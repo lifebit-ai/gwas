@@ -55,6 +55,6 @@ process fit_null_glmm {
     --traitType=${params.traitType} \
     --outputPrefix=step1_${params.phenoCol}_out \
     --outputPrefix_varRatio=step1_${params.phenoCol} \
-    --nThreads=${task.cpus} ${saigeStep1ExtraFlags}
+    --nThreads=${task.cpus} ${params.saigeStep1ExtraFlags}
   """
 }
