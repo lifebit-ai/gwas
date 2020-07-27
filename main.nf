@@ -35,17 +35,6 @@ process fit_null_glmm {
   file "*" into fit_null_glmm_results
 
   script:
-  // Rscript bin/step1_fitNULLGLMM.R\
-  //     --plinkFile=testdata/sampleA \
-  //     --phenoFile=testdata/new_sample.phe \
-  //     --phenoCol=PHE \
-  //     --sampleIDColinphenoFile=IID \
-  //     --traitType=binary        \
-  //     --outputPrefix=step1_out \
-  //     --outputPrefix_varRatio=step1_ \
-  //     --nThreads=2 \
-  //     --LOCO=FALSE \
-  //     --IsOverwriteVarianceRatioFile=TRUE
   """
   step1_fitNULLGLMM.R \
     --plinkFile=${plink_GRM_snps} \
