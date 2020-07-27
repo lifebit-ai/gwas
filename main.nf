@@ -11,13 +11,13 @@
 
 // Channel setup
 Channel
-  .fromPath(phenoFile)
-  .ifEmpty { exit 1, "Pheno file not found: ${phenoFile}" }
+  .fromPath(params.phenoFile)
+  .ifEmpty { exit 1, "Pheno file not found: ${params.phenoFile}" }
   .set { phenoCh }
 Channel
-  .fromFilePairs("${plinkFile}.{bed,bim,fam}",size:3, flat : true)
+  .fromFilePairs("${params.plinkFile}.{bed,bim,fam}",size:3, flat : true)
   .map { bed, bim, fam -> [ bed.baseName, file(bed), file(bim), file(fam)]}
-  .ifEmpty { exit 1, "PLINK files not found: ${plinkFile}" }
+  .ifEmpty { exit 1, "PLINK files not found: ${params.plinkFile}" }
   .set { plinkCh }
   // { file -> file.baseName }  \
 
