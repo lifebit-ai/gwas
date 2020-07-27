@@ -16,10 +16,8 @@ Channel
   .set { phenoCh }
 Channel
   .fromFilePairs("${params.plinkFile}.{bed,bim,fam}",size:3, flat : true)
-  .map { bed, bim, fam -> [ bed.baseName, file(bed), file(bim), file(fam)]}
   .ifEmpty { exit 1, "PLINK files not found: ${params.plinkFile}" }
   .set { plinkCh }
-  // { file -> file.baseName }  \
 
 /*--------------------------------------------------
   GWAS Analysis 1 with SAIGE - Fit the null mixed-model
