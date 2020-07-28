@@ -43,7 +43,8 @@ process pre_gwas_filtering {
   file("${name}_filtered.{bed,bim,fam}") into plinkTestCh
 
   script:
-  // --real-ref-alleles \
+  // TODO: (High priority) Only extract needed individuals from VCF files with `bcftools -S samples.txt` - get from samples file?
+  // TODO: (Not required) `bcftools -T sites_to_extract.txt`
   """
   # Download, filter and convert (bcf or vcf.gz) -> vcf.gz
   bcftools view -q ${params.qFilter} $vcf -Oz -o ${name}_filtered.vcf.gz
@@ -128,3 +129,6 @@ process gwas_2_spa_tests {
     --IsOutputHetHomCountsinCaseCtrl=TRUE
   """
 }
+
+// TODO: Post-GWAS filtering
+// TODO: Creation of post-GRM plink files (bcftools) - only needs to be run once
