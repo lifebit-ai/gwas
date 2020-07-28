@@ -26,12 +26,46 @@ Channel
   .set { vcfsCh }
 
 /*--------------------------------------------------
+  Pre-GWAS filtering - download, filter and convert VCFs
+---------------------------------------------------*/
+
+process pre_gwas_filtering {
+  tag "$name"
+  publishDir "${params.outdir}/pre_gwas_filtering", mode: 'copy'
+
+  input:
+  set val(name), val(chr), file(vcf), file(index) from vcfsCh
+
+  output:
+  set val(name), val(chr), file("${name}_filtered.vcf.gz"), file("${name}_filtered.vcf.gz.csi") into filteredVcfsCh
+
+
+  script:
+  // # Create PLINK binary from vcf.gz
+  // plink2 \
+  //   --make-bed \
+  //   --set-missing-var-ids @:#,\\$r,\\$a" \
+  //   --vcf ${name}_filtered.vcf.gz \
+  //   --out ${name}_filtered \
+  //   --vcf-half-call m \
+  //   --double-id \
+  //   --real-ref-alleles \
+  //   --set-hh-missing \
+  //   --new-id-max-allele-len 60 missing
+  """
+  # Download, filter and convert (bcf or vcf.gz) -> vcf.gz
+  bcftools view -q ${params.qFilter} $vcf -Oz -o ${name}_filtered.vcf.gz
+  bcftools index ${name}_filtered.vcf.gz
+  """
+}
+
+/*--------------------------------------------------
   GWAS Analysis 1 with SAIGE - Fit the null mixed-model
 ---------------------------------------------------*/
 
 process gwas_1_fit_null_glmm {
   tag "$plink_GRM_snps"
-  publishDir params.outdir, mode: 'copy'
+  publishDir "${params.outdir}/gwas_1_fit_null_glmm", mode: 'copy'
 
   input:
   set val(plink_GRM_snps), file(bed), file(bim), file(fam) from plinkCh
@@ -57,15 +91,15 @@ process gwas_1_fit_null_glmm {
 }
 
 /*--------------------------------------------------
-  Perform mixed-model association testing with SAIGE
+  GWAS Analysis 1 with SAIGE - Perform mixed-model association testing with SAIGE
 ---------------------------------------------------*/
 
 process gwas_2_spa_tests {
   tag "$name"
-  publishDir params.outdir, mode: 'copy'
+  publishDir "${params.outdir}/gwas_2_spa_tests", mode: 'copy'
 
   input:
-  set val(name), val(chr), file(vcf), file(index) from vcfsCh
+  set val(name), val(chr), file(vcf), file(index) from filteredVcfsCh
   each file(rda) from rdaCh
   each file(varianceRatio) from varianceRatioCh
 
