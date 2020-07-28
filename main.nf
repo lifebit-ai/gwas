@@ -29,7 +29,7 @@ Channel
   GWAS Analysis 1 with SAIGE - Fit the null mixed-model
 ---------------------------------------------------*/
 
-process fit_null_glmm {
+process gwas_1_fit_null_glmm {
   tag "$plink_GRM_snps"
   publishDir params.outdir, mode: 'copy'
 
@@ -60,7 +60,7 @@ process fit_null_glmm {
   Perform mixed-model association testing with SAIGE
 ---------------------------------------------------*/
 
-process spa_tests {
+process gwas_2_spa_tests {
   tag "$name"
   publishDir params.outdir, mode: 'copy'
 
