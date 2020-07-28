@@ -18,6 +18,12 @@ Channel
   .fromFilePairs("${params.plinkFile}.{bed,bim,fam}",size:3, flat : true)
   .ifEmpty { exit 1, "PLINK files not found: ${params.plinkFile}" }
   .set { plinkCh }
+Channel
+  .fromPath(params.vcfsList)
+  .ifEmpty { exit 1, "Cannot find CSV VCFs file : ${params.vcfsList}" }
+  .splitCsv(skip:1)
+  .map { chr, vcf, index -> [file(vcf).simpleName, chr, file(vcf), file(index)] }
+  .set { vcfsCh }
 
 /*--------------------------------------------------
   GWAS Analysis 1 with SAIGE - Fit the null mixed-model
@@ -33,6 +39,8 @@ process fit_null_glmm {
 
   output:
   file "*" into fit_null_glmm_results
+  file ("step1_${params.phenoCol}_out.rda") into rdaCh
+  file ("step1_${params.phenoCol}.varianceRatio.txt") into varianceRatioCh
 
   script:
   """
@@ -45,5 +53,41 @@ process fit_null_glmm {
     --outputPrefix=step1_${params.phenoCol}_out \
     --outputPrefix_varRatio=step1_${params.phenoCol} \
     --nThreads=${task.cpus} ${params.saigeStep1ExtraFlags}
+  """
+}
+
+/*--------------------------------------------------
+  Perform mixed-model association testing with SAIGE
+---------------------------------------------------*/
+
+process spa_tests {
+  tag "$name"
+  publishDir params.outdir, mode: 'copy'
+
+  input:
+  set val(name), val(chr), file(vcf), file(index) from vcfsCh
+  each file(rda) from rdaCh
+  each file(varianceRatio) from varianceRatioCh
+
+  output:
+  file "*" into results
+
+  script:
+  """
+  step2_SPAtests.R \
+    --vcfFile=${vcf} \
+    --vcfFileIndex=${index} \
+    --vcfField=GT \
+    --chrom=${chr} \
+    --minMAC=20 \
+    --sampleFile=day0_covid.samples \
+    --GMMATmodelFile=${rda} \
+    --varianceRatioFile=${varianceRatio} \
+    --SAIGEOutputFile=${params.phenoCol}.${name}.SAIGE.gwas.txt \
+    --numLinesOutput=2 \
+    --IsOutputAFinCaseCtrl=TRUE \
+    --IsDropMissingDosages=FALSE \
+    --IsOutputNinCaseCtrl=TRUE \
+    --IsOutputHetHomCountsinCaseCtrl=TRUE
   """
 }
