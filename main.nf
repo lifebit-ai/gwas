@@ -40,24 +40,25 @@ process pre_gwas_filtering {
 
   output:
   set val(name), val(chr), file("${name}_filtered.vcf.gz"), file("${name}_filtered.vcf.gz.csi") into filteredVcfsCh
-
+  file("${name}_filtered.{bed,bim,fam}") into plinkTestCh
 
   script:
-  // # Create PLINK binary from vcf.gz
-  // plink2 \
-  //   --make-bed \
-  //   --set-missing-var-ids @:#,\\$r,\\$a" \
-  //   --vcf ${name}_filtered.vcf.gz \
-  //   --out ${name}_filtered \
-  //   --vcf-half-call m \
-  //   --double-id \
-  //   --real-ref-alleles \
-  //   --set-hh-missing \
-  //   --new-id-max-allele-len 60 missing
+  // --real-ref-alleles \
   """
   # Download, filter and convert (bcf or vcf.gz) -> vcf.gz
   bcftools view -q ${params.qFilter} $vcf -Oz -o ${name}_filtered.vcf.gz
   bcftools index ${name}_filtered.vcf.gz
+ 
+  # Create PLINK binary from vcf.gz
+  plink2 \
+    --make-bed \
+    --set-missing-var-ids @:#,\\\$r,\\\$a \
+    --vcf ${name}_filtered.vcf.gz \
+    --out ${name}_filtered \
+    --vcf-half-call m \
+    --double-id \
+    --set-hh-missing \
+    --new-id-max-allele-len 60 missing
   """
 }
 
