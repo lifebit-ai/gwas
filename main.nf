@@ -24,7 +24,7 @@ Channel
 ---------------------------------------------------*/
 
 process fit_null_glmm {
-  tag "$name"
+  tag "$plink_GRM_snps"
   publishDir params.outdir, mode: 'copy'
 
   input:
