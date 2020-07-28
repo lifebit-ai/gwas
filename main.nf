@@ -9,7 +9,9 @@
 ----------------------------------------------------------------------------------------
 */
 
-// Channel setup
+/*--------------------------------------------------
+  Channel setup
+---------------------------------------------------*/
 Channel
   .fromPath(params.phenoFile)
   .ifEmpty { exit 1, "Pheno file not found: ${params.phenoFile}" }
@@ -91,7 +93,7 @@ process gwas_1_fit_null_glmm {
 }
 
 /*--------------------------------------------------
-  GWAS Analysis 1 with SAIGE - Perform mixed-model association testing with SAIGE
+  GWAS Analysis 2 with SAIGE - Perform mixed-model association testing with SAIGE
 ---------------------------------------------------*/
 
 process gwas_2_spa_tests {
