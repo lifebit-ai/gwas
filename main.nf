@@ -17,7 +17,7 @@ Channel
   .ifEmpty { exit 1, "Pheno file not found: ${params.phenoFile}" }
   .set { phenoCh }
 Channel
-  .fromFilePairs("${params.plinkFile}.{bed,bim,fam}",size:3, flat : true)
+  .fromFilePairs("${params.plinkFile}",size:3, flat : true)
   .ifEmpty { exit 1, "PLINK files not found: ${params.plinkFile}" }
   .set { plinkCh }
 Channel
