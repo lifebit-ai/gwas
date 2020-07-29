@@ -95,7 +95,7 @@ process gwas_1_fit_null_glmm {
 }
 
 /*--------------------------------------------------
-  GWAS Analysis 2 with SAIGE - Perform mixed-model association testing with SAIGE
+  GWAS Analysis 2 with SAIGE - Perform mixed-model association testing
 ---------------------------------------------------*/
 
 process gwas_2_spa_tests {
