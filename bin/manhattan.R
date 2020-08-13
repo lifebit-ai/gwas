@@ -74,7 +74,6 @@ if(is.null(args$suggestive_line)) {args$suggestive_line  = FALSE} else {args$sug
 ############################## LIBRARIES SECTION #############################
 
 suppressWarnings(suppressMessages(library(data.table)))
-suppressWarnings(suppressMessages(library(GWASTools)))
 suppressWarnings(suppressMessages(library(qqman)))
 suppressWarnings(suppressMessages(library(snakecase)))
 
@@ -131,12 +130,12 @@ png(filename =  paste0(output_tag,"_", manhattan_suffix , ".png") ,
     res = res,
     type = type)
 
-manhattan_plot <- manhattan(analysis, 
-                            main     = title, 
-                            col      = c(manhattan_colour_1, manhattan_colour_2), 
-                            cex      = cex, 
-                            cex.axis = cex_axis, 
-                            suggestiveline = suggestive_line)
+manhattan_plot <- qqman::manhattan(analysis,
+                                   main     = title,
+                                   col      = c(manhattan_colour_1,manhattan_colour_2),
+                                   cex      = cex,
+                                   cex.axis = cex_axis,
+                                   suggestiveline = suggestive_line)
 dev.off()
 
 

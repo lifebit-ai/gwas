@@ -59,7 +59,6 @@ if(is.null(args$res)) {args$res = 300} else {args$res=as.character(args$res)}
 
 suppressWarnings(suppressMessages(library(data.table)))
 suppressWarnings(suppressMessages(library(GWASTools)))
-suppressWarnings(suppressMessages(library(qqman)))
 suppressWarnings(suppressMessages(library(snakecase)))
 
 
@@ -116,7 +115,7 @@ png(filename =  paste0(output_tag,"_", "qqplot_ci" , ".png") ,
     type   = type)
 
 
-qqPlot(analysis$P, main=paste0(analysis_tag,",","lambda=",round(lambda(analysis$P),2)))
+GWASTools::qqPlot(analysis$P, main=paste0(analysis_tag,",","lambda=",round(lambda(analysis$P),2)))
 dev.off()
 
 #check whether we can just save the R objects and also give the option for exporting through a future airlock
