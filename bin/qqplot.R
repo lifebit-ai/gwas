@@ -32,7 +32,7 @@ if("--help" %in% args | "help" %in% args | (length(args) == 0) | (length(args) =
       
           The typical command for running the script is as follows:
     
-          ./gwas_plots.R --saige_output='saige_out.txt' --output_tag='covid_2'      
+          ./qqplot.R --saige_output='saige_out.txt' --output_tag='covid_2'
       
       WARNING : here put all the things the user has to know
       \n")
