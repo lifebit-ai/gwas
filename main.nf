@@ -109,6 +109,7 @@ process gwas_2_spa_tests {
 
   output:
   file "*" into results
+  file("*.SAIGE.gwas.txt") into ch_report
 
   script:
   """
