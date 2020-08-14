@@ -25,7 +25,7 @@ dependencies:
   - r-plyr
   - r-dplyr
   - r-purrr
-  - r-r-kableextra
+  - r-kableextra
   - r-stringr
   - r-dt
   - r-magrittr
