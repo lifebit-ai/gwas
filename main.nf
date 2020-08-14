@@ -163,7 +163,7 @@ process create_report {
   cd /opt/bin
 
   # creates gwascat_subset.csv
-  ./subset_gwascat.R
+  Rscript subset_gwascat.R
 
   # creates covid_1_manhattan.png with analysis.csv as input
   ./manhattan.R --saige_output='analysis.csv' --output_tag='covid1'
