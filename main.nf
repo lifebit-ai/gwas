@@ -158,7 +158,7 @@ process create_report {
 
   mv analysis.csv /opt/bin
   cp $gwas_cat gwas_cat.csv
-  mv  gwas_cat.csv /opt/bin
+  mv  gwascat.csv /opt/bin
 
   cd /opt/bin
 
