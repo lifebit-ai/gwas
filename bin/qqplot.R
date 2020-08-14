@@ -80,14 +80,13 @@ res               <- args$res
 cat("\n")
 cat("ARGUMENTS SUMMARY")
 cat("\n")
-cat("saige_output      : ", saige_output,     "\n",sep="")
-cat("output_tag        : ", output_tag,       "\n",sep="")
-cat("saige_output      : ", saige_output,     "\n",sep="")
-cat("output_tag        : ", output_tag,       "\n",sep="")
-cat("saige_output      : ", saige_output,     "\n",sep="")
-cat("output_tag        : ", output_tag,       "\n",sep="")
-cat("saige_output      : ", saige_output,     "\n",sep="")
-cat("output_tag        : ", output_tag,       "\n",sep="")
+cat("saige_output: ", saige_output, "\n",sep="")
+cat("output_tag  : ", output_tag,   "\n",sep="")
+cat("width       : ", width,        "\n",sep="")
+cat("height      : ", height,       "\n",sep="")
+cat("units       : ", units,        "\n",sep="")
+cat("type        : ", type,         "\n",sep="")
+cat("res         : ", res,          "\n",sep="")
 
 # ############################### FUNCTIONS SECTION ###############################
 
@@ -110,12 +109,11 @@ png(filename =  paste0(output_tag,"_", "qqplot_ci" , ".png") ,
     width  = width,
     height = height,
     units  = units,
-    bg     = bg,
     res    = res,
     type   = type)
 
 
-GWASTools::qqPlot(analysis$P, main=paste0(analysis_tag,",","lambda=",round(lambda(analysis$P),2)))
+GWASTools::qqPlot(analysis$P, main=paste0(output_tag,",","lambda=",round(lambda(analysis$P),2)))
 dev.off()
 
 #check whether we can just save the R objects and also give the option for exporting through a future airlock
