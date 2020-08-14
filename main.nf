@@ -157,7 +157,7 @@ process create_report {
   concat_chroms.R
 
   mv analysis.csv /opt/bin
-  cp $gwas_cat gwascat.csv
+  mv $gwas_cat tmp && mv tmp gwascat.csv
   mv  gwascat.csv /opt/bin
 
   cd /opt/bin
