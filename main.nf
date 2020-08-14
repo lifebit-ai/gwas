@@ -26,6 +26,10 @@ Channel
   .splitCsv(skip:1)
   .map { chr, vcf, index -> [file(vcf).simpleName, chr, file(vcf), file(index)] }
   .set { vcfsCh }
+Channel
+  .fromPath(params.gwas_cat)
+  .ifEmpty { exit 1, "Cannot find GWAS catalogue CSV  file : ${params.gwas_cat}" }
+  .set { ch_gwas_cat }
 
 /*--------------------------------------------------
   Pre-GWAS filtering - download, filter and convert VCFs
