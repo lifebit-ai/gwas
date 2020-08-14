@@ -1,5 +1,7 @@
 # GEL GWAS
 
+![](bin/covid_1_manhattan.png)
+
 ## Example usage
 ```bash
 nextflow run main.nf \
