@@ -15,11 +15,14 @@
 Channel
   .fromPath(params.phenoFile)
   .ifEmpty { exit 1, "Pheno file not found: ${params.phenoFile}" }
-  .set { phenoCh }
+  .into { phenoCh; phenoCh_gwas_filtering}
 Channel
   .fromFilePairs("${params.plinkFile}",size:3, flat : true)
   .ifEmpty { exit 1, "PLINK files not found: ${params.plinkFile}" }
   .set { plinkCh }
+Channel
+  .fromPath(params.keep)
+  .set {keep_pheno_ch}
 Channel
   .fromPath(params.vcfsList)
   .ifEmpty { exit 1, "Cannot find CSV VCFs file : ${params.vcfsList}" }
@@ -31,20 +34,25 @@ Channel
   Pre-GWAS filtering - download, filter and convert VCFs
 ---------------------------------------------------*/
 
-process pre_gwas_filtering {
+process gwas_filtering {
   tag "$name"
-  publishDir "${params.outdir}/pre_gwas_filtering", mode: 'copy'
+  publishDir "${params.outdir}/gwas_filtering", mode: 'copy'
 
   input:
   set val(name), val(chr), file(vcf), file(index) from vcfsCh
+  each file(phenofile) from phenoCh_gwas_filtering
+  each file(keep_file) from keep_pheno_ch
 
   output:
   set val(name), val(chr), file("${name}_filtered.vcf.gz"), file("${name}_filtered.vcf.gz.csi") into filteredVcfsCh
   file("${name}_filtered.{bed,bim,fam}") into plinkTestCh
+  file("${name}.filtered_final.gz") into plink_filtered_ch
 
   script:
   // TODO: (High priority) Only extract needed individuals from VCF files with `bcftools -S samples.txt` - get from samples file?
   // TODO: (Not required) `bcftools -T sites_to_extract.txt`
+  // Optional parameters
+  extra_plink_filter_missingness_options = params.keep != "testdata/nofile" ? "--keep ${keep_file}" : ""
   """
   # Download, filter and convert (bcf or vcf.gz) -> vcf.gz
   bcftools view -q ${params.qFilter} $vcf -Oz -o ${name}_filtered.vcf.gz
@@ -60,6 +68,39 @@ process pre_gwas_filtering {
     --double-id \
     --set-hh-missing \
     --new-id-max-allele-len 60 missing
+
+  #Filter missingness
+  plink \
+    --bfile ${name}_filtered \
+    --pheno $phenofile \
+    --pheno-name ${params.phenoCol} \
+    --allow-no-sex \
+    --test-missing midp \
+    --out ${name} \
+    --1 \
+    --keep-allele-order \
+    ${extra_plink_filter_missingness_options}
+
+  awk '\$5 < ${params.thres_m} {print}' ${name}.missing > ${name}.missing_FAIL
+
+  #Filter HWE
+  plink \
+    --bfile ${name}_filtered \
+    --pheno $phenofile \
+    --pheno-name ${params.phenoCol} \
+    --allow-no-sex \
+    --hwe ${params.thres_HWE} midp \
+    --out ${name}.misHWEfiltered \
+    --make-just-bim \
+    --exclude ${name}.missing_FAIL \
+    --1 \
+    --keep-allele-order \
+    ${extra_plink_filter_missingness_options}
+
+  bcftools view ${name}_filtered.vcf.gz | awk -F '\\t' 'NR==FNR{c[\$1\$2\$3\$4]++;next}; c[\$1\$2\$4\$5] > 0' ${name}.misHWEfiltered - | bgzip > ${name}.filtered_temp.gz
+  bcftools view -h ${name}_filtered.vcf.gz -Oz -o ${name}_filtered.header.gz
+  paste ${name}_filtered.header.gz ${name}.filtered_temp.gz > ${name}.filtered_final.gz
+
   """
 }
 
