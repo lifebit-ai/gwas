@@ -166,7 +166,7 @@ process create_report {
   Rscript subset_gwascat.R
 
   # creates covid_1_manhattan.png with analysis.csv as input
-  ./manhattan.R --saige_output='analysis.csv' --output_tag='covid1'
+  ./manhattan.R --saige_output='analysis.csv' --output_tag='covid1' --height='200' --width='500'
 
   R -e "rmarkdown::render('gwas_report.Rmd', params = list(manhattan='covid_1_manhattan.png',gwascat='gwascat_subset.csv',output_file='multiqc_report.html')"
 
