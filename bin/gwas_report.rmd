@@ -1,0 +1,90 @@
+---
+output: 
+  html_document:
+    code_download: false
+    toc: true                  # table of content true
+    toc_depth: 3               # upto three depths of headings (specified by #, ## and ###)
+    toc_float: true
+    number_sections: true      # if you want number sections at each table header
+    theme: united              # many options for theme, this one is my favorite.
+    highlight: tango           # specifies the syntax highlighting style
+    css: 'style.css'
+params:
+  manhattan:  "covid_1_manhattan.png"
+  gwascat: "gwascat_subset.csv"
+title: "`r paste0('Genomics England GWAS Report','' `"
+author: ""
+date: ""
+---
+
+<style>
+body {
+text-align: justify}
+</style>
+
+<img src="logo.png" style="position:absolute;top:4px;bottom:4px;right:4px;" />
+
+
+```{r include = FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+```
+
+```{r echo = FALSE}
+source("DTable.R")
+source("sanitise.R")
+
+suppressPackageStartupMessages({
+
+library(magrittr)
+library(DT)
+library(data.table)
+library(htmltools)
+library(stringr)
+library(dplyr)
+library(kableExtra)
+   })
+```
+
+# Visualisations
+
+Plots to explore GWAS results
+
+```{r}
+figure_number  <- "Figure 1: " 
+figure_caption <- "Manhattan plot"
+knitr::include_graphics("covid_1_manhattan.png", )
+htmltools::tags$figcaption( style = 'caption-side: bottom; text-align: center; font-size: 85%%; color: #71879d',
+                            htmltools::em(figure_number), 
+                            htmltools::em(figure_caption))
+```
+
+
+<div class = "row">
+<div class = "col-md-3">
+</div>
+<div class = "col-md-6">
+
+
+# GWAS catalogue information
+
+```{r}
+table_number <- "Table 1: "
+caption      <- ""
+table_caption <- htmltools::tags$caption( style = 'caption-side: bottom; text-align: center; font-size: 100%; color: #71879d',
+                            htmltools::em(table_number), 
+                            htmltools::em(caption))
+table   <- data.table::fread("gwascat_subset.csv")
+knitr::kable(table, caption = table_caption, "html", align = "l") %>%
+  kable_styling("striped")
+```
+</div>
+<div class = "col-md-3">
+</div>
+</div>
+
+
+```{r}
+toKeep <- c("SNPS", "MAPPED_TRAIT_URI", "INITIAL.SAMPLE.SIZE", "RISK.ALLELE.FREQUENCY", "DISEASE.TRAIT")
+table <- data.table::fread("")
+DTable(table[,toKeep],table_caption = "")
+```
