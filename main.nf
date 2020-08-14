@@ -154,8 +154,8 @@ process create_report {
   script:
   """
   # creates analysis.csv
-  concat_chroms.R
-
+  Rscript /opt/bin/concat_chroms.R
+  
   mv analysis.csv /opt/bin
   mv $gwas_cat tmp && mv tmp gwascat.csv
   mv  gwascat.csv /opt/bin
