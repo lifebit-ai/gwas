@@ -15,6 +15,7 @@ dependencies:
   - bioconda::multiqc=1.7
   - jupytext
   - r-base
+  - r-irkernel
   - r-snakecase
   - r-qqman
   - r-data.table
