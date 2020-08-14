@@ -76,3 +76,5 @@ RUN find /opt/bin/ -type f -iname "*.py" -exec chmod +x {} \; && \
 # Instruct R processes to use these empty files instead of clashing with a local version
 RUN touch .Rprofile
 RUN touch .Renviron
+
+RUN Rscript -e 'Sys.setenv(TAR = "/bin/tar");options(repos = "https://cloud.r-project.org/"); install.packages("RCurl")'
