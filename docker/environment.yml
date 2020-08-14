@@ -13,6 +13,7 @@ dependencies:
   - conda-forge::pygments=2.5.2
   - bioconda::fastqc=0.11.8
   - bioconda::multiqc=1.7
+  - jupytext
   - r-base
   - r-snakecase
   - r-qqman
@@ -23,8 +24,14 @@ dependencies:
   - r-plyr
   - r-dplyr
   - r-purrr
+  - r-r-kableextra
   - r-stringr
+  - r-dt
+  - r-magrittr
+  - r-htmltools
   - cairo
+  - bioconda::plink
   - bioconductor-biobase
   - bioconductor-gwascat
   - bioconductor-gwastools
+  - fonts-anaconda=1
