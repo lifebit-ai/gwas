@@ -26,6 +26,10 @@ Channel
   .splitCsv(skip:1)
   .map { chr, vcf, index -> [file(vcf).simpleName, chr, file(vcf), file(index)] }
   .set { vcfsCh }
+Channel
+  .fromPath(params.gwas_cat)
+  .ifEmpty { exit 1, "Cannot find GWAS catalogue CSV  file : ${params.gwas_cat}" }
+  .set { ch_gwas_cat }
 
 /*--------------------------------------------------
   Pre-GWAS filtering - download, filter and convert VCFs
@@ -153,13 +157,13 @@ process create_report {
   concat_chroms.R
 
   mv analysis.csv /opt/bin
-  cp $gwas_cat gwas_cat.csv
-  mv  gwas_cat.csv /opt/bin
+  mv $gwas_cat tmp && mv tmp gwascat.csv
+  mv  gwascat.csv /opt/bin
 
   cd /opt/bin
 
   # creates gwascat_subset.csv
-  ./subset_gwascat.R
+  Rscript subset_gwascat.R
 
   # creates covid_1_manhattan.png with analysis.csv as input
   ./manhattan.R --saige_output='analysis.csv' --output_tag='covid1'
