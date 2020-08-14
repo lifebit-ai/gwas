@@ -1,0 +1,30 @@
+# You can use this file to create a conda environment for this pipeline:
+#   conda env create -f environment.yml
+name: gel-gwas-1.0dev
+channels:
+  - conda-forge
+  - bioconda
+  - r
+  - defaults
+dependencies:
+  - conda-forge::python=3.7.3
+  - conda-forge::markdown=3.1.1
+  - conda-forge::pymdown-extensions=6.0
+  - conda-forge::pygments=2.5.2
+  - bioconda::fastqc=0.11.8
+  - bioconda::multiqc=1.7
+  - r-base
+  - r-snakecase
+  - r-qqman
+  - r-data.table
+  - r-devtools
+  - r-rmarkdown
+  - r-ggplot2
+  - r-plyr
+  - r-dplyr
+  - r-purrr
+  - r-stringr
+  - cairo
+  - bioconductor-biobase
+  - bioconductor-gwascat
+  - bioconductor-gwastools
