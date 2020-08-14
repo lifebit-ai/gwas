@@ -143,7 +143,8 @@ process create_report {
   file(gwas_cat) from ch_gwas_cat
 
   output:
-  file "multiqc_report.html" into results
+  file "multiqc_report.html" into ch_report_outputs
+  file "*" into ch_report_outputs_all
 
   script:
   """
@@ -162,8 +163,11 @@ process create_report {
   # creates covid_1_manhattan.png with analysis.csv as input
   ./manhattan.R --saige_output='analysis.csv' --output_tag='covid1'
 
-  R -e "rmarkdown::render('limma_parameterised.Rmd', params = list(manhattan='covid_1_manhattan.png',gwascat='gwascat_subset.csv',output_file='multiqc_report.html')"
+  R -e "rmarkdown::render('gwas_report.Rmd', params = list(manhattan='covid_1_manhattan.png',gwascat='gwascat_subset.csv',output_file='multiqc_report.html')"
+
+  jupytext --to ipynb gwas_report.Rmd
 
   mv multiqc_report.html ..
+  mv gwas_report.ipynb ..
   """
 }
