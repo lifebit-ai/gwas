@@ -79,3 +79,4 @@ RUN touch .Renviron
 
 RUN Rscript -e 'Sys.setenv(TAR = "/bin/tar");options(repos = "https://cloud.r-project.org/"); install.packages("RCurl")'
 RUN apt install libcurl4-openssl-dev -y
+ENV PATH="$PATH:/opt/bin/"
