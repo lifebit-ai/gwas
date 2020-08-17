@@ -153,26 +153,21 @@ process create_report {
 
   script:
   """
-  # creates analysis.csv
-  Rscript /opt/bin/concat_chroms.R
+  cp /opt/bin/* .
   
-  mv analysis.csv /opt/bin
-  mv $gwas_cat tmp && mv tmp gwascat.csv
-  mv  gwascat.csv /opt/bin
-
-  cd /opt/bin
+  # creates analysis.csv
+  Rscript concat_chroms.R
 
   # creates gwascat_subset.csv
   Rscript subset_gwascat.R
 
   # creates covid_1_manhattan.png with analysis.csv as input
-  ./manhattan.R --saige_output='analysis.csv' --output_tag='covid1' --height='200' --width='500'
+  ./manhattan.R --saige_output='analysis.csv' --output_tag='covid1'
 
-  R -e "rmarkdown::render('gwas_report.Rmd', params = list(manhattan='covid_1_manhattan.png',gwascat='gwascat_subset.csv',output_file='multiqc_report.html')"
+  # Generates the report
+  Rscript -e "rmarkdown::render('gwas_report.Rmd', params = list(manhattan='covid_1_manhattan.png',gwascat='gwascat_subset.csv',output_file='multiqc_report.html'))"
 
+  # Generates the ipynb
   jupytext --to ipynb gwas_report.Rmd
-
-  mv multiqc_report.html ..
-  mv gwas_report.ipynb ..
   """
 }

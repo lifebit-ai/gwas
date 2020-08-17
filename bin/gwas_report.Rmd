@@ -12,6 +12,7 @@ output:
 params:
   manhattan:  "covid_1_manhattan.png"
   gwascat: "gwascat_subset.csv"
+  output_file: "multiqc_report.html"
 title: "`r paste0('Genomics England GWAS Report' , '') `"
 author: ""
 date: ""
