@@ -166,7 +166,7 @@ process create_report {
 
   # Generates the report
   Rscript -e "rmarkdown::render('gwas_report.Rmd', params = list(manhattan='covid_1_manhattan.png',gwascat='gwascat_subset.csv',output_file='multiqc_report.html'))"
-
+  mv gwas_report.html multiqc_report.html
   # Generates the ipynb
   jupytext --to ipynb gwas_report.Rmd
   """
