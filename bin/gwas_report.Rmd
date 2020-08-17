@@ -12,17 +12,14 @@ output:
 params:
   manhattan:  "covid_1_manhattan.png"
   gwascat: "gwascat_subset.csv"
-title: "`r paste0('Genomics England GWAS Report','' `"
+title: "`r paste0('Genomics England GWAS Report' , '') `"
 author: ""
 date: ""
 ---
 
-<style>
-body {
-text-align: justify}
-</style>
 
-<img src="logo.png" style="position:absolute;top:4px;bottom:4px;right:4px;" />
+
+<img src="logo.png" width=100 style="position:absolute;top:4px;bottom:4px;right:4px;" />
 
 
 ```{r include = FALSE}
@@ -38,6 +35,7 @@ suppressPackageStartupMessages({
 library(magrittr)
 library(DT)
 library(data.table)
+  
 library(htmltools)
 library(stringr)
 library(dplyr)
@@ -59,32 +57,29 @@ htmltools::tags$figcaption( style = 'caption-side: bottom; text-align: center; f
 ```
 
 
-<div class = "row">
-<div class = "col-md-3">
-</div>
-<div class = "col-md-6">
-
-
 # GWAS catalogue information
 
 ```{r}
-table_number <- "Table 1: "
-caption      <- ""
-table_caption <- htmltools::tags$caption( style = 'caption-side: bottom; text-align: center; font-size: 100%; color: #71879d',
-                            htmltools::em(table_number), 
-                            htmltools::em(caption))
-table   <- data.table::fread("gwascat_subset.csv")
-knitr::kable(table, caption = table_caption, "html", align = "l") %>%
-  kable_styling("striped")
-```
-</div>
-<div class = "col-md-3">
-</div>
-</div>
-
-
-```{r}
+table   <- as.data.frame(data.table::fread("gwascat_subset.csv"))
 toKeep <- c("SNPS", "MAPPED_TRAIT_URI", "INITIAL.SAMPLE.SIZE", "RISK.ALLELE.FREQUENCY", "DISEASE.TRAIT")
-table <- data.table::fread("")
-DTable(table[,toKeep],table_caption = "")
+toKeep <- colnames(table)
+DT::datatable(table[,toKeep],
+               # OPTIONS:
+                options = list(
+                  filter     = "bottom",
+                  # Does not allow columnful dataframes go rogue and tucks them in to fit page width
+                  scrollX = TRUE,
+                  scrollCollapse = TRUE,
+
+                  # Defines all capabilities
+                  dom        = 'BRrltpi',
+
+                  autoWidth  = TRUE,
+                  ColReorder = TRUE,
+                  buttons    = list('copy','print', list(extend  = 'collection',
+                                                         buttons = c('csv', 'excel', 'pdf'),
+                                                         text    = 'Download'),
+                                    I('colvis'))))
+
+
 ```
