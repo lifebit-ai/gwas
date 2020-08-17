@@ -15,6 +15,7 @@ RUN apt-get update && \
               libssl-dev \
               libgsl0-dev \
               libperl-dev \
+              libxt-dev \
               procps
 
 #Install htslib developmental version specific commit

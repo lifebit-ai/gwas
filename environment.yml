@@ -18,7 +18,6 @@ dependencies:
   - r-irkernel
   - r-snakecase
   - r-qqman
-  - r-data.table
   - r-devtools
   - r-rmarkdown
   - r-ggplot2
@@ -36,3 +35,4 @@ dependencies:
   - bioconductor-gwascat
   - bioconductor-gwastools
   - fonts-anaconda=1
+  - r-data.table
