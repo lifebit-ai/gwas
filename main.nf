@@ -21,8 +21,8 @@ Channel
   .ifEmpty { exit 1, "PLINK files not found: ${params.plinkFile}" }
   .set { plinkCh }
 Channel
-  .fromPath(params.keep)
-  .set {keep_pheno_ch}
+  .fromPath(params.plink_keep_pheno)
+  .set {plink_keep_pheno_ch}
 Channel
   .fromPath(params.vcfsList)
   .ifEmpty { exit 1, "Cannot find CSV VCFs file : ${params.vcfsList}" }
@@ -41,7 +41,7 @@ process gwas_filtering {
   input:
   set val(name), val(chr), file(vcf), file(index) from vcfsCh
   each file(phenofile) from phenoCh_gwas_filtering
-  each file(keep_file) from keep_pheno_ch
+  each file(plink_keep_file) from plink_keep_pheno_ch
 
   output:
   set val(name), val(chr), file("${name}.filtered_final.vcf.gz"), file("${name}.filtered_final.vcf.gz.csi") into filteredVcfsCh
@@ -51,7 +51,7 @@ process gwas_filtering {
   // TODO: (High priority) Only extract needed individuals from VCF files with `bcftools -S samples.txt` - get from samples file?
   // TODO: (Not required) `bcftools -T sites_to_extract.txt`
   // Optional parameters
-  extra_plink_filter_missingness_options = params.keep != "testdata/nofile" ? "--keep ${keep_file}" : ""
+  extra_plink_filter_missingness_options = params.plink_keep_pheno != "testdata/nofile" ? "--keep ${plink_keep_file}" : ""
   """
   # Download, filter and convert (bcf or vcf.gz) -> vcf.gz
   bcftools view -q ${params.qFilter} $vcf -Oz -o ${name}_filtered.vcf.gz
