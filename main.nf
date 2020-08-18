@@ -44,9 +44,8 @@ process gwas_filtering {
   each file(keep_file) from keep_pheno_ch
 
   output:
-  set val(name), val(chr), file("${name}_filtered.vcf.gz"), file("${name}_filtered.vcf.gz.csi") into filteredVcfsCh
+  set val(name), val(chr), file("${name}.filtered_final.vcf.gz"), file("${name}.filtered_final.vcf.gz.csi") into filteredVcfsCh
   file("${name}_filtered.{bed,bim,fam}") into plinkTestCh
-  set file("${name}.filtered_final.vcf.gz"), file("${name}.filtered_final.vcf.gz.csi") into plink_filtered_ch
 
   script:
   // TODO: (High priority) Only extract needed individuals from VCF files with `bcftools -S samples.txt` - get from samples file?
@@ -97,7 +96,7 @@ process gwas_filtering {
     --keep-allele-order \
     ${extra_plink_filter_missingness_options}
 
-  bcftools view ${name}_filtered.vcf.gz | awk -F '\\t' 'NR==FNR{c[\$1\$4\$5\$6]++;next}; c[\$1\$2\$4\$5] > 0' ${name}.misHWEfiltered.bim - | bgzip > ${name}.filtered_temp.vcf.gz
+  bcftools view ${name}_filtered.vcf.gz | awk -F '\\t' 'NR==FNR{c[\$1\$4\$6\$5]++;next}; c[\$1\$2\$4\$5] > 0' ${name}.misHWEfiltered.bim - | bgzip > ${name}.filtered_temp.vcf.gz
   bcftools view -h ${name}_filtered.vcf.gz -Oz -o ${name}_filtered.header.vcf.gz
   cat ${name}_filtered.header.vcf.gz ${name}.filtered_temp.vcf.gz > ${name}.filtered_final.vcf.gz
   bcftools index ${name}.filtered_final.vcf.gz
