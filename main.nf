@@ -24,8 +24,10 @@ Channel
   .fromPath(params.vcfsList)
   .ifEmpty { exit 1, "Cannot find CSV VCFs file : ${params.vcfsList}" }
   .splitCsv(skip:1)
-  .map { chr, vcf, index -> [file(vcf).simpleName, chr, vcf, index] }
-  .set { vcfsCh }
+  .map { chr, vcf, index -> [file(vcf).simpleName, chr, file(vcf), file(index)] }
+  .into { vcfsCh ; ch_vcfs}
+
+ch_vcfs.view()
 
 /*--------------------------------------------------
   Pre-GWAS filtering - download, filter and convert VCFs
@@ -34,32 +36,33 @@ Channel
 process pre_gwas_filtering {
   tag "$name"
   publishDir "${params.outdir}/pre_gwas_filtering", mode: 'copy'
+  echo true
 
   input:
   set val(name), val(chr), file(vcf), file(index) from vcfsCh
 
   output:
-  set val(name), val(chr), file("${name}_filtered.vcf.gz"), file("${name}_filtered.vcf.gz.csi") into filteredVcfsCh
-  file("${name}_filtered.{bed,bim,fam}") into plinkTestCh
+  set val(name), val(chr), file("${name}_filtered.vcf.gz"), file("${name}_filtered.vcf.gz.csi") optional true into filteredVcfsCh
+  file("${name}_filtered.{bed,bim,fam}") optional true into plinkTestCh
 
   script:
   // TODO: (High priority) Only extract needed individuals from VCF files with `bcftools -S samples.txt` - get from samples file?
   // TODO: (Not required) `bcftools -T sites_to_extract.txt`
-  """
-  # Download, filter and convert (bcf or vcf.gz) -> vcf.gz
-  bcftools view -q ${params.qFilter} $vcf -Oz -o ${name}_filtered.vcf.gz
-  bcftools index ${name}_filtered.vcf.gz
+  // bcftools view -q ${params.qFilter} $vcf -Oz -o ${name}_filtered.vcf.gz
+  // bcftools index ${name}_filtered.vcf.gz
  
-  # Create PLINK binary from vcf.gz
-  plink2 \
-    --make-bed \
-    --set-missing-var-ids @:#,\\\$r,\\\$a \
-    --vcf ${name}_filtered.vcf.gz \
-    --out ${name}_filtered \
-    --vcf-half-call m \
-    --double-id \
-    --set-hh-missing \
-    --new-id-max-allele-len 60 missing
+  // # Create PLINK binary from vcf.gz
+  // plink2 \
+  //   --make-bed \
+  //   --set-missing-var-ids @:#,\\\$r,\\\$a \
+  //   --vcf ${name}_filtered.vcf.gz \
+  //   --out ${name}_filtered \
+  //   --vcf-half-call m \
+  //   --double-id \
+  //   --set-hh-missing \
+  //   --new-id-max-allele-len 60 missing
+  """
+  ls -l *
   """
 }
 
@@ -79,6 +82,8 @@ process gwas_1_fit_null_glmm {
   file "*" into fit_null_glmm_results
   file ("step1_${params.phenoCol}_out.rda") into rdaCh
   file ("step1_${params.phenoCol}.varianceRatio.txt") into varianceRatioCh
+
+  when: !params.skip_saige
 
   script:
   """
@@ -105,10 +110,12 @@ process gwas_2_spa_tests {
   input:
   set val(name), val(chr), file(vcf), file(index) from filteredVcfsCh
   each file(rda) from rdaCh
-  each file(varianceRatio) from varianceRatioCh
+  each file(varianceRatio) from varianceRatioCh 
 
   output:
   file "*" into results
+
+  when: !params.skip_saige
 
   script:
   """
