@@ -62,6 +62,7 @@ process pre_gwas_filtering {
   //   --set-hh-missing \
   //   --new-id-max-allele-len 60 missing
   """
+  speedtest
   ls -l *
   """
 }
