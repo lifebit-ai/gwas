@@ -36,3 +36,4 @@ dependencies:
   - bioconductor-gwastools
   - fonts-anaconda=1
   - r-data.table
+  - r-ggpubr
