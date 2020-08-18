@@ -51,7 +51,7 @@ process gwas_filtering {
   // TODO: (High priority) Only extract needed individuals from VCF files with `bcftools -S samples.txt` - get from samples file?
   // TODO: (Not required) `bcftools -T sites_to_extract.txt`
   // Optional parameters
-  extra_plink_filter_missingness_options = params.plink_keep_pheno != "testdata/nofile" ? "--keep ${plink_keep_file}" : ""
+  extra_plink_filter_missingness_options = params.plink_keep_pheno != "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/nodata" ? "--keep ${plink_keep_file}" : ""
   """
   # Download, filter and convert (bcf or vcf.gz) -> vcf.gz
   bcftools view -q ${params.qFilter} $vcf -Oz -o ${name}_filtered.vcf.gz
