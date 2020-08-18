@@ -16,6 +16,7 @@ RUN apt-get update && \
               libgsl0-dev \
               libperl-dev \
               libxt-dev \
+              speedtest-cli \
               procps
 
 #Install htslib developmental version specific commit
