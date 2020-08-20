@@ -149,27 +149,28 @@ process create_report {
 
   output:
   file "multiqc_report.html" into ch_report_outputs
-  file "*" into ch_report_outputs_all
+  set file("*png"), file("*ipynb"), file("*csv") into ch_report_outputs_all
 
   script:
   """
   cp /opt/bin/* .
   
   # creates analysis.csv
-  Rscript concat_chroms.R
+  concat_chroms.R
 
   # creates gwascat_subset.csv
-  Rscript subset_gwascat.R
+  subset_gwascat.R
 
   # creates covid_1_manhattan.png with analysis.csv as input
-  ./manhattan.R --saige_output='analysis.csv' --output_tag='covid1'
+  manhattan.R --saige_output='analysis.csv' --output_tag='covid1'
 
   # creates covid_1_qqplot_ci.png with analysis.csv as input
-  ./qqplot.R --saige_output='analysis.csv' --output_tag='covid1'
+  qqplot.R --saige_output='analysis.csv' --output_tag='covid1'
 
   # Generates the report
   Rscript -e "rmarkdown::render('gwas_report.Rmd', params = list(manhattan='covid_1_manhattan.png',gwascat='gwascat_subset.csv',output_file='multiqc_report.html'))"
   mv gwas_report.html multiqc_report.html
+
   # Generates the ipynb
   jupytext --to ipynb gwas_report.Rmd
   """
