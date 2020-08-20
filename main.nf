@@ -164,6 +164,9 @@ process create_report {
   # creates covid_1_manhattan.png with analysis.csv as input
   ./manhattan.R --saige_output='analysis.csv' --output_tag='covid1'
 
+  # creates covid_1_qqplot_ci.png with analysis.csv as input
+  ./qqplot.R --saige_output='analysis.csv' --output_tag='covid1'
+
   # Generates the report
   Rscript -e "rmarkdown::render('gwas_report.Rmd', params = list(manhattan='covid_1_manhattan.png',gwascat='gwascat_subset.csv',output_file='multiqc_report.html'))"
   mv gwas_report.html multiqc_report.html
