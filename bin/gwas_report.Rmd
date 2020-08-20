@@ -19,7 +19,6 @@ date: ""
 ---
 
 
-
 <img src="logo.png" width=100 style="position:absolute;top:4px;bottom:4px;right:4px;" />
 
 
@@ -51,7 +50,7 @@ Plots to explore GWAS results
 ```{r}
 figure_number  <- "Figure 1: "
 figure_caption <- "Manhattan plot"
-knitr::include_graphics("covid_1_manhattan.png", )
+knitr::include_graphics(params$manhattan, )
 htmltools::tags$figcaption( style = 'caption-side: bottom; text-align: center; font-size: 85%%; color: #71879d',
                             htmltools::em(figure_number),
                             htmltools::em(figure_caption))
@@ -60,7 +59,7 @@ htmltools::tags$figcaption( style = 'caption-side: bottom; text-align: center; f
 ```{r}
 figure_number  <- "Figure 2: " 
 figure_caption <- "QQ plot"
-knitr::include_graphics("covid_1_qqplot_ci.png", )
+knitr::include_graphics(params$qqplot, )
 htmltools::tags$figcaption( style = 'caption-side: bottom; text-align: center; font-size: 85%%; color: #71879d',
                             htmltools::em(figure_number), 
                             htmltools::em(figure_caption))
@@ -78,12 +77,11 @@ htmltools::tags$figcaption( style = 'caption-side: bottom; text-align: center; f
 # GWAS catalogue information
 
 ```{r}
-table   <- as.data.frame(data.table::fread("gwascat_subset.csv"))
+table   <- as.data.frame(data.table::fread(params$gwascat))
 colnames(table) <- snakecase::to_snake_case(colnames(table))
 toDisplayNames <- c( "chr_id", "start", "end", "snps","disease_trait", "mapped_gene","snp_gene_ids", "mapped_trait_uri")
 toDisplayIndices <- na.omit(match(toDisplayNames, colnames(table)))
 reordered_columns <- c( "chr_id",  "start", "end", "snps", "strand",  "mapped_gene", "reported_gene_s", "mapped_trait", "mapped_trait_uri", "snp_id_current", "risk_allele_frequency",  "pubmedid", "first_author", "date", "journal", "link", "study", "disease_trait", "initial_sample_size", "replication_sample_size", "region",  "upstream_gene_id", "downstream_gene_id", "snp_gene_ids", "upstream_gene_distance", "downstream_gene_distance", "strongest_snp_risk_allele",  "merged", "context", "intergenic", "risk_allele_frequency",  "p_value", "pvalue_mlog", "p_value_text", "or_or_beta", "x_95_ci_text",  "platform_snps_passing_qc", "width","chr_pos", "cnv", "study_accession", "genotyping_technology", "seqnames", "date_added_to_catalog")
 table <- table[, reordered_columns]
 DTable(table)
-
 ```

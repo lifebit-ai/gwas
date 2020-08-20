@@ -168,7 +168,7 @@ process create_report {
   qqplot.R --saige_output='analysis.csv' --output_tag='covid1'
 
   # Generates the report
-  Rscript -e "rmarkdown::render('gwas_report.Rmd', params = list(manhattan='covid_1_manhattan.png',gwascat='gwascat_subset.csv',output_file='multiqc_report.html'))"
+  Rscript -e "rmarkdown::render('gwas_report.Rmd', params = list(manhattan='${params.output_tag}_manhattan.png',qqplot='${params.output_tag}_qqplot_ci.png', gwascat='gwascat_subset.csv'))"
   mv gwas_report.html multiqc_report.html
 
   # Generates the ipynb
