@@ -14,7 +14,7 @@ DTable <- function(df = df,
                    nDigits_after_decimal = 1,
                    table_caption = ""  ,
                    escape = FALSE,
-                   font_family = "tahoma"){ # absolut path to file
+                   font_family = "sans-serif"){ # absolut path to file
   
   
   # > READING FILE INTO DF; DF TRANSFORMATIONS:
@@ -24,22 +24,18 @@ DTable <- function(df = df,
   DT::datatable(df, 
                 rownames   = FALSE,
                 escape     = FALSE,
+                fillContainer = FALSE,
                 filter     = "bottom",
                 caption    = table_caption,
-                extensions = list("ColReorder"   = NULL,
-                                  "Buttons"      = NULL,
-                                  "FixedColumns" = list(leftColumns=1),
-                                  "RowGroup"     = list(dataSrc="")),
-                
+                extensions = c('FixedColumns','Scroller', 'Buttons'),
                 # OPTIONS:
                 options = list(
                   
                   # Does not allow columnful dataframes go rogue and tucks them in to fit page width
                   scrollX = TRUE,
-                  scrollCollapse = TRUE, 
                   
                   # Defines all capabilities
-                  dom        = 'Brltpi', 
+                  dom        = 'PBRMDCT<"clear">lfrtip',
                   
                   autoWidth  = TRUE,
                   ColReorder = TRUE,
@@ -47,29 +43,25 @@ DTable <- function(df = df,
                   #   columnDefs = list(list(targets = length(colnames(df)), visible = TRUE)))),
                   
                   lengthMenu = list(c(10, 50, -1), c('10', '50', 'All')),
-                  
+
                   buttons    = list('copy','print', 
                                     list(extend  = 'collection',
                                          buttons = c('csv', 'excel', 'pdf'),
-                                         text    = 'Save'),
-                                    I('colvis')),
+                                         text    = 'Export')),
                   # Black header container for colnames
                   initComplete = JS(
                     "function(settings, json) {",
-                    "$(this.api().table().header()).css({'color': '#fff','font-family': 'tahoma', 'background-color': '#71879d'});",
-                    "$(this.api().table().body()).css({'color': '#71879d','font-family': 'tahoma',   'text-align' : 'center'});",
-                    "$(this.api().table().footer()).css({'color': '#fff','font-family': 'tahoma'});",
-                    "$(this.api().table().container()).css({'color': '#fff','font-family': 'tahoma', 'outline-color' : '#71879d' });",
-                    "$(this.api().table().node()).css({'color': '#fff','font-family': 'tahoma'});",
+                    "$(this.api().table().header()).css({'color': '#fff','font-family': 'sans-serif', 'background-color': '#4e4b4c'});",
+                    "$(this.api().table().body()).css({'color': '#4e4b4c','font-family': 'sans-serif',   'text-align' : 'center'});",
+                    "$(this.api().table().footer()).css({'color': '#fff','font-family': 'sans-serif'});",
+                    "$(this.api().table().container()).css({'color': '#fff','font-family': 'sans-serif', 'outline-color' : '#4e4b4c' });",
+                    "$(this.api().table().node()).css({'color': '#fff','font-family': 'sans-serif'});",
                     "}") )) %>% 
     
     # Change fontsize of cell values
     formatStyle(columns    = seq_along(colnames(df)), 
                 fontSize   = "85%",
-                fontFamily = "tahoma")%>%
-    
-    # Round values to 4 decimals
-    formatRound(colnames(df), nDigits_after_decimal)  -> fancyDatatable
+                fontFamily = "sans-serif")  -> fancyDatatable
   
   return(fancyDatatable)  
 }
