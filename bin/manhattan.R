@@ -39,9 +39,6 @@ if("--help" %in% args | "help" %in% args | (length(args) == 0) | (length(args) =
                                         Default: 0.6
           --cex_axis=val              - A value to denote the cex.axis for the manhattan plot
                                         Default: 0.6
-          --suggestive_line=boolean   - Boolean. If set to FALSE the suggestive line
-                                        in the manhattan plot is omitted.
-                                        Default: TRUE
           --manhattan_colour_1=chr    - A string in single quotes, can be either base R colour name or hexcode.
                                         Default: '#4e4b4c' (Genomics England dark gray)
           --manhattan_colour_2=chr    - A string in single quotes, can be either base R colour name or hexcode.
@@ -153,9 +150,9 @@ cat("manhattan_colour_2 : ", manhattan_colour_2 ,"\n",sep="")
 analysis <- data.table::fread(saige_output)
 
 png(filename = paste0(output_tag, "_", "manhattan" , ".png") ,
-    width    = width   ,
-    height   = height  ,
-    units    = units  ,
+    width    = width,
+    height   = height,
+    units    = units,
     res      = res,
     type     = type)
 
@@ -167,7 +164,7 @@ manhattan_plot <- qqman::manhattan(analysis,
                                    col  = c(manhattan_colour_1, manhattan_colour_2),
                                    highlight      =  analysis[[snp_col]] [analysis[[p_val_col]] < p_value_cutoff],
                                    annotatePval   = p_value_cutoff,
-                                   suggestiveline = suggestive_line)
+                                   suggestiveline = -log10(p_value_cutoff))
 
 dev.off()
 
