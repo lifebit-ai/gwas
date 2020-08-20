@@ -79,6 +79,4 @@ RUN find /opt/bin/ -type f -iname "*.py" -exec chmod +x {} \; && \
 RUN touch .Rprofile
 RUN touch .Renviron
 
-RUN Rscript -e 'Sys.setenv(TAR = "/bin/tar");options(repos = "https://cloud.r-project.org/"); install.packages("RCurl")'
-RUN apt install libcurl4-openssl-dev -y
 ENV PATH="$PATH:/opt/bin/"
