@@ -71,6 +71,11 @@ htmltools::tags$figcaption( style = 'caption-side: bottom; text-align: center; f
 ```{r}
 table   <- as.data.frame(data.table::fread(params$saige_results))
 colnames(table) <- snakecase::to_snake_case(colnames(table))
+reordered_columns <- c("CHR", "POS", "SNPID",  "p.value", "imputationInfo", "N", "BETA", "SE", "Tstat",
+"p.value.NA", "Is.SPA.converge", "varT", "varTstar", "AF.Cases",  "Allele1", "Allele2", "AC_Allele2",
+"AF_Allele2", "AF.Controls", "N.Cases", "N.Controls", "homN_Allele2_cases",
+"hetN_Allele2_cases", "homN_Allele2_ctrls", "hetN_Allele2_ctrls")
+table <- table[, reordered_columns]
 DTable(table)
 ```
 
