@@ -152,23 +152,35 @@ process create_report {
   set file("*png"), file("*ipynb"), file("*csv") into ch_report_outputs_all
 
   script:
+
   """
   cp /opt/bin/* .
   
-  # creates analysis.csv
-  concat_chroms.R
+  # creates 2 .csv files, saige_results_<params.output_tag>.csv, saige_results_top_n.csv
+  concat_chroms.R \
+    --saige_output_name='saige_results' \
+    --filename_pattern='${params.saige_filename_pattern}' \
+    --output_tag='${params.output_tag}' \
+    --top_n_sites=${params.top_n_sites} \
+    --max_top_n_sites=${params.max_top_n_sites}
 
   # creates gwascat_subset.csv
-  subset_gwascat.R
+  subset_gwascat.R \
+    --saige_output='saige_results_${params.output_tag}.csv' \
+    --gwas_cat='${gwas_cat}'
 
-  # creates covid_1_manhattan.png with analysis.csv as input
-  manhattan.R --saige_output='analysis.csv' --output_tag='covid1'
+  # creates <params.output_tag>_manhattan.png with analysis.csv as input
+  manhattan.R \
+    --saige_output='saige_results_${params.output_tag}.csv' \
+    --output_tag='${params.output_tag}'
 
-  # creates covid_1_qqplot_ci.png with analysis.csv as input
-  qqplot.R --saige_output='analysis.csv' --output_tag='covid1'
+  # creates <params.output_tag>_qqplot_ci.png with analysis.csv as input
+  qqplot.R \
+    --saige_output='saige_results_${params.output_tag}.csv' \
+    --output_tag='${params.output_tag}'
 
   # Generates the report
-  Rscript -e "rmarkdown::render('gwas_report.Rmd', params = list(manhattan='${params.output_tag}_manhattan.png',qqplot='${params.output_tag}_qqplot_ci.png', gwascat='gwascat_subset.csv'))"
+  Rscript -e "rmarkdown::render('gwas_report.Rmd', params = list(manhattan='${params.output_tag}_manhattan.png',qqplot='${params.output_tag}_qqplot_ci.png', gwascat='gwascat_subset.csv', saige_results='saige_results_top_n.csv'))"
   mv gwas_report.html multiqc_report.html
 
   # Generates the ipynb
