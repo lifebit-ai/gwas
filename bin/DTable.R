@@ -64,12 +64,11 @@ DTable <- function(df = df,
                 fontFamily = "sans-serif")   %>%
 
     formatSignif(
-      columns = unlist(lapply(df, is.numeric),
+      columns = unlist(lapply(df, is.numeric)),
       digits = 2,
       interval = 3,
       mark = ",",
-      dec.mark = getOption("OutDec")
-      )                 -> fancyDatatable
+      dec.mark = getOption("OutDec"))                 -> fancyDatatable
 
   
   return(fancyDatatable)  
