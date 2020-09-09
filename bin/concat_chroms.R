@@ -1,12 +1,12 @@
 #!/usr/bin/env Rscript
 
-############################## ARGUMENTS SECTION #############################
-## Collect arguments
+############################## ARGUMENTS SECTION ############################# Collect arguments
 args <- commandArgs(TRUE)
 
 ## Default setting when no all arguments passed or help needed
-if("--help" %in% args | "help" %in% args | (length(args) == 0) | (length(args) == 1) ) {
-  cat("
+if ("--help" %in% args | "help" %in% args | (length(args) == 0) | (length(args) == 
+    1)) {
+    cat("
       The helper R Script concat_chroms.R
 
       Mandatory arguments:
@@ -57,23 +57,39 @@ if("--help" %in% args | "help" %in% args | (length(args) == 0) | (length(args) =
       See ./concat_chroms.R --help for more details.
 
       \n")
-
-  q(save="no")
+    
+    q(save = "no")
 }
 
 ## Parse arguments (we expect the form --arg=value)
-parseArgs    <- function(x) strsplit(sub("^--", "", x), "=")
+parseArgs <- function(x) strsplit(sub("^--", "", x), "=")
 
-argsL        <- as.list(as.character(as.data.frame(do.call("rbind", parseArgs(args)))$V2))
+argsL <- as.list(as.character(as.data.frame(do.call("rbind", parseArgs(args)))$V2))
 names(argsL) <- as.data.frame(do.call("rbind", parseArgs(args)))$V1
-args         <- argsL
+args <- argsL
 rm(argsL)
 
 ## Give some value to optional arguments if not provided
-if(is.null(args$filename_pattern)) {args$filename_pattern = ".SAIGE.gwas.txt"} else {args$filename_pattern=as.character(args$filename_pattern)}
-if(is.null(args$saige_output_name)) {args$saige_output_name = "saige_results"} else {args$saige_output_name=as.character(args$saige_output_name)}
-if(is.null(args$top_n_sites)) {args$top_n_sites = 200} else {args$top_n_sites=as.numeric(args$top_n_sites)}
-if(is.null(args$max_top_n_sites)) {args$max_top_n_sites = 1000} else {args$max_top_n_sites=as.numeric(args$max_top_n_sites)}
+if (is.null(args$filename_pattern)) {
+    args$filename_pattern = ".SAIGE.gwas.txt"
+} else {
+    args$filename_pattern = as.character(args$filename_pattern)
+}
+if (is.null(args$saige_output_name)) {
+    args$saige_output_name = "saige_results"
+} else {
+    args$saige_output_name = as.character(args$saige_output_name)
+}
+if (is.null(args$top_n_sites)) {
+    args$top_n_sites = 200
+} else {
+    args$top_n_sites = as.numeric(args$top_n_sites)
+}
+if (is.null(args$max_top_n_sites)) {
+    args$max_top_n_sites = 1000
+} else {
+    args$max_top_n_sites = as.numeric(args$max_top_n_sites)
+}
 
 ############################## LIBRARIES SECTION #############################
 
@@ -81,32 +97,36 @@ suppressWarnings(suppressMessages(library(plyr)))
 suppressWarnings(suppressMessages(library(data.table)))
 suppressWarnings(suppressMessages(library(snakecase)))
 
-# ######################### VARIABLES REASSIGNMENT SECTION ###############################
+# ######################### VARIABLES REASSIGNMENT SECTION
+# ###############################
 
 # Facilitates testing and protects from wh-spaces, irregular chars
 
 # required
-output_tag         <- snakecase::to_snake_case(as.character(args$output_tag))
+output_tag <- snakecase::to_snake_case(as.character(args$output_tag))
 
 # optional
-filename_pattern   <- as.character(args$filename_pattern)
-saige_output_name  <- snakecase::to_snake_case(as.character(args$saige_output_name))
-max_top_n_sites    <- as.numeric(args$max_top_n_sites)
-top_n_sites        <- ifelse(as.numeric(args$top_n_sites) > max_top_n_sites, max_top_n_sites, as.numeric(args$top_n_sites))
+filename_pattern <- as.character(args$filename_pattern)
+saige_output_name <- snakecase::to_snake_case(as.character(args$saige_output_name))
+max_top_n_sites <- as.numeric(args$max_top_n_sites)
+top_n_sites <- ifelse(as.numeric(args$top_n_sites) > max_top_n_sites, max_top_n_sites, 
+    as.numeric(args$top_n_sites))
 
 cat("\n")
 cat("ARGUMENTS SUMMARY")
 cat("\n")
-cat("output_tag         : ", output_tag         ,"\n",sep="")
-cat("filename_pattern   : ", filename_pattern   ,"\n",sep="")
-cat("saige_output_name  : ", saige_output_name  ,"\n",sep="")
-cat("top_n_sites        : ", top_n_sites        ,"\n",sep="")
+cat("output_tag         : ", output_tag, "\n", sep = "")
+cat("filename_pattern   : ", filename_pattern, "\n", sep = "")
+cat("saige_output_name  : ", saige_output_name, "\n", sep = "")
+cat("top_n_sites        : ", top_n_sites, "\n", sep = "")
 
 # ############################### SCRIPT SECTION ###############################
 
 paths <- list.files(".", pattern = filename_pattern, full.names = TRUE)
-list_of_dfs <- lapply(paths,data.table::fread)
+list_of_dfs <- lapply(paths, data.table::fread)
 saige_results <- plyr::rbind.fill(list_of_dfs)
-saige_results_sorted_topN <- saige_results[order(saige_results[['p.value']]),][1:top_n_sites,]
-data.table::fwrite(saige_results, paste0(saige_output_name, "_", output_tag, ".csv"), sep = ",")
+saige_results_sorted_topN <- saige_results[order(saige_results[["p.value"]]), ][1:top_n_sites, 
+    ]
+data.table::fwrite(saige_results, paste0(saige_output_name, "_", output_tag, ".csv"), 
+    sep = ",")
 data.table::fwrite(saige_results_sorted_topN, "saige_results_top_n.csv", sep = ",")
