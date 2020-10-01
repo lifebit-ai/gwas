@@ -35,6 +35,8 @@ build_phenoFiles = function(row, data, design, out_path){
 option_list = list(
   make_option(c("--input_file"), action="store", default='data/sample_multilevel.phe', type='character',
               help="String containing input phenoFile."),
+  make_option(c("--mode"), action="store", default='case_vs_control_contrast', type='character',
+              help="String containing case group from the desired phenotypic column."),
   make_option(c("--case_group"), action="store", default='None', type='character',
               help="String containing case group from the desired phenotypic column."),
   make_option(c("--outprefix"), action="store", default='', type='character',
@@ -47,6 +49,7 @@ args = parse_args(OptionParser(option_list=option_list))
 
 # Args to variables
 input_file              = args$input_file
+mode                    = args$mode
 case_group              = args$case_group
 outprefix               = paste0(args$outprefix, "_")
 outdir                  = sub("/$","",args$outdir)
@@ -65,19 +68,27 @@ data = fread(input_file)
 # otherwise it will subset for the case group and generate only those files
 
 if (case_group != 'None'){
-case_group = as.integer(case_group)
-design = crossing(control = data$PHE, case = data$PHE) %>%
-            filter((case == case_group) & !(case == control))
-design_list = sapply(1:nrow(design), function(x) build_phenoFiles(x, data, design, out_path), simplify=FALSE)
+  if (mode == 'case_vs_group_contrasts'){
+      case_group = as.integer(case_group)
+      design = crossing(control = data$PHE, case = data$PHE) %>%
+                  filter((case == case_group) & !(case == control))
+      design_list = sapply(1:nrow(design), function(x) build_phenoFiles(x, data, design, out_path), simplify=FALSE)
 
-data$PHE = case_when(data$PHE == case_group ~ 1,
-                     TRUE ~ 0)
-write.table(data, paste0(out_path,'design_matrix_control_all','_case_',case_group,'.phe'), sep='\t',  quote=FALSE, row.names=FALSE)
+      data$PHE = case_when(data$PHE == case_group ~ 1,
+                          TRUE ~ 0)
+      write.table(data, paste0(out_path,'design_matrix_control_all','_case_',case_group,'.phe'), sep='\t',  quote=FALSE, row.names=FALSE)
+  }
+  if (mode == 'case_vs_control_contrast'){
+    data$PHE = case_when(data$PHE == case_group ~ 1,
+                          TRUE ~ 0)
+    write.table(data, paste0(out_path,'design_matrix_control_all','_case_',case_group,'.phe'), sep='\t',  quote=FALSE, row.names=FALSE)
+  }
+
   
 
 }
 
-if (case_group == 'None'){
+if (case_group == 'None' & mode == 'all_contrasts'){
 design = crossing(control = data$PHE, case = data$PHE) %>%
             filter(!(case == control))
 # Removes inverse duplicates (ie. 1-0, 0-1)

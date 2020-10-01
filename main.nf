@@ -37,34 +37,35 @@ Channel
 /*--------------------------------------------------
   Ingest output from CB
 ---------------------------------------------------*/
+if (params.cohort_browser_phenoFile){
+  process transforms_cb_output {
+    tag "$name"
+    publishDir "${params.outdir}/design_matrix", mode: 'copy'
 
-process transforms_cb_output{
-  tag "$name"
-  publishDir "${params.outdir}/design_matrix", mode: 'copy'
+    input:
+    val input_cb_data from ch_input_cb_data
+    val input_meta_data from ch_input_meta_data
 
-  input:
-  val input_cb_data from ch_input_cb_data
-  val input_meta_data from ch_input_meta_data
+    output:
+    file("${params.outprefix}_.phe") into ch_transform_cb
 
-  output:
-  file("${params.outdir}/design_matrix/${params.outprefix}.phe") into ch_transform_cb
+    script:
+    """
+    cp /opt/bin/* .
 
-  script:
-  """
-  cp /opt/bin/* .
-
-  mkdir -p ${params.outdir}/design_matrix
-  
-  transform_cb_output.R --input_cb_data ${params.input_cb_data} \
-                        --input_meta_data ${params.input_meta_data} \
-                        --phenoCol ${params.phenoCol} \
-                        --continuous_var_transformation ${params.continous_var_transformation} \
-                        --outdir "${params.outdir}/design_matrix" \
-                        --outprefix ${params.outprefix}
-  """
+    mkdir -p ${params.outdir}/design_matrix
+    
+    transform_cb_output.R --input_cb_data "${params.input_cb_data}" \
+                          --input_meta_data "${params.input_meta_data}" \
+                          --phenoCol "${params.phenoCol}" \
+                          --continuous_var_transformation "${params.continuous_var_transformation}" \
+                          --outdir "." \
+                          --outprefix "${params.outprefix}"
+    """
+  }
 }
-
-if (params.case_group){
+//TODO: Check this later and finish it with the processes 
+if (params.case_group && params.mode == 'case_vs_groups_contrasts') {
   process add_design_matrix_case{
     tag "$name"
     publishDir "${params.outdir}/contrasts", mode: 'copy'
@@ -73,7 +74,60 @@ if (params.case_group){
     file(pheFile) from ch_transform_cb
 
     output:
-    file("${params.outdir}/contrasts/${outprefix}_design_matrix_control_*.phe'") into phenoCh_gwas_filtering
+    file("${params.outprefix}_design_matrix_control_*.phe") into phenoCh_gwas_filtering
+
+    script:
+    """
+    cp /opt/bin/* .
+
+    mkdir -p ${params.outdir}/contrasts
+
+    create_design.R --input_file ${pheFile} \
+                    --mode ${params.mode} \
+                    --case_group ${params.case_group} \
+                    --outdir . \
+                    --outprefix ${params.outprefix}
+                      
+    """
+  }
+}
+if (params.cohort_browser_phenofile && params.case_group && params.mode == 'case_vs_control_contrast') {
+  process add_design_matrix_case_vs_control_contrast{
+    tag "$name"
+    publishDir "${params.outdir}/contrasts", mode: 'copy'
+
+    input:
+    file(pheFile) from ch_transform_cb
+
+    output:
+    file("${params.outprefix}_design_matrix_control_*.phe") into phenoCh_gwas_filtering
+
+    script:
+    """
+    cp /opt/bin/* .
+
+    mkdir -p ${params.outdir}/contrasts
+
+    create_design.R --input_file ${pheFile} \
+                    --mode ${params.mode} \
+                    --case_group ${params.case_group} \
+                    --outdir . \
+                    --outprefix ${params.outprefix}
+                      
+    """
+  }
+}
+
+if (params.cohort_browser_phenofile &&  params.case_group && params.mode == 'case_vs_groups_contrasts') {
+  process add_design_matrix_case_vs_groups_contrasts{
+    tag "$name"
+    publishDir "${params.outdir}/contrasts", mode: 'copy'
+
+    input:
+    file(pheFile) from ch_transform_cb
+
+    output:
+    file("${outprefix}_design_matrix_control_*.phe'") into phenoCh_gwas_filtering
 
     script:
     """
@@ -83,15 +137,16 @@ if (params.case_group){
 
     create_design.R --input_file ${pheFile} \
                     --case_group ${params.case_group} \
-                    --outdir ${params.outdir}/contrasts/ \
+                    --outdir . \
                     --outprefix ${outprefix}
                       
     """
   }
 }
 
-if (!params.case_group){
-  process add_design_matrix{
+if (params.cohort_browser_phenofile && params.mode == 'all_contrasts') {
+
+  process add_design_matrix_all_contrasts{
     tag "$name"
     publishDir "${params.outdir}/contrasts", mode: 'copy'
 
@@ -99,7 +154,7 @@ if (!params.case_group){
     file(pheFile) from ch_transform_cb
 
     output:
-    file("${params.outdir}/contrasts/${outprefix}_design_matrix_control_*.phe'") into ch_design_matrix
+    file("${outprefix}_design_matrix_control_*.phe'") into phenoCh_gwas_filtering
 
     script:
     """
@@ -108,7 +163,8 @@ if (!params.case_group){
     mkdir -p ${params.outdir}/contrasts
 
     create_design.R --input_file ${pheFile} \
-                    --outdir ${params.outdir}/contrasts/ \
+                    --mode ${params.mode}
+                    --outdir . \
                     --outprefix ${outprefix}
                       
     """
@@ -192,6 +248,8 @@ process gwas_filtering {
 /*--------------------------------------------------
   GWAS Analysis 1 with SAIGE - Fit the null mixed-model
 ---------------------------------------------------*/
+// Create channel for this process
+phenoCh_gwas_filtering.into{phenoCh}
 
 process gwas_1_fit_null_glmm {
   tag "$plink_GRM_snps"

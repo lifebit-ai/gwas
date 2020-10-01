@@ -13,7 +13,7 @@ library(tidyverse)
 library(jsonlite)
     })
 
-
+options(warn=-1)
 
 ##########################################################
 # Parse arguments                                        

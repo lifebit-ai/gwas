@@ -38,3 +38,4 @@ dependencies:
   - r-data.table
   - r-ggpubr
   - r-tidyverse
+  - conda-forge::r-optparse
