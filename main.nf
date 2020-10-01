@@ -47,7 +47,7 @@ if (params.cohort_browser_phenofile){
     val input_meta_data from ch_input_meta_data
 
     output:
-    file("${params.outprefix}_.phe") into ch_transform_cb
+    file("${params.output_tag}_.phe") into ch_transform_cb
     file("*.json") into ch_encoding_json
 
     script:
@@ -61,7 +61,7 @@ if (params.cohort_browser_phenofile){
                           --phenoCol "${params.phenoCol}" \
                           --continuous_var_transformation "${params.continuous_var_transformation}" \
                           --outdir "." \
-                          --outprefix "${params.outprefix}"
+                          --output_tag "${params.output_tag}"
     """
   }
 }
@@ -77,7 +77,7 @@ if (params.cohort_browser_phenofile && params.case_group && params.mode == 'case
     file(json) from ch_encoding_json
 
     output:
-    file("${params.outprefix}_design_matrix_control_*.phe") into phenoCh_gwas_filtering
+    file("${params.output_tag}_design_matrix_control_*.phe") into phenoCh_gwas_filtering
 
     script:
     """
@@ -89,7 +89,7 @@ if (params.cohort_browser_phenofile && params.case_group && params.mode == 'case
                     --mode "${params.mode}" \
                     --case_group "${params.case_group}" \
                     --outdir . \
-                    --outprefix ${params.outprefix} \
+                    --output_tag ${params.output_tag} \
                     --phenoCol "${params.phenoCol}"
                       
     """
@@ -106,7 +106,7 @@ if (params.cohort_browser_phenofile &&  params.case_group && params.mode == 'cas
     file(json) from ch_encoding_json
 
     output:
-    file("${outprefix}_design_matrix_control_*.phe'") into phenoCh_gwas_filtering
+    file("${output_tag}_design_matrix_control_*.phe'") into phenoCh_gwas_filtering
 
     script:
     """
@@ -117,7 +117,7 @@ if (params.cohort_browser_phenofile &&  params.case_group && params.mode == 'cas
     create_design.R --input_file ${pheFile} \
                     --case_group "${params.case_group}" \
                     --outdir . \
-                    --outprefix ${outprefix} \
+                    --output_tag ${output_tag} \
                     --phenoCol "${params.phenoCol}"
                       
     """
@@ -134,7 +134,7 @@ if (params.cohort_browser_phenofile && params.mode == 'all_contrasts') {
     file(pheFile) from ch_transform_cb
 
     output:
-    file("${outprefix}_design_matrix_control_*.phe'") into phenoCh_gwas_filtering
+    file("${output_tag}_design_matrix_control_*.phe'") into phenoCh_gwas_filtering
 
     script:
     """
@@ -145,7 +145,7 @@ if (params.cohort_browser_phenofile && params.mode == 'all_contrasts') {
     create_design.R --input_file ${pheFile} \
                     --mode ${params.mode}
                     --outdir . \
-                    --outprefix ${outprefix} \
+                    --output_tag ${output_tag} \
                     --phenoCol "${params.phenoCol}"
                       
     """

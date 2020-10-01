@@ -12,7 +12,5 @@ nextflow run main.nf \
   --phenoCol "Specimen type" \
   --mode 'case_vs_control_contrast' \
   --case_group "NOSE" \
-  --vcfsList "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/vcfs.csv" \
-  --outdir results/ \
-  --outprefix test_ 
+  --vcfsList "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/vcfs.csv"
 ```
