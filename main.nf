@@ -242,8 +242,8 @@ process gwas_1_fit_null_glmm {
 
   output:
   file "*" into fit_null_glmm_results
-  file ("step1_${params.phenoCol}_out.rda") into rdaCh
-  file ("step1_${params.phenoCol}.varianceRatio.txt") into varianceRatioCh
+  file ("step1_${params.phenoCol.replaceAll(/\s/,'_')}_out.rda") into rdaCh
+  file ("step1_${params.phenoCol.replaceAll(/\s/,'_')}.varianceRatio.txt") into varianceRatioCh
 
   script:
   """
@@ -253,8 +253,8 @@ process gwas_1_fit_null_glmm {
     --phenoCol="PHE" \
     --sampleIDColinphenoFile=IID \
     --traitType=${params.traitType} \
-    --outputPrefix="step1_${params.phenoCol}_out" \
-    --outputPrefix_varRatio="step1_${params.phenoCol}" \
+    --outputPrefix="step1_${params.phenoCol.replaceAll(/\s/,'_')}_out" \
+    --outputPrefix_varRatio="step1_${params.phenoCol.replaceAll(/\s/,'_')}" \
     --nThreads=${task.cpus} ${params.saigeStep1ExtraFlags}
   """
 }
@@ -287,7 +287,7 @@ process gwas_2_spa_tests {
     --sampleFile=day0_covid.samples \
     --GMMATmodelFile=${rda} \
     --varianceRatioFile=${varianceRatio} \
-    --SAIGEOutputFile="${params.phenoCol}.${name}.SAIGE.gwas.txt" \
+    --SAIGEOutputFile="${params.phenoCol.replaceAll(/\s/,'_')}.${name}.SAIGE.gwas.txt" \
     --numLinesOutput=2 \
     --IsOutputAFinCaseCtrl=TRUE \
     --IsDropMissingDosages=FALSE \
