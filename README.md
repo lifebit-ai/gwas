@@ -6,7 +6,12 @@
 ```bash
 nextflow run main.nf \
   --plinkFile "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/sampleA.{bed,bim,fam}" \
-  --phenoFile s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/sample.phe \
-  --phenoCol PHE \
-  --vcfsList s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/vcfs.csv
+  --input_cb_data https://gist.githubusercontent.com/mcamarad/e98cdd5e69413fb6189ed70405c43ef4/raw/d602bec4b31d5d75f74f1dbb408bd392db57bdb6/cohort_data_phenos.csv \
+  --input_meta_data https://gist.githubusercontent.com/mcamarad/e98cdd5e69413fb6189ed70405c43ef4/raw/d602bec4b31d5d75f74f1dbb408bd392db57bdb6/metadata.csv \
+  --continuous_var_transformation "mean" \
+  --phenoCol "Specimen type" \
+  --case_group 4 \
+  --vcfsList s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/vcfs.csv \
+  --outdir results/ \
+  --outprefix test_ 
 ```

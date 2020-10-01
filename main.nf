@@ -12,10 +12,9 @@
 /*--------------------------------------------------
   Channel setup
 ---------------------------------------------------*/
-Channel
-  .fromPath(params.phenoFile)
-  .ifEmpty { exit 1, "Pheno file not found: ${params.phenoFile}" }
-  .into { phenoCh; phenoCh_gwas_filtering}
+ch_input_cb_data = params.input_cb_data ? Channel.value(params.input_cb_data) : Channel.empty()
+ch_input_meta_data = params.input_meta_data ? Channel.value(params.input_meta_data) : Channel.empty()
+
 Channel
   .fromFilePairs("${params.plinkFile}",size:3, flat : true)
   .ifEmpty { exit 1, "PLINK files not found: ${params.plinkFile}" }
@@ -33,6 +32,89 @@ Channel
   .fromPath(params.gwas_cat)
   .ifEmpty { exit 1, "Cannot find GWAS catalogue CSV  file : ${params.gwas_cat}" }
   .set { ch_gwas_cat }
+
+
+/*--------------------------------------------------
+  Ingest output from CB
+---------------------------------------------------*/
+
+process transforms_cb_output{
+  tag "$name"
+  publishDir "${params.outdir}/design_matrix", mode: 'copy'
+
+  input:
+  val input_cb_data from ch_input_cb_data
+  val input_meta_data from ch_input_meta_data
+
+  output:
+  file("${params.outdir}/design_matrix/${params.outprefix}.phe") into ch_transform_cb
+
+  script:
+  """
+  cp /opt/bin/* .
+
+  mkdir -p ${params.outdir}/design_matrix
+  
+  transform_cb_output.R --input_cb_data ${params.input_cb_data} \
+                        --input_meta_data ${params.input_meta_data} \
+                        --phenoCol ${params.phenoCol} \
+                        --continuous_var_transformation ${params.continous_var_transformation} \
+                        --outdir "${params.outdir}/design_matrix" \
+                        --outprefix ${params.outprefix}
+  """
+}
+
+if (params.case_group){
+  process add_design_matrix_case{
+    tag "$name"
+    publishDir "${params.outdir}/contrasts", mode: 'copy'
+
+    input:
+    file(pheFile) from ch_transform_cb
+
+    output:
+    file("${params.outdir}/contrasts/${outprefix}_design_matrix_control_*.phe'") into phenoCh_gwas_filtering
+
+    script:
+    """
+    cp /opt/bin/* .
+
+    mkdir -p ${params.outdir}/contrasts
+
+    create_design.R --input_file ${pheFile} \
+                    --case_group ${params.case_group} \
+                    --outdir ${params.outdir}/contrasts/ \
+                    --outprefix ${outprefix}
+                      
+    """
+  }
+}
+
+if (!params.case_group){
+  process add_design_matrix{
+    tag "$name"
+    publishDir "${params.outdir}/contrasts", mode: 'copy'
+
+    input:
+    file(pheFile) from ch_transform_cb
+
+    output:
+    file("${params.outdir}/contrasts/${outprefix}_design_matrix_control_*.phe'") into ch_design_matrix
+
+    script:
+    """
+    cp /opt/bin/* .
+
+    mkdir -p ${params.outdir}/contrasts
+
+    create_design.R --input_file ${pheFile} \
+                    --outdir ${params.outdir}/contrasts/ \
+                    --outprefix ${outprefix}
+                      
+    """
+  }
+}
+
 
 /*--------------------------------------------------
   Pre-GWAS filtering - download, filter and convert VCFs
@@ -76,7 +158,7 @@ process gwas_filtering {
   plink \
     --bfile ${name}_filtered \
     --pheno $phenofile \
-    --pheno-name ${params.phenoCol} \
+    --pheno-name PHE \
     --allow-no-sex \
     --test-missing midp \
     --out ${name} \
@@ -90,7 +172,7 @@ process gwas_filtering {
   plink \
     --bfile ${name}_filtered \
     --pheno $phenofile \
-    --pheno-name ${params.phenoCol} \
+    --pheno-name PHE \
     --allow-no-sex \
     --hwe ${params.thres_HWE} midp \
     --out ${name}.misHWEfiltered \
@@ -129,7 +211,7 @@ process gwas_1_fit_null_glmm {
   step1_fitNULLGLMM.R \
     --plinkFile=${plink_GRM_snps} \
     --phenoFile=${phenoFile} \
-    --phenoCol=${params.phenoCol} \
+    --phenoCol="PHE" \
     --sampleIDColinphenoFile=IID \
     --traitType=${params.traitType} \
     --outputPrefix=step1_${params.phenoCol}_out \
