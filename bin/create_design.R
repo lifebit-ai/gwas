@@ -7,7 +7,9 @@ suppressPackageStartupMessages({
 library(data.table)
 library(tidyr)
 library(dplyr)
+library(stringr)
 library(optparse)
+library(jsonlite)
     })
 
 ###########################
@@ -42,7 +44,9 @@ option_list = list(
   make_option(c("--outprefix"), action="store", default='', type='character',
               help="String containing output phenoFile prefixes."),
   make_option(c("--outdir"), action="store", default='.', type='character',
-              help="String containing output phenoFile dir (ie. results).")
+              help="String containing output phenoFile dir (ie. results)."),
+  make_option(c("--phenoCol"), action="store", default='None', type='character',
+              help="String containing name of phenotypic column selected by user.")
 )
 
 args = parse_args(OptionParser(option_list=option_list))
@@ -53,6 +57,10 @@ mode                    = args$mode
 case_group              = args$case_group
 outprefix               = paste0(args$outprefix, "_")
 outdir                  = sub("/$","",args$outdir)
+phenoCol                = args$phenoCol %>% str_replace('\\(|\\)',"") %>% 
+                                            str_replace("-[^-]+$", "") %>% 
+                                            str_replace(' ','_') %>% 
+                                            str_to_lower
 
 system(paste0("mkdir -p ", outdir), intern=T)
 
@@ -64,10 +72,15 @@ out_path = paste0(outdir, "/", outprefix)
 
 data = fread(input_file)
 
+encodings = read_json(paste0(phenoCol,'.json'))
+
+
+
 # In case group not specified it will run all combinations, 
 # otherwise it will subset for the case group and generate only those files
 
 if (case_group != 'None'){
+  case_group = encodings[[case_group]]
   if (mode == 'case_vs_group_contrasts'){
       case_group = as.integer(case_group)
       design = crossing(control = data$PHE, case = data$PHE) %>%

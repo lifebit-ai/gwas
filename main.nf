@@ -12,7 +12,7 @@
 /*--------------------------------------------------
   Channel setup
 ---------------------------------------------------*/
-ch_input_cb_data = params.input_cb_data ? Channel.value(params.input_cb_data) : Channel.empty()
+ch_input_cb_data = params.cohort_browser_phenofile ? Channel.value(params.cohort_browser_phenofile) : Channel.empty()
 ch_input_meta_data = params.input_meta_data ? Channel.value(params.input_meta_data) : Channel.empty()
 
 Channel
@@ -37,7 +37,7 @@ Channel
 /*--------------------------------------------------
   Ingest output from CB
 ---------------------------------------------------*/
-if (params.cohort_browser_phenoFile){
+if (params.cohort_browser_phenofile){
   process transforms_cb_output {
     tag "$name"
     publishDir "${params.outdir}/design_matrix", mode: 'copy'
@@ -48,6 +48,7 @@ if (params.cohort_browser_phenoFile){
 
     output:
     file("${params.outprefix}_.phe") into ch_transform_cb
+    file("*.json") into ch_encoding_json
 
     script:
     """
@@ -55,7 +56,7 @@ if (params.cohort_browser_phenoFile){
 
     mkdir -p ${params.outdir}/design_matrix
     
-    transform_cb_output.R --input_cb_data "${params.input_cb_data}" \
+    transform_cb_output.R --input_cb_data "${params.cohort_browser_phenofile}" \
                           --input_meta_data "${params.input_meta_data}" \
                           --phenoCol "${params.phenoCol}" \
                           --continuous_var_transformation "${params.continuous_var_transformation}" \
@@ -65,32 +66,7 @@ if (params.cohort_browser_phenoFile){
   }
 }
 //TODO: Check this later and finish it with the processes 
-if (params.case_group && params.mode == 'case_vs_groups_contrasts') {
-  process add_design_matrix_case{
-    tag "$name"
-    publishDir "${params.outdir}/contrasts", mode: 'copy'
 
-    input:
-    file(pheFile) from ch_transform_cb
-
-    output:
-    file("${params.outprefix}_design_matrix_control_*.phe") into phenoCh_gwas_filtering
-
-    script:
-    """
-    cp /opt/bin/* .
-
-    mkdir -p ${params.outdir}/contrasts
-
-    create_design.R --input_file ${pheFile} \
-                    --mode ${params.mode} \
-                    --case_group ${params.case_group} \
-                    --outdir . \
-                    --outprefix ${params.outprefix}
-                      
-    """
-  }
-}
 if (params.cohort_browser_phenofile && params.case_group && params.mode == 'case_vs_control_contrast') {
   process add_design_matrix_case_vs_control_contrast{
     tag "$name"
@@ -98,6 +74,7 @@ if (params.cohort_browser_phenofile && params.case_group && params.mode == 'case
 
     input:
     file(pheFile) from ch_transform_cb
+    file(json) from ch_encoding_json
 
     output:
     file("${params.outprefix}_design_matrix_control_*.phe") into phenoCh_gwas_filtering
@@ -109,10 +86,11 @@ if (params.cohort_browser_phenofile && params.case_group && params.mode == 'case
     mkdir -p ${params.outdir}/contrasts
 
     create_design.R --input_file ${pheFile} \
-                    --mode ${params.mode} \
-                    --case_group ${params.case_group} \
+                    --mode "${params.mode}" \
+                    --case_group "${params.case_group}" \
                     --outdir . \
-                    --outprefix ${params.outprefix}
+                    --outprefix ${params.outprefix} \
+                    --phenoCol "${params.phenoCol}"
                       
     """
   }
@@ -125,6 +103,7 @@ if (params.cohort_browser_phenofile &&  params.case_group && params.mode == 'cas
 
     input:
     file(pheFile) from ch_transform_cb
+    file(json) from ch_encoding_json
 
     output:
     file("${outprefix}_design_matrix_control_*.phe'") into phenoCh_gwas_filtering
@@ -136,9 +115,10 @@ if (params.cohort_browser_phenofile &&  params.case_group && params.mode == 'cas
     mkdir -p ${params.outdir}/contrasts
 
     create_design.R --input_file ${pheFile} \
-                    --case_group ${params.case_group} \
+                    --case_group "${params.case_group}" \
                     --outdir . \
-                    --outprefix ${outprefix}
+                    --outprefix ${outprefix} \
+                    --phenoCol "${params.phenoCol}"
                       
     """
   }
@@ -165,7 +145,8 @@ if (params.cohort_browser_phenofile && params.mode == 'all_contrasts') {
     create_design.R --input_file ${pheFile} \
                     --mode ${params.mode}
                     --outdir . \
-                    --outprefix ${outprefix}
+                    --outprefix ${outprefix} \
+                    --phenoCol "${params.phenoCol}"
                       
     """
   }
@@ -268,12 +249,12 @@ process gwas_1_fit_null_glmm {
   """
   step1_fitNULLGLMM.R \
     --plinkFile=${plink_GRM_snps} \
-    --phenoFile=${phenoFile} \
+    --phenoFile="${phenoFile}" \
     --phenoCol="PHE" \
     --sampleIDColinphenoFile=IID \
     --traitType=${params.traitType} \
-    --outputPrefix=step1_${params.phenoCol}_out \
-    --outputPrefix_varRatio=step1_${params.phenoCol} \
+    --outputPrefix="step1_${params.phenoCol}_out" \
+    --outputPrefix_varRatio="step1_${params.phenoCol}" \
     --nThreads=${task.cpus} ${params.saigeStep1ExtraFlags}
   """
 }
@@ -306,7 +287,7 @@ process gwas_2_spa_tests {
     --sampleFile=day0_covid.samples \
     --GMMATmodelFile=${rda} \
     --varianceRatioFile=${varianceRatio} \
-    --SAIGEOutputFile=${params.phenoCol}.${name}.SAIGE.gwas.txt \
+    --SAIGEOutputFile="${params.phenoCol}.${name}.SAIGE.gwas.txt" \
     --numLinesOutput=2 \
     --IsOutputAFinCaseCtrl=TRUE \
     --IsDropMissingDosages=FALSE \
