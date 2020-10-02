@@ -47,9 +47,8 @@ Assumes that sex comes from `participant phenotypic sex` -> This behaviour will 
    - [ ] Make a Nextflow process which runs sex inference and adds it to the phenoFile
 
 - [ ] **(2) Branch GWAS processes so that multiple reports can be generated and explored:**
-   - [ ] Modify reporting process so it allows to render multiple reports in one report
-   or
-   - [ ] Modify reporting process so it allows to render multiple reports in one report
+   - [ ] Modify reporting process so it allows to combine multiple reports in one report
+   - [ ] Modify reporting process so it allows to switch between reports
 
 - [ ] **(3) GWAS post-analysis**
    - [ ] Add MAGMA & friends to run pathway-analysis
