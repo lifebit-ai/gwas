@@ -60,6 +60,7 @@ if (params.cohort_browser_phenofile){
                           --input_meta_data "${params.input_meta_data}" \
                           --phenoCol "${params.phenoCol}" \
                           --continuous_var_transformation "${params.continuous_var_transformation}" \
+                          --continuous_var_aggregation "${params.continuous_var_aggregation}" \
                           --outdir "." \
                           --output_tag "${params.output_tag}"
     """

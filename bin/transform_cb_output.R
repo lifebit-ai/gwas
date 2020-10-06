@@ -26,8 +26,10 @@ option_list = list(
               help="String containing input metadata for columns in Cohort Browser output."),
   make_option(c("--phenoCol"), action="store", default='None', type='character',
               help="String representing phenotype that will be used for GWAS comparison(s)."),
-  make_option(c("--continuous_var_transformation"), action="store", default='mean', type='character',
-              help="String representing the type of transformation desired for input data"),
+  make_option(c("--continuous_var_transformation"), action="store", default='log', type='character',
+              help="String representing the type of transformation desired for integer and continuous input data"),
+  make_option(c("--continuous_var_aggregation"), action="store", default='mean', type='character',
+              help="String representing the type of aggregation desired for input data"),
   make_option(c("--outdir"), action="store", default='.', type='character',
               help="String containing the output directory"),
   make_option(c("--outprefix"), action="store", default='CB', type='character',
@@ -40,6 +42,7 @@ args = parse_args(OptionParser(option_list=option_list))
 input_cb_data                 = args$input_cb_data
 input_meta_data               = args$input_meta_data
 phenoCol                      = args$phenoCol
+aggregation                   = args$continuous_var_aggregation
 transformation                = args$continuous_var_transformation
 outprefix                     = paste0(args$outprefix, "_")
 outdir                        = sub("/$","",args$outdir)
@@ -50,7 +53,7 @@ out_path = paste0(outdir, "/", outprefix)
 
 
 
-if (!(transformation %in% c('mean', 'max', 'min', 'median'))){
+if (!(aggregation %in% c('mean', 'max', 'min', 'median'))){
     stop('Selected transformation for continuous variables not supported.')
 }
 
@@ -90,7 +93,7 @@ pheno_dictionary$'Field Name' = str_replace_all(pheno_dictionary$'Field Name'," 
 #Compress multiple measures into a single measurement
 
 
-encode_pheno_values = function(column, data, pheno_dictionary, transformation){
+encode_pheno_values = function(column, data, pheno_dictionary, transformation, aggregation){
     
     #Clean column name
     pheno_cols = data[, str_detect(colnames(data), column)]
@@ -148,15 +151,16 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation){
         
         # pick transformation function - tried a case_when but it seems... 
         # ...I cannot make it give back functions
-        if (transformation == 'mean'){
-            transformation = function(x) mean(x)
-        } else if (transformation == 'median') {
-            transformation = function(x) median(x)
-        } else if (transformation == 'max') {
-            transformation = function(x) max(x)
-        } else if (transformation){
-            transformation = function(x) min(x)
+        if (aggregation == 'mean'){
+            aggregation = function(x) mean(x)
+        } else if (aggregation == 'median') {
+            aggregation = function(x) median(x)
+        } else if (aggregation == 'max') {
+            aggregation = function(x) max(x)
+        } else if (aggregation){
+            aggregation = function(x) min(x)
         }
+
         #Apply aggregation & transformation
         ## Get unique sets of measurements
         if (dim(pheno_cols)[2] > 1){
@@ -164,13 +168,27 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation){
             sets_measures = str_extract(colnames(pheno_cols), "-[:digit:]") %>% unique()
             ## Group by the same group of arrays
             ##Merge arrays per instances
-            pheno_cols = sapply(sets_measures, function(value) apply(pheno_cols[, str_detect(colnames(pheno_cols), value)], 1, function(x) transformation(x)))
+            pheno_cols = sapply(sets_measures, function(value) apply(pheno_cols[, str_detect(colnames(pheno_cols), value)], 1, function(x) aggregation(x)))
             #Group by instances
-            pheno_cols = apply(pheno_cols, 1, function(x) transformation(x))
+            pheno_cols = apply(pheno_cols, 1, function(x) aggregation(x))
         }else{
-            pheno_cols = lapply(pheno_cols, function(x) transformation(x))
+            pheno_cols = lapply(pheno_cols, function(x) aggregation(x))
         }
         pheno_cols = pheno_cols %>% as.vector
+
+        if (transformation == 'log'){
+            pheno_cols = log(pheno_cols)
+        }
+        if (transformation == 'log2') {
+            pheno_cols = log2(pheno_cols)
+        } 
+        if (transformation == 'z-score') {
+            pheno_cols = (pheno_cols - mean(pheno_cols)) / sd(pheno_cols)
+        }
+        if (transformation == 'None'){
+            pheno_cols = pheno_cols
+        }
+
         return(pheno_cols)
 
     }
@@ -185,7 +203,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation){
         if (dim(pheno_cols)[2] > 1) {
             # Turns the dates into a big integer
             pheno_cols = apply(pheno_cols, 1, function(x) format(as.Date(x, "%d/%m/%Y"), "%Y%m%d") %>% as.integer)
-            #Aggregate - gets the first column - arbitrary
+            # Aggregate - gets the first column - arbitrary
             pheno_cols = apply(pheno_cols, 1, function(x) x[1])
         }else{
             # If only one array, applies directly the transformation
@@ -208,7 +226,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation){
 columns_to_transform = colnames(cb_data) %>%
         str_replace("-[^-]+$", "") %>%
         unique
-cb_data_transformed = sapply(columns_to_transform, function(x) encode_pheno_values(x, cb_data, pheno_dictionary, transformation), simplify=FALSE) %>% as.data.frame
+cb_data_transformed = sapply(columns_to_transform, function(x) encode_pheno_values(x, cb_data, pheno_dictionary, transformation, aggregation), simplify=FALSE) %>% as.data.frame
 
 #####################
 # Make final output #
@@ -227,16 +245,15 @@ cb_data_transformed$IID = cb_data_transformed[['platekey_in_aggregate_vcf']]
 cb_data_transformed$PAT = 0
 cb_data_transformed$MAT = 0
 # This should be provided either by default from the CB output or as an argument or calculated from the VCF data
-cb_data_transformed$SEX = cb_data_transformed$`participant_phenotypic_sex`
 cb_data_transformed$PHE = cb_data_transformed[[column_to_PHE]]
 
 cb_data_transformed[['individual_id']] = NULL
-cb_data_transformed$`participant_phenotypic_sex` = NULL
+
 
 ##################################################
 # Write .phe file                                #
 ##################################################
-cb_data_transformed = cb_data_transformed %>% select(FID, IID, PAT, MAT, SEX, PHE, everything(), -!!as.symbol(column_to_PHE), -`platekey`, -`platekey_in_aggregate_vcf`)
+cb_data_transformed = cb_data_transformed %>% select(FID, IID, PAT, MAT, PHE, everything(), -!!as.symbol(column_to_PHE), -`platekey`, -`platekey_in_aggregate_vcf`)
 ### FID, IID this has to be the platekey metadata -> Agg VCF columns. 
 write.table(cb_data_transformed, paste0(out_path,'.phe'), sep='\t',  quote=FALSE, row.names=FALSE)
 
