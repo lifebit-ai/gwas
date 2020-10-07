@@ -1,10 +1,10 @@
 # Usage
 
 In order to use this pipeline, you can run the following example:
-
+**Binary**
 ```bash
 nextflow run main.nf \
-  --plink_file "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/sampleA.{bed,bim,fam}" \
+  --GRM_plink_input "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/sampleA.{bed,bim,fam}" \
   --phenofile "https://gist.githubusercontent.com/mcamarad/e98cdd5e69413fb6189ed70405c43ef4/raw/d602bec4b31d5d75f74f1dbb408bd392db57bdb6/cohort_data_phenos.csv" \
   --metadata "https://gist.githubusercontent.com/mcamarad/e98cdd5e69413fb6189ed70405c43ef4/raw/d602bec4b31d5d75f74f1dbb408bd392db57bdb6/metadata.csv" \
   --continuous_var_aggregation "mean" \
@@ -16,12 +16,25 @@ nextflow run main.nf \
   --vcfs_list "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/vcfs.csv"
 ```
 
+**Quantitative**
+```bash
+nextflow run main.nf \
+  --GRM_plink_input "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/sampleA.{bed,bim,fam}" \
+  --phenofile "https://gist.githubusercontent.com/mcamarad/e98cdd5e69413fb6189ed70405c43ef4/raw/d602bec4b31d5d75f74f1dbb408bd392db57bdb6/cohort_data_phenos.csv" \
+  --metadata "https://gist.githubusercontent.com/mcamarad/e98cdd5e69413fb6189ed70405c43ef4/raw/d602bec4b31d5d75f74f1dbb408bd392db57bdb6/metadata.csv" \
+  --continuous_var_aggregation "mean" \
+  --continuous_var_transformation "log" \
+  --pheno_col "Height (HCM)" \
+  --trait_type "quantitative" \
+  --vcfs_list "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/vcfs.csv"
+```
+
 # Parameters
 
 ## **ESSENTIAL**
 
 - **--vcfs_list** : path/url to CSV file containing chr chunk information, path to aggregated VCFs, VCFs index.
-- **--plink_file** : path/url to S3 bucket that contains bed, bim, fam files for aggregated VCFs.
+- **--GRM_plink_input** : path/url to S3 bucket that contains bed, bim, fam files for aggregated VCFs.
 - **--pheno_col** : String with the name of the phenotypic column to be used as trait. Note for CB users, it must match the name of the column, i.e. 'Specimen type'.
 - **--phenofile** : path/url to file that contains phenotypic information about cohort to be analysed.
 - **--metadata** : path/url to file that contains metadata from phenotypic information.

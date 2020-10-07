@@ -13,6 +13,7 @@ params:
   manhattan:  "covid_1_manhattan.png"
   qqplot:  "covid_1_qqplot_ci.png"
   gwascat: "gwascat_subset.csv"
+  trait_type: 'binary'
   saige_results: "saige_results_top_n.csv"
 title: "`r paste0('Genomics England GWAS Report' , '') `"
 author: ""
@@ -71,11 +72,17 @@ htmltools::tags$figcaption( style = 'caption-side: bottom; text-align: center; f
 ```{r}
 table   <- as.data.frame(data.table::fread(params$saige_results))
 colnames(table) <- snakecase::to_snake_case(colnames(table))
+if (params$trait_type =='binary'){
 reordered_columns <-
 c("chr", "pos", "snpid", "p_value", "imputation_info", "n", "beta", "se", "tstat",
  "p_value_na", "is_spa_converge", "var_t", "var_tstar", "allele_1", "allele_2", "ac_allele_2",
 "af_allele_2","af_cases", "af_controls", "n_cases", "n_controls", "hom_n_allele_2_cases",
 "het_n_allele_2_cases", "hom_n_allele_2_ctrls", "het_n_allele_2_ctrls")
+}
+if (params$trait_type == 'quantitative'){
+reordered_columns <- colnames(table)
+}
+
 table <- table[, reordered_columns]
 DTable(table)
 ```

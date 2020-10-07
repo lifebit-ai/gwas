@@ -11,6 +11,7 @@ library(optparse)
 library(data.table)
 library(tidyverse)
 library(jsonlite)
+library(snakecase)
     })
 
 options(warn=-1)
@@ -80,14 +81,16 @@ cb_data = cb_data %>% filter(!`Platekey in aggregate VCF-0.0`== "")
 #colnames(cb_data) = colnames(cb_data) %>% str_replace("-[^-]+$", "")
 colnames(cb_data) = colnames(cb_data) %>% 
         str_replace_all(" ", "_") %>% 
-        str_replace_all("\\(|\\)","") %>%
+        str_replace_all("\\(","") %>%
+        str_replace_all("\\)","") %>%
         str_to_lower()
 
 # Use phenotype metadata (data dictionary) to determine the type of each phenotype -> This will be given by CB
 pheno_dictionary = fread(input_meta_data) %>%
         as.tibble # Change by metadata input var
 pheno_dictionary$'Field Name' = str_replace_all(pheno_dictionary$'Field Name'," ", "_") %>%
-        str_replace_all('\\(|\\)',"") %>% 
+        str_replace_all("\\(","") %>%
+        str_replace_all("\\)","") %>% 
         str_to_lower()
 
 #Compress multiple measures into a single measurement
@@ -233,7 +236,8 @@ cb_data_transformed = sapply(columns_to_transform, function(x) encode_pheno_valu
 #####################
 
 #TODO: Add more covariates
-column_to_PHE = phenoCol %>% str_replace('\\(|\\)',"") %>% 
+column_to_PHE = phenoCol %>% str_replace_all("\\(","") %>%
+        str_replace_all("\\)","") %>%
         str_replace("-[^-]+$", "") %>% 
         str_replace(' ','_') %>% 
         str_to_lower
