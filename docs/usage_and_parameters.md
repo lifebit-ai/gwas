@@ -18,7 +18,8 @@ nextflow run main.nf \
 
 # Parameters
 
-**ESSENTIAL**
+## **ESSENTIAL**
+
 - **--vcfs_list** : path/url to CSV file containing chr chunk information, path to aggregated VCFs, VCFs index.
 - **--plink_file** : path/url to S3 bucket that contains bed, bim, fam files for aggregated VCFs.
 - **--pheno_col** : String with the name of the phenotypic column to be used as trait. Note for CB users, it must match the name of the column, i.e. 'Specimen type'.
@@ -26,7 +27,9 @@ nextflow run main.nf \
 - **--metadata** : path/url to file that contains metadata from phenotypic information.
 - **--query** : Under development. It will allow the user to query through multiple instances & arrays of the same phenotype.
 - **--programme** : Under development. It will allow the user to select between cohorts.
-**Binary**
+
+## **Binary**
+
 - **--trait_type** : Should be set as 'binary'.
 - **--design_mode** : String containing the design matrix configuration to be used. Allows the user to select between the following scenarios:
 
@@ -37,9 +40,13 @@ nextflow run main.nf \
 | Scenario 3 | all_vs_all | User doesn't have a particular group in mind and wants to run an exploration on the phenotype | All vs All approach | Allows for exploration or assumptions free analysis |
 
 - **case_group** : String containing name of the case group selected for contrasts.
-**Quantitative**
+
+## **Quantitative**
+
 - **trait_type** : Should be set to 'quantitative'.
-**Optional**
+
+## **Optional**
+
 - **continuous_var_transformation** : Transforms continuous variables using 'log', 'log2', 'zscores' or 'None'.
 - **continuous_var_aggregation** : Defines how to aggregate different measurements. Choose between 'max', 'min', 'median' or 'mean'.
 - **q_filter** : Minimum allele frequency filter for selecting sites.
