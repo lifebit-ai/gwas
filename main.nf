@@ -302,8 +302,8 @@ if (params.trait_type == 'binary'){
 
     output:
     file "*" into fit_null_glmm_results
-    file ("step1_${params.pheno_col.replaceAll(/\s/,'_').replaceAll(/\(/, '').replaceAll(/\)/, '')}_out.rda") into rdaCh
-    file ("step1_${params.pheno_col.replaceAll(/\s/,'_').replaceAll(/\(/, '').replaceAll(/\)/, '')}.varianceRatio.txt") into varianceRatioCh
+    file ("step1_${params.pheno_col.replaceAll(/\s/,'_').replaceAll(/\(|\)/, '')}_out.rda") into rdaCh
+    file ("step1_${params.pheno_col.replaceAll(/\s/,'_').replaceAll(/\(|\)/, '')}.varianceRatio.txt") into varianceRatioCh
 
     script:
     """
@@ -313,8 +313,8 @@ if (params.trait_type == 'binary'){
       --phenoCol="PHE" \
       --traitType=binary       \
       --sampleIDColinphenoFile=IID \
-      --outputPrefix="step1_${params.pheno_col.replaceAll(/\s/,'_').replaceAll(/\(/, '').replaceAll(/\)/, '')}_out" \
-      --outputPrefix_varRatio="step1_${params.pheno_col.replaceAll(/\s/,'_').replaceAll(/\(/, '').replaceAll(/\)/, '')}" \
+      --outputPrefix="step1_${params.pheno_col.replaceAll(/\s/,'_').replaceAll(/\(|\)/, '')}_out" \
+      --outputPrefix_varRatio="step1_${params.pheno_col.replaceAll(/\s/,'_').replaceAll(/\(|\)/, '')}" \
       --nThreads=${task.cpus} ${params.saige_step1_extra_flags}
     """
   }
@@ -332,8 +332,8 @@ if (params.trait_type == 'quantitative'){
 
     output:
     file "*" into fit_null_glmm_results
-    file ("step1_${params.pheno_col.replaceAll(/\s/,'_').replaceAll(/\(/, '').replaceAll(/\)/, '')}_out.rda") into rdaCh
-    file ("step1_${params.pheno_col.replaceAll(/\s/,'_').replaceAll(/\(/, '').replaceAll(/\)/, '')}.varianceRatio.txt") into varianceRatioCh
+    file ("step1_${params.pheno_col.replaceAll(/\s/,'_').replaceAll(/\(|\)/, '')}_out.rda") into rdaCh
+    file ("step1_${params.pheno_col.replaceAll(/\s/,'_').replaceAll(/\(|\)/, '')}.varianceRatio.txt") into varianceRatioCh
 
     script:
     """
@@ -344,8 +344,8 @@ if (params.trait_type == 'quantitative'){
       --traitType=quantitative       \
 	    --invNormalize=TRUE	\
       --sampleIDColinphenoFile=IID \
-      --outputPrefix="step1_${params.pheno_col.replaceAll(/\s/,'_').replaceAll(/\(/, '').replaceAll(/\)/, '')}_out" \
-      --outputPrefix_varRatio="step1_${params.pheno_col.replaceAll(/\s/,'_').replaceAll(/\(/, '').replaceAll(/\)/, '')}" \
+      --outputPrefix="step1_${params.pheno_col.replaceAll(/\s/,'_').replaceAll(/\(|\)/, '')}_out" \
+      --outputPrefix_varRatio="step1_${params.pheno_col.replaceAll(/\s/,'_').replaceAll(/\(|\)/, '')}" \
       --nThreads=${task.cpus} ${params.saige_step1_extra_flags}
     """
   }
@@ -381,7 +381,7 @@ process gwas_2_spa_tests {
     --sampleFile=day0_covid.samples \
     --GMMATmodelFile=${rda} \
     --varianceRatioFile=${varianceRatio} \
-    --SAIGEOutputFile="${params.pheno_col.replaceAll(/\s/,'_').replaceAll(/\(/, '')}.${name}.SAIGE.gwas.txt" \
+    --SAIGEOutputFile="${params.pheno_col.replaceAll(/\s/,'_').replaceAll(/\(|\)/, '')}.${name}.SAIGE.gwas.txt" \
     --numLinesOutput=2 \
     --IsOutputAFinCaseCtrl=TRUE \
     --IsDropMissingDosages=FALSE \
