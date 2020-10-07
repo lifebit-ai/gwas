@@ -32,7 +32,7 @@ option_list = list(
               help="String representing the type of aggregation desired for input data"),
   make_option(c("--outdir"), action="store", default='.', type='character',
               help="String containing the output directory"),
-  make_option(c("--outprefix"), action="store", default='CB', type='character',
+  make_option(c("--output_tag"), action="store", default='CB', type='character',
               help="String containing the prefix to be used in the output files")
  
 )
@@ -44,7 +44,7 @@ input_meta_data               = args$input_meta_data
 phenoCol                      = args$phenoCol
 aggregation                   = args$continuous_var_aggregation
 transformation                = args$continuous_var_transformation
-outprefix                     = paste0(args$outprefix, "_")
+outprefix                     = paste0(args$output_tag, "_")
 outdir                        = sub("/$","",args$outdir)
 
 system(paste0("mkdir -p ", outdir), intern=T)

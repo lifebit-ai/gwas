@@ -67,7 +67,7 @@ if (params.phenofile){
   }
 }
 //TODO: Check this later and finish it with the processes 
-if (params.train_type == 'binary'){
+if (params.trait_type == 'binary'){
 
   if (params.phenofile && params.case_group && params.design_mode == 'case_vs_control_contrast') {
     process add_design_matrix_case_vs_control_contrast{
@@ -237,7 +237,7 @@ process gwas_filtering {
 phenoCh_gwas_filtering.into{phenoCh}
 
 if (params.trait_type == 'binary'){
-  process gwas_1_fit_null_glmm {
+  process gwas_1_fit_null_glmm_bin {
     tag "$plink_GRM_snps"
     publishDir "${params.outdir}/gwas_1_fit_null_glmm", mode: 'copy'
 
@@ -267,7 +267,7 @@ if (params.trait_type == 'binary'){
 }
 
 if (params.trait_type == 'quantitative'){
-  process gwas_1_fit_null_glmm {
+  process gwas_1_fit_null_glmm_qt {
     tag "$plink_GRM_snps"
     publishDir "${params.outdir}/gwas_1_fit_null_glmm", mode: 'copy'
 

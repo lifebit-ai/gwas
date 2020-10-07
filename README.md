@@ -12,7 +12,7 @@ nextflow run main.nf \
   --continuous_var_aggregation "mean" \
   --continuous_var_transformation "zscore" \
   --pheno_col "Specimen type" \
-  --mode 'case_vs_control_contrast' \
+  --design_mode 'case_vs_control_contrast' \
   --case_group "NOSE" \
   --trait_type "binary" \
   --vcfs_list "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/vcfs.csv"

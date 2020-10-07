@@ -41,7 +41,7 @@ option_list = list(
               help="String containing case group from the desired phenotypic column."),
   make_option(c("--case_group"), action="store", default='None', type='character',
               help="String containing case group from the desired phenotypic column."),
-  make_option(c("--outprefix"), action="store", default='', type='character',
+  make_option(c("--output_tag"), action="store", default='', type='character',
               help="String containing output phenoFile prefixes."),
   make_option(c("--outdir"), action="store", default='.', type='character',
               help="String containing output phenoFile dir (ie. results)."),
@@ -55,7 +55,7 @@ args = parse_args(OptionParser(option_list=option_list))
 input_file              = args$input_file
 mode                    = args$mode
 case_group              = args$case_group
-outprefix               = paste0(args$outprefix, "_")
+outprefix               = paste0(args$output_tag, "_")
 outdir                  = sub("/$","",args$outdir)
 phenoCol                = args$phenoCol %>% str_replace('\\(|\\)',"") %>% 
                                             str_replace("-[^-]+$", "") %>% 
