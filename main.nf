@@ -12,19 +12,19 @@
 /*--------------------------------------------------
   Channel setup
 ---------------------------------------------------*/
-ch_input_cb_data = params.cohort_browser_phenofile ? Channel.value(params.cohort_browser_phenofile) : Channel.empty()
-ch_input_meta_data = params.input_meta_data ? Channel.value(params.input_meta_data) : Channel.empty()
+ch_input_cb_data = params.phenofile ? Channel.value(params.phenofile) : Channel.empty()
+ch_input_meta_data = params.metadata ? Channel.value(params.metadata) : Channel.empty()
 
 Channel
-  .fromFilePairs("${params.plinkFile}",size:3, flat : true)
-  .ifEmpty { exit 1, "PLINK files not found: ${params.plinkFile}" }
+  .fromFilePairs("${params.plink_file}",size:3, flat : true)
+  .ifEmpty { exit 1, "PLINK files not found: ${params.plink_file}" }
   .set { plinkCh }
 Channel
   .fromPath(params.plink_keep_pheno)
   .set {plink_keep_pheno_ch}
 Channel
-  .fromPath(params.vcfsList)
-  .ifEmpty { exit 1, "Cannot find CSV VCFs file : ${params.vcfsList}" }
+  .fromPath(params.vcfs_list)
+  .ifEmpty { exit 1, "Cannot find CSV VCFs file : ${params.vcfs_list}" }
   .splitCsv(skip:1)
   .map { chr, vcf, index -> [file(vcf).simpleName, chr, file(vcf), file(index)] }
   .set { vcfsCh }
@@ -37,7 +37,7 @@ Channel
 /*--------------------------------------------------
   Ingest output from CB
 ---------------------------------------------------*/
-if (params.cohort_browser_phenofile){
+if (params.phenofile){
   process transforms_cb_output {
     tag "$name"
     publishDir "${params.outdir}/design_matrix", mode: 'copy'
@@ -56,9 +56,9 @@ if (params.cohort_browser_phenofile){
 
     mkdir -p ${params.outdir}/design_matrix
     
-    transform_cb_output.R --input_cb_data "${params.cohort_browser_phenofile}" \
-                          --input_meta_data "${params.input_meta_data}" \
-                          --phenoCol "${params.phenoCol}" \
+    transform_cb_output.R --input_cb_data "${params.phenofile}" \
+                          --input_meta_data "${params.metadata}" \
+                          --phenoCol "${params.pheno_col}" \
                           --continuous_var_transformation "${params.continuous_var_transformation}" \
                           --continuous_var_aggregation "${params.continuous_var_aggregation}" \
                           --outdir "." \
@@ -67,91 +67,94 @@ if (params.cohort_browser_phenofile){
   }
 }
 //TODO: Check this later and finish it with the processes 
+if (params.train_type == 'binary'){
 
-if (params.cohort_browser_phenofile && params.case_group && params.mode == 'case_vs_control_contrast') {
-  process add_design_matrix_case_vs_control_contrast{
-    tag "$name"
-    publishDir "${params.outdir}/contrasts", mode: 'copy'
+  if (params.phenofile && params.case_group && params.design_mode == 'case_vs_control_contrast') {
+    process add_design_matrix_case_vs_control_contrast{
+      tag "$name"
+      publishDir "${params.outdir}/contrasts", mode: 'copy'
 
-    input:
-    file(pheFile) from ch_transform_cb
-    file(json) from ch_encoding_json
+      input:
+      file(pheFile) from ch_transform_cb
+      file(json) from ch_encoding_json
 
-    output:
-    file("${params.output_tag}_design_matrix_control_*.phe") into phenoCh_gwas_filtering
+      output:
+      file("${params.output_tag}_design_matrix_control_*.phe") into phenoCh_gwas_filtering
 
-    script:
-    """
-    cp /opt/bin/* .
+      script:
+      """
+      cp /opt/bin/* .
 
-    mkdir -p ${params.outdir}/contrasts
+      mkdir -p ${params.outdir}/contrasts
 
-    create_design.R --input_file ${pheFile} \
-                    --mode "${params.mode}" \
-                    --case_group "${params.case_group}" \
-                    --outdir . \
-                    --output_tag ${params.output_tag} \
-                    --phenoCol "${params.phenoCol}"
-                      
-    """
+      create_design.R --input_file ${pheFile} \
+                      --mode "${params.design_mode}" \
+                      --case_group "${params.case_group}" \
+                      --outdir . \
+                      --output_tag ${params.output_tag} \
+                      --phenoCol "${params.pheno_col}"
+                        
+      """
+    }
+  }
+
+  if (params.phenofile &&  params.case_group && params.design_mode == 'case_vs_groups_contrasts') {
+    process add_design_matrix_case_vs_groups_contrasts{
+      tag "$name"
+      publishDir "${params.outdir}/contrasts", mode: 'copy'
+
+      input:
+      file(pheFile) from ch_transform_cb
+      file(json) from ch_encoding_json
+
+      output:
+      file("${output_tag}_design_matrix_control_*.phe'") into phenoCh_gwas_filtering
+
+      script:
+      """
+      cp /opt/bin/* .
+
+      mkdir -p ${params.outdir}/contrasts
+
+      create_design.R --input_file ${pheFile} \
+                      --case_group "${params.case_group}" \
+                      --outdir . \
+                      --output_tag ${output_tag} \
+                      --phenoCol "${params.pheno_col}"
+                        
+      """
+    }
+  }
+
+  if (params.phenofile && params.design_mode == 'all_contrasts') {
+
+    process add_design_matrix_all_contrasts{
+      tag "$name"
+      publishDir "${params.outdir}/contrasts", mode: 'copy'
+
+      input:
+      file(pheFile) from ch_transform_cb
+
+      output:
+      file("${output_tag}_design_matrix_control_*.phe'") into phenoCh_gwas_filtering
+
+      script:
+      """
+      cp /opt/bin/* .
+
+      mkdir -p ${params.outdir}/contrasts
+
+      create_design.R --input_file ${pheFile} \
+                      --mode ${params.design_mode}
+                      --outdir . \
+                      --output_tag ${output_tag} \
+                      --phenoCol "${params.pheno_col}"
+                        
+      """
+    }
   }
 }
 
-if (params.cohort_browser_phenofile &&  params.case_group && params.mode == 'case_vs_groups_contrasts') {
-  process add_design_matrix_case_vs_groups_contrasts{
-    tag "$name"
-    publishDir "${params.outdir}/contrasts", mode: 'copy'
-
-    input:
-    file(pheFile) from ch_transform_cb
-    file(json) from ch_encoding_json
-
-    output:
-    file("${output_tag}_design_matrix_control_*.phe'") into phenoCh_gwas_filtering
-
-    script:
-    """
-    cp /opt/bin/* .
-
-    mkdir -p ${params.outdir}/contrasts
-
-    create_design.R --input_file ${pheFile} \
-                    --case_group "${params.case_group}" \
-                    --outdir . \
-                    --output_tag ${output_tag} \
-                    --phenoCol "${params.phenoCol}"
-                      
-    """
-  }
-}
-
-if (params.cohort_browser_phenofile && params.mode == 'all_contrasts') {
-
-  process add_design_matrix_all_contrasts{
-    tag "$name"
-    publishDir "${params.outdir}/contrasts", mode: 'copy'
-
-    input:
-    file(pheFile) from ch_transform_cb
-
-    output:
-    file("${output_tag}_design_matrix_control_*.phe'") into phenoCh_gwas_filtering
-
-    script:
-    """
-    cp /opt/bin/* .
-
-    mkdir -p ${params.outdir}/contrasts
-
-    create_design.R --input_file ${pheFile} \
-                    --mode ${params.mode}
-                    --outdir . \
-                    --output_tag ${output_tag} \
-                    --phenoCol "${params.phenoCol}"
-                      
-    """
-  }
-}
 
 
 /*--------------------------------------------------
@@ -178,7 +181,7 @@ process gwas_filtering {
   extra_plink_filter_missingness_options = params.plink_keep_pheno != "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/nodata" ? "--keep ${plink_keep_file}" : ""
   """
   # Download, filter and convert (bcf or vcf.gz) -> vcf.gz
-  bcftools view -q ${params.qFilter} $vcf -Oz -o ${name}_filtered.vcf.gz
+  bcftools view -q ${params.q_filter} $vcf -Oz -o ${name}_filtered.vcf.gz
   bcftools index ${name}_filtered.vcf.gz
  
   # Create PLINK binary from vcf.gz
@@ -233,32 +236,67 @@ process gwas_filtering {
 // Create channel for this process
 phenoCh_gwas_filtering.into{phenoCh}
 
-process gwas_1_fit_null_glmm {
-  tag "$plink_GRM_snps"
-  publishDir "${params.outdir}/gwas_1_fit_null_glmm", mode: 'copy'
+if (params.trait_type == 'binary'){
+  process gwas_1_fit_null_glmm {
+    tag "$plink_GRM_snps"
+    publishDir "${params.outdir}/gwas_1_fit_null_glmm", mode: 'copy'
 
-  input:
-  set val(plink_GRM_snps), file(bed), file(bim), file(fam) from plinkCh
-  each file(phenoFile) from phenoCh
+    input:
+    set val(plink_GRM_snps), file(bed), file(bim), file(fam) from plinkCh
+    each file(phenoFile) from phenoCh
 
-  output:
-  file "*" into fit_null_glmm_results
-  file ("step1_${params.phenoCol.replaceAll(/\s/,'_')}_out.rda") into rdaCh
-  file ("step1_${params.phenoCol.replaceAll(/\s/,'_')}.varianceRatio.txt") into varianceRatioCh
+    output:
+    file "*" into fit_null_glmm_results
+    file ("step1_${params.pheno_col.replaceAll(/\s/,'_')}_out.rda") into rdaCh
+    file ("step1_${params.pheno_col.replaceAll(/\s/,'_')}.varianceRatio.txt") into varianceRatioCh
 
-  script:
-  """
-  step1_fitNULLGLMM.R \
-    --plinkFile=${plink_GRM_snps} \
-    --phenoFile="${phenoFile}" \
-    --phenoCol="PHE" \
-    --sampleIDColinphenoFile=IID \
-    --traitType=${params.traitType} \
-    --outputPrefix="step1_${params.phenoCol.replaceAll(/\s/,'_')}_out" \
-    --outputPrefix_varRatio="step1_${params.phenoCol.replaceAll(/\s/,'_')}" \
-    --nThreads=${task.cpus} ${params.saigeStep1ExtraFlags}
-  """
+    script:
+    """
+    step1_fitNULLGLMM.R \
+      --plinkFile=${plink_GRM_snps} \
+      --phenoFile="${phenoFile}" \
+      --phenoCol="PHE" \
+      --traitType=binary       \
+      --sampleIDColinphenoFile=IID \
+      --outputPrefix="step1_${params.pheno_col.replaceAll(/\s/,'_')}_out" \
+      --outputPrefix_varRatio="step1_${params.pheno_col.replaceAll(/\s/,'_')}" \
+      --nThreads=${task.cpus} ${params.saige_step1_extra_flags}
+    """
+  }
+
 }
+
+if (params.trait_type == 'quantitative'){
+  process gwas_1_fit_null_glmm {
+    tag "$plink_GRM_snps"
+    publishDir "${params.outdir}/gwas_1_fit_null_glmm", mode: 'copy'
+
+    input:
+    set val(GRM_plink_input), file(bed), file(bim), file(fam) from plinkCh
+    each file(phenoFile) from phenoCh
+
+    output:
+    file "*" into fit_null_glmm_results
+    file ("step1_${params.pheno_col.replaceAll(/\s/,'_')}_out.rda") into rdaCh
+    file ("step1_${params.pheno_col.replaceAll(/\s/,'_')}.varianceRatio.txt") into varianceRatioCh
+
+    script:
+    """
+    step1_fitNULLGLMM.R \
+      --plinkFile=${GRM_plink_input} \
+      --phenoFile="${phenoFile}" \
+      --phenoCol="PHE" \
+      --traitType=quantitative       \
+	    --invNormalize=TRUE	\
+      --sampleIDColinphenoFile=IID \
+      --outputPrefix="step1_${params.pheno_col.replaceAll(/\s/,'_')}_out" \
+      --outputPrefix_varRatio="step1_${params.pheno_col.replaceAll(/\s/,'_')}" \
+      --nThreads=${task.cpus} ${params.saige_step1_extra_flags}
+    """
+  }
+
+}
+
 
 /*--------------------------------------------------
   GWAS Analysis 2 with SAIGE - Perform mixed-model association testing
@@ -288,7 +326,7 @@ process gwas_2_spa_tests {
     --sampleFile=day0_covid.samples \
     --GMMATmodelFile=${rda} \
     --varianceRatioFile=${varianceRatio} \
-    --SAIGEOutputFile="${params.phenoCol.replaceAll(/\s/,'_')}.${name}.SAIGE.gwas.txt" \
+    --SAIGEOutputFile="${params.pheno_col.replaceAll(/\s/,'_')}.${name}.SAIGE.gwas.txt" \
     --numLinesOutput=2 \
     --IsOutputAFinCaseCtrl=TRUE \
     --IsDropMissingDosages=FALSE \

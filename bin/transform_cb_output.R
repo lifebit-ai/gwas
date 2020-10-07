@@ -182,7 +182,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         if (transformation == 'log2') {
             pheno_cols = log2(pheno_cols)
         } 
-        if (transformation == 'z-score') {
+        if (transformation == 'zscore') {
             pheno_cols = (pheno_cols - mean(pheno_cols)) / sd(pheno_cols)
         }
         if (transformation == 'None'){

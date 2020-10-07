@@ -9,15 +9,15 @@ Two `.csv` files:
 - **CB phenotypic data:** Contains columns selected by user with all respective measurements
 - **CB metadata for phenotypes:** Contains information about the columns
 
-These three files need to be passed to the pipeline in orde
+These two files need to be passed to the pipeline in order to make it work.
 
-## 2. **Transformation**
+## 2. **Aggregation & Transformation**
 
 Adds a script that takes the phenotypic data and metadata associated and performs the following tasks:
 - Cleans the data from files with missing genotypic data
-- Reads column by column selected by the user and applies a corresponding transformation to aggregate multiple measurements and additionally transform the data if needed. Currently, is compatible with:
+- Reads column by column selected by the user and applies a corresponding aggregation multiple measurements and additionally transform the data if needed. Currently, is compatible with:
   - Categorical (multi-level or not) -> Selects the first measurement until querying is allowed. Adds unknown label for NA, but they are not selected for contrast.
-  - Integer/Continuous -> Applies aggregation using mean, min, max, avg across measurements (instances and arrays)
+  - Integer/Continuous -> Applies aggregation using mean, min, max, avg across measurements (instances and arrays) and transformation (log, log2, Z-score, None)
   - Dates and Time -> transforms it into YYYYMMDD integer which can be used as covariates
   - Text -> Removes free text
 - Generates `.phe` file for GWAS
