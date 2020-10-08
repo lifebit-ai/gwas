@@ -4,7 +4,7 @@ In order to use this pipeline, you can run the following example:
 **Binary**
 ```bash
 nextflow run main.nf \
-  --GRM_plink_input "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/sampleA.{bed,bim,fam}" \
+  --grm_plink_input "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/sampleA.{bed,bim,fam}" \
   --phenofile "https://gist.githubusercontent.com/mcamarad/e98cdd5e69413fb6189ed70405c43ef4/raw/d602bec4b31d5d75f74f1dbb408bd392db57bdb6/cohort_data_phenos.csv" \
   --metadata "https://gist.githubusercontent.com/mcamarad/e98cdd5e69413fb6189ed70405c43ef4/raw/d602bec4b31d5d75f74f1dbb408bd392db57bdb6/metadata.csv" \
   --continuous_var_aggregation "mean" \
@@ -19,7 +19,7 @@ nextflow run main.nf \
 **Quantitative**
 ```bash
 nextflow run main.nf \
-  --GRM_plink_input "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/sampleA.{bed,bim,fam}" \
+  --grm_plink_input "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/sampleA.{bed,bim,fam}" \
   --phenofile "https://gist.githubusercontent.com/mcamarad/e98cdd5e69413fb6189ed70405c43ef4/raw/d602bec4b31d5d75f74f1dbb408bd392db57bdb6/cohort_data_phenos.csv" \
   --metadata "https://gist.githubusercontent.com/mcamarad/e98cdd5e69413fb6189ed70405c43ef4/raw/d602bec4b31d5d75f74f1dbb408bd392db57bdb6/metadata.csv" \
   --continuous_var_aggregation "mean" \
@@ -34,7 +34,7 @@ nextflow run main.nf \
 ## **ESSENTIAL**
 
 - **--vcfs_list** : path/url to CSV file containing chr chunk information, path to aggregated VCFs, VCFs index.
-- **--GRM_plink_input** : path/url to folder that contains bed, bim, fam files for aggregated VCFs.
+- **--grm_plink_input** : path/url to folder that contains bed, bim, fam files for aggregated VCFs.
 - **--pheno_col** : String with the name of the phenotypic column to be used as trait. Note for CB users, it must match the name of the column, i.e. 'Specimen type'.
 - **--phenofile** : path/url to file that contains phenotypic information about cohort to be analysed.
 - **--metadata** : path/url to file that contains metadata from phenotypic information.
