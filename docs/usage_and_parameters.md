@@ -60,7 +60,7 @@ nextflow run main.nf \
 
 ## **Optional**
 
-- **continuous_var_transformation** : Transforms continuous variables using 'log', 'log2', 'zscores' or 'None'.
+- **continuous_var_transformation** : Transforms continuous variables using 'log', 'log10', 'log2', 'zscores' or 'None'.
 - **continuous_var_aggregation** : Defines how to aggregate different measurements. Choose between 'max', 'min', 'median' or 'mean'.
 - **q_filter** : Minimum allele frequency filter for selecting sites.
 - **thres_m** : Minimum threshold for missingess.

@@ -1,8 +1,6 @@
 
 # CB integration with GWAS pipeline
 
-CB output needs to be prepared and fed into GWAS pipeline so user has an end-to-end experience.
-
 ## 1. **Ingestion**
 
 Two `.csv` files:

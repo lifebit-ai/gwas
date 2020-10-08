@@ -156,11 +156,14 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         # ...I cannot make it give back functions
         if (aggregation == 'mean'){
             aggregation = function(x) mean(x)
-        } else if (aggregation == 'median') {
+        }
+        if (aggregation == 'median') {
             aggregation = function(x) median(x)
-        } else if (aggregation == 'max') {
+        }
+        if (aggregation == 'max') {
             aggregation = function(x) max(x)
-        } else if (aggregation){
+        }
+        if (aggregation == 'min'){
             aggregation = function(x) min(x)
         }
 
@@ -174,13 +177,17 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
             pheno_cols = sapply(sets_measures, function(value) apply(pheno_cols[, str_detect(colnames(pheno_cols), value)], 1, function(x) aggregation(x)))
             #Group by instances
             pheno_cols = apply(pheno_cols, 1, function(x) aggregation(x))
-        }else{
+        }
+        if (dim(pheno_cols)[2] == 1) {
             pheno_cols = lapply(pheno_cols, function(x) aggregation(x))
         }
         pheno_cols = pheno_cols %>% as.vector
 
         if (transformation == 'log'){
             pheno_cols = log(pheno_cols)
+        }
+        if (transformation == 'log10'){
+            pheno_cols = log(pheno_cols, 10)
         }
         if (transformation == 'log2') {
             pheno_cols = log2(pheno_cols)
