@@ -34,7 +34,7 @@ nextflow run main.nf \
 ## **ESSENTIAL**
 
 - **--vcfs_list** : path/url to CSV file containing chr chunk information, path to aggregated VCFs, VCFs index.
-- **--GRM_plink_input** : path/url to S3 bucket that contains bed, bim, fam files for aggregated VCFs.
+- **--GRM_plink_input** : path/url to folder that contains bed, bim, fam files for aggregated VCFs.
 - **--pheno_col** : String with the name of the phenotypic column to be used as trait. Note for CB users, it must match the name of the column, i.e. 'Specimen type'.
 - **--phenofile** : path/url to file that contains phenotypic information about cohort to be analysed.
 - **--metadata** : path/url to file that contains metadata from phenotypic information.
@@ -73,5 +73,4 @@ nextflow run main.nf \
 - **top_n_sites** : Minimum number of top sites to be included in output.
 - **max_top_n_sites** : Maximum number of top sites to be included in output.
 - **saige_filename_pattern** : File pattern specifically for SAIGE files.
-
 
