@@ -70,7 +70,7 @@ out_path = paste0(outdir, "/", outprefix)
 # Data import & creation of files
 ###########################
 
-data = fread(input_file)
+data = data.table::fread(input_file)
 
 encodings = read_json(paste0(phenoCol,'.json'))
 
