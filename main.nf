@@ -16,8 +16,8 @@ ch_input_cb_data = params.phenofile ? Channel.value(params.phenofile) : Channel.
 ch_input_meta_data = params.metadata ? Channel.value(params.metadata) : Channel.empty()
 
 Channel
-  .fromFilePairs("${params.GRM_plink_input}",size:3, flat : true)
-  .ifEmpty { exit 1, "PLINK files not found: ${params.GRM_plink_input}" }
+  .fromFilePairs("${params.grm_plink_input}",size:3, flat : true)
+  .ifEmpty { exit 1, "PLINK files not found: ${params.grm_plink_input}" }
   .set { plinkCh }
 Channel
   .fromPath(params.plink_keep_pheno)
@@ -293,11 +293,11 @@ phenoCh_gwas_filtering.into{phenoCh}
 
 if (params.trait_type == 'binary'){
   process gwas_1_fit_null_glmm_bin {
-    tag "$plink_GRM_snps"
+    tag "$plink_grm_snps"
     publishDir "${params.outdir}/gwas_1_fit_null_glmm", mode: 'copy'
 
     input:
-    set val(plink_GRM_snps), file(bed), file(bim), file(fam) from plinkCh
+    set val(plink_grm_snps), file(bed), file(bim), file(fam) from plinkCh
     each file(phenoFile) from phenoCh
 
     output:
@@ -308,7 +308,7 @@ if (params.trait_type == 'binary'){
     script:
     """
     step1_fitNULLGLMM.R \
-      --plinkFile=${plink_GRM_snps} \
+      --plinkFile=${plink_grm_snps} \
       --phenoFile="${phenoFile}" \
       --phenoCol="PHE" \
       --traitType=binary       \
@@ -323,11 +323,11 @@ if (params.trait_type == 'binary'){
 
 if (params.trait_type == 'quantitative'){
   process gwas_1_fit_null_glmm_qt {
-    tag "$plink_GRM_snps"
+    tag "$plink_grm_snps"
     publishDir "${params.outdir}/gwas_1_fit_null_glmm", mode: 'copy'
 
     input:
-    set val(GRM_plink_input), file(bed), file(bim), file(fam) from plinkCh
+    set val(grm_plink_input), file(bed), file(bim), file(fam) from plinkCh
     each file(phenoFile) from phenoCh
 
     output:
@@ -338,7 +338,7 @@ if (params.trait_type == 'quantitative'){
     script:
     """
     step1_fitNULLGLMM.R \
-      --plinkFile=${GRM_plink_input} \
+      --plinkFile=${grm_plink_input} \
       --phenoFile="${phenoFile}" \
       --phenoCol="PHE" \
       --traitType=quantitative       \

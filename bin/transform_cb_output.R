@@ -155,16 +155,16 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         # pick transformation function - tried a case_when but it seems... 
         # ...I cannot make it give back functions
         if (aggregation == 'mean'){
-            aggregation = function(x) mean(x)
+            aggregation_fun = function(x) mean(x)
         }
         if (aggregation == 'median') {
-            aggregation = function(x) median(x)
+            aggregation_fun = function(x) median(x)
         }
         if (aggregation == 'max') {
-            aggregation = function(x) max(x)
+            aggregation_fun = function(x) max(x)
         }
         if (aggregation == 'min'){
-            aggregation = function(x) min(x)
+            aggregation_fun = function(x) min(x)
         }
 
         #Apply aggregation & transformation
@@ -174,12 +174,12 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
             sets_measures = str_extract(colnames(pheno_cols), "-[:digit:]") %>% unique()
             ## Group by the same group of arrays
             ##Merge arrays per instances
-            pheno_cols = sapply(sets_measures, function(value) apply(pheno_cols[, str_detect(colnames(pheno_cols), value)], 1, function(x) aggregation(x)))
+            pheno_cols = sapply(sets_measures, function(value) apply(pheno_cols[, str_detect(colnames(pheno_cols), value)], 1, function(x) aggregation_fun(x)))
             #Group by instances
-            pheno_cols = apply(pheno_cols, 1, function(x) aggregation(x))
+            pheno_cols = apply(pheno_cols, 1, function(x) aggregation_fun(x))
         }
-        if (dim(pheno_cols)[2] == 1) {
-            pheno_cols = lapply(pheno_cols, function(x) aggregation(x))
+        if (is.vector(pheno_cols) && length(dim(pheno_cols)) == 1) {
+            pheno_cols = lapply(pheno_cols, function(x) aggregation_fun(x))
         }
         pheno_cols = pheno_cols %>% as.vector
 
@@ -215,7 +215,8 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
             pheno_cols = apply(pheno_cols, 1, function(x) format(as.Date(x, "%d/%m/%Y"), "%Y%m%d") %>% as.integer)
             # Aggregate - gets the first column - arbitrary
             pheno_cols = apply(pheno_cols, 1, function(x) x[1])
-        }else{
+        }
+        if (is.vector(pheno_cols) && length(dim(pheno_cols)) == 1) {
             # If only one array, applies directly the transformation
             pheno_cols = lapply(pheno_cols, function(x) format(as.Date(x, "%d/%m/%Y"), "%Y%m%d") %>% as.integer) %>% as.vector
         }
