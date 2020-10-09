@@ -37,18 +37,19 @@ Assumes that sex comes from `participant phenotypic sex` -> This behaviour will 
 
 # Future work
 
-- [ ] **(1) Automatic inference of sex from genotypic data**
-   - [ ] Check how to do it: 
-      - seXY: https://academic.oup.com/bioinformatics/article/33/4/561/2666346
-      - plink: https://www.cog-genomics.org/plink/1.9/basic_stats#check_sex 
-   - [ ] Create trigget to run this option when no sex in phenoFile or user ask for it (exposing parameter).
-   - [ ] Make a Nextflow process which runs sex inference and adds it to the phenoFile
+- [ ] **(1) Add querying for data in instances**
 
-- [ ] **(2) Branch GWAS processes so that multiple reports can be generated and explored:**
-   - [ ] Modify reporting process so it allows to combine multiple reports in one report
-   - [ ] Modify reporting process so it allows to switch between reports
+
+- [ ] **(2) Implement multiple contrast reporting and handling of results**
+
 
 - [ ] **(3) GWAS post-analysis**
    - [ ] Add MAGMA & friends to run pathway-analysis
-   - [ ] Add IntAssoPlot https://www.frontiersin.org/articles/10.3389/fgene.2020.00260/full
+   - [ ] Expand on dataviz: 
+      - [ ] Add IntAssoPlot https://www.frontiersin.org/articles/10.3389/fgene.2020.00260/full
+      - [ ] Expand report with modules being run.
+      - [ ] Add interactivity when exploring results.
    - [ ] PRS within pipeline
+   - [ ] LDSC within pipeline
+   - [ ] Annovar within pipeline
+   - [ ] GWAMA/METAL within pipeline
