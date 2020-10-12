@@ -1,6 +1,7 @@
 # Usage
 
 In order to use this pipeline, you can run the following example:
+
 **Binary**
 ```bash
 nextflow run main.nf \
@@ -52,25 +53,25 @@ nextflow run main.nf \
 | Scenario 2 | case_vs_group_contrasts | User wants to run on a particular case but wants to compare to each of the other cases as controls independently | Subset case vs each group as control | Find associations that are different to an specific group |
 | Scenario 3 | all_vs_all | User doesn't have a particular group in mind and wants to run an exploration on the phenotype | All vs All approach | Allows for exploration or assumptions free analysis |
 
-- **case_group** : String containing name of the case group selected for contrasts.
+- **--case_group** : String containing name of the case group selected for contrasts.
 
 ## **Quantitative**
 
-- **trait_type** : Should be set to 'quantitative'.
+- **--trait_type** : Should be set to 'quantitative'.
 
 ## **Optional**
 
-- **continuous_var_transformation** : Transforms continuous variables using 'log', 'log10', 'log2', 'zscores' or 'None'.
-- **continuous_var_aggregation** : Defines how to aggregate different measurements. Choose between 'max', 'min', 'median' or 'mean'.
-- **q_filter** : Minimum allele frequency filter for selecting sites.
-- **thres_m** : Minimum threshold for missingess.
-- **thres_HWE** : Minimum threshold for Hardy-Weinberg Equilibrium
-- **plink_keep_pheno** : Space/tab-delimited text file with family IDs in the first column and within-family IDs in the second column, and removes all unlisted samples from the current analysis.
-- **saige_step1_extra_flags** : Additional flags for SAIGE, they should be formatted as "--LOCO=FALSE".
-- **outdir** : Output directory for results.
-- **gwas_cat** : Path to GWAS catalog CSV file. Defaults to 's3://lifebit-featured-datasets/projects/gel/gel-gwas/gwascat.csv'.
-- **output_tag** : Prefix to identify output files.
-- **top_n_sites** : Minimum number of top sites to be included in output.
-- **max_top_n_sites** : Maximum number of top sites to be included in output.
-- **saige_filename_pattern** : File pattern specifically for SAIGE files.
+- **--continuous_var_transformation** : Transforms continuous variables using 'log', 'log10', 'log2', 'zscores' or 'None'.
+- **--continuous_var_aggregation** : Defines how to aggregate different measurements. Choose between 'max', 'min', 'median' or 'mean'.
+- **--q_filter** : Minimum allele frequency filter for selecting sites.
+- **--thres_m** : Minimum threshold for missingess.
+- **--thres_HWE** : Minimum threshold for Hardy-Weinberg Equilibrium
+- **--plink_keep_pheno** : Space/tab-delimited text file with family IDs in the first column and within-family IDs in the second column, and removes all unlisted samples from the current analysis.
+- **--saige_step1_extra_flags** : Additional flags for SAIGE, they should be formatted as "--LOCO=FALSE".
+- **--outdir** : Output directory for results.
+- **--gwas_cat** : Path to GWAS catalog CSV file. Defaults to 's3://lifebit-featured-datasets/projects/gel/gel-gwas/gwascat.csv'.
+- **--output_tag** : Prefix to identify output files.
+- **--top_n_sites** : Minimum number of top sites to be included in output.
+- **--max_top_n_sites** : Maximum number of top sites to be included in output.
+- **--saige_filename_pattern** : File pattern specifically for SAIGE files.
 
