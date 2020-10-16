@@ -4,7 +4,5 @@ results/
 .nextflow*
 .gitignore
 README.md
-main.nf
-nextflow.config
 .vscode/
 testdata/
