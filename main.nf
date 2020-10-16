@@ -14,6 +14,7 @@
 ---------------------------------------------------*/
 ch_input_cb_data = params.phenofile ? Channel.value(params.phenofile) : Channel.empty()
 ch_input_meta_data = params.metadata ? Channel.value(params.metadata) : Channel.empty()
+ch_gwas_summary = params.gwas_summary ? Channel.value(params.gwas_summary) : Channel.empty()
 
 Channel
   .fromFilePairs("${params.grm_plink_input}",size:3, flat : true)
@@ -368,7 +369,7 @@ process gwas_2_spa_tests {
 
   output:
   file "*" into results
-  file("*.SAIGE.gwas.txt") into ch_report
+  file("*.SAIGE.gwas.txt") into ch_saige_output
 
   script:
   """
@@ -391,20 +392,18 @@ process gwas_2_spa_tests {
 }
 
 /*--------------------------------------------------
-  GWAS Analysis 2 with SAIGE - Generate report
+  GWAS Analysis 2 with SAIGE - Combine SAIGE outputs
 ---------------------------------------------------*/
 
-process create_report {
-  tag "report"
+process prepare_files {
+  tag "preparation_files"
   publishDir "${params.outdir}/MultiQC/", mode: 'copy'
 
   input:
-  file(saige_output) from ch_report.collect()
-  file(gwas_cat) from ch_gwas_cat
+  file(saige_output) from ch_saige_output.collect()
 
   output:
-  file "multiqc_report.html" into ch_report_outputs
-  set file("*png"), file("*ipynb"), file("*csv") into ch_report_outputs_all
+  set file("*top_n.csv"), file("*${param.output_tag}.csv") into (ch_ldsc_input, ch_report_input)
 
   script:
 
@@ -418,6 +417,223 @@ process create_report {
     --output_tag='${params.output_tag}' \
     --top_n_sites=${params.top_n_sites} \
     --max_top_n_sites=${params.max_top_n_sites}
+  """
+}
+/*--------------------------------------------------
+  LDSC - Genetic correlation and heritability
+---------------------------------------------------*/
+if (params.post_analysis == 'heritability' || params.post_analysis == 'genetic_correlation_h2'){
+  process prepare_files_ldsc {
+    tag "preparation_files"
+    publishDir "${params.outdir}/ldsc_inputs/", mode: 'copy'
+
+    input:
+    set file("*top_n.csv"), file(summary_stats) from ch_ldsc_input
+
+    output:
+    file("*transformed_${param.output_tag}.csv") into ch_ldsc_input2
+
+    script:
+
+    """
+    cp /opt/bin/* .
+    
+    convert_output.R \
+      --gwas_stats "$summary_stats"
+    """
+  }
+  process munge_saige_output {
+    tag "munge_saige_output"
+    publishDir "${params.outdir}/ldsc_inputs/", mode: 'copy'
+
+    input:
+    file(saige_summary_stats) from ch_ldsc_input2
+
+    output:
+    file("${params.output_tag}_ldsc.sumstats.gz") into ch_saige_ldsc
+
+    script:
+
+    """
+    cp /opt/bin/* .
+    mkdir assets/
+    cp /assets/* assets/
+    
+    munge_sumstats.py --sumstats $saige_summary_stats \
+                      --out "${params.output_tag}_ldsc" \
+                      --merge-alleles assets/w_hm3.snplist \
+                      --a1 Allele1 \
+                      --a2 Allele2 \
+                      --signed-sumstats Tstat,0 \
+                      --p p.value \
+                      --snp SNPID \
+                      --info inputationInfo
+    """
+  }
+}
+
+if (params.post_analysis == 'heritability'){
+
+  process heritability {
+    tag "heritability"
+    publishDir "${params.outdir}/heritability/", mode: 'copy'
+
+    input:
+    file(saige_output) from ch_saige_ldsc
+
+    output:
+    file("${param.output_tag}_h2.log") into ch_ldsc_report_input
+
+    script:
+
+    """
+    cp /opt/bin/* .
+    mkdir assets/
+    cp /assets/* assets/
+    
+    ldsc.py \
+      --h2 $saige_output \
+      --ref-ld-chr assets/eur_w_ld_chr/ \
+      --w-ld-chr assets/eur_w_ld_chr/ \
+      --out ${param.output_tag}_h2
+    """
+  }
+}
+
+if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_summary){
+  process prepare_gwas_summary_ldsc {
+    tag "preparation_gwas_summary_ldsc"
+    publishDir "${params.outdir}/ldsc_inputs/", mode: 'copy'
+
+    input:
+    file(summary_stats) from ch_gwas_summary
+
+    output:
+    file("*transformed_$summary_stats") into ch_gwas_summary_ldsc
+
+    script:
+
+    """
+    cp /opt/bin/* .
+    
+    convert_output.R \
+      --gwas_stats "$summary_stats"
+    """
+  }
+  //* Munge gwas stats
+
+  process munge_gwas_summary {
+    tag "munge_gwas_summary"
+    publishDir "${params.outdir}/ldsc_inputs/", mode: 'copy'
+
+    input:
+    file(summary_stats) from ch_gwas_summary
+
+    output:
+    file("gwas_summary.sumstats.gz") into ch_gwas_summary_ldsc
+
+    script:
+
+    """
+    cp /opt/bin/* .
+    mkdir assets/
+    cp /assets/* assets/
+    
+    munge_sumstats.py \
+          --sumstats $summary_stats \
+          --out gwas_summary \
+          --merge-alleles assets/w_hm3.snplist
+    """
+  }
+  //* Run genetic correlation
+  process genetic_correlation_h2 {
+    tag "genetic_correlation_h2"
+    publishDir "${params.outdir}/genetic_correlation/", mode: 'copy'
+
+    input:
+    file(gwas_summary_ldsc) from ch_gwas_summary_ldsc
+    file(saige_ldsc) from ch_ldsc_input2
+    output:
+    file("${param.output_tag}_genetic_correlation.log") into ch_ldsc_report_input
+
+    script:
+
+    """
+    cp /opt/bin/* .
+    mkdir assets/
+    cp /assets/* assets/
+    
+    ldsc.py \
+          --rg $saige_ldsc,$gwas_summary_ldsc \
+          --ref-ld-chr assets/eur_w_ld_chr/ \
+          --w-ld-chr assets/eur_w_ld_chr/ \
+          --out ${param.output_tag}_genetic_correlation \
+          --no-intercept
+    """
+  }
+
+}
+
+if(params.post_analysis){
+  process create_report_ldsc {
+    tag "report"
+    publishDir "${params.outdir}/MultiQC/", mode: 'copy'
+
+    input:
+    file(saige_output) from ch_report_input.collect()
+    file(gwas_cat) from ch_gwas_cat
+    file(ldsc_log) into ch_ldsc_report_input
+
+    output:
+    file "multiqc_report.html" into ch_report_outputs
+    set file("*png"), file("*ipynb"), file("*csv") into ch_report_outputs_all
+
+    script:
+
+    """
+    cp /opt/bin/* .
+
+    # creates gwascat_subset.csv
+    subset_gwascat.R \
+      --saige_output='saige_results_${params.output_tag}.csv' \
+      --gwas_cat='${gwas_cat}'
+
+    # creates <params.output_tag>_manhattan.png with analysis.csv as input
+    manhattan.R \
+      --saige_output='saige_results_${params.output_tag}.csv' \
+      --output_tag='${params.output_tag}'
+
+    # creates <params.output_tag>_qqplot_ci.png with analysis.csv as input
+    qqplot.R \
+      --saige_output='saige_results_${params.output_tag}.csv' \
+      --output_tag='${params.output_tag}'
+
+    # Generates the report
+    Rscript -e "rmarkdown::render('gwas_report.Rmd', params = list(manhattan='${params.output_tag}_manhattan.png',qqplot='${params.output_tag}_qqplot_ci.png', gwascat='gwascat_subset.csv', saige_results='saige_results_top_n.csv', trait_type='${params.trait_type}', ldsc_log="$ldsc_log"))"
+    mv gwas_report.html multiqc_report.html
+
+    # Generates the ipynb
+    jupytext --to ipynb gwas_report.Rmd
+    """
+  }
+}
+if(!params.post_analysis){
+  process create_report {
+  tag "report"
+  publishDir "${params.outdir}/MultiQC/", mode: 'copy'
+
+  input:
+  file(saige_output) from ch_report_input.collect()
+  file(gwas_cat) from ch_gwas_cat
+
+  output:
+  file "multiqc_report.html" into ch_report_outputs
+  set file("*png"), file("*ipynb"), file("*csv") into ch_report_outputs_all
+
+  script:
+
+  """
+  cp /opt/bin/* .
 
   # creates gwascat_subset.csv
   subset_gwascat.R \
@@ -435,10 +651,11 @@ process create_report {
     --output_tag='${params.output_tag}'
 
   # Generates the report
-  Rscript -e "rmarkdown::render('gwas_report.Rmd', params = list(manhattan='${params.output_tag}_manhattan.png',qqplot='${params.output_tag}_qqplot_ci.png', gwascat='gwascat_subset.csv', saige_results='saige_results_top_n.csv', trait_type='${params.trait_type}'))"
+  Rscript -e "rmarkdown::render('gwas_report.Rmd', params = list(manhattan='${params.output_tag}_manhattan.png',qqplot='${params.output_tag}_qqplot_ci.png', gwascat='gwascat_subset.csv', saige_results='saige_results_top_n.csv', trait_type='${params.trait_type}', ldsc_log="None"))"
   mv gwas_report.html multiqc_report.html
 
   # Generates the ipynb
   jupytext --to ipynb gwas_report.Rmd
   """
+  }
 }

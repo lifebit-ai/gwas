@@ -3,3 +3,5 @@ work/
 results/
 .DS_Store
 .idea/
+testdata/ldsc
+assets/eur_w_ld_chr
