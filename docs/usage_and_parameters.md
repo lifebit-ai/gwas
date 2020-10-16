@@ -86,25 +86,42 @@ nextflow run main.nf \
 | Scenario 2 | case_vs_group_contrasts | User wants to run on a particular case but wants to compare to each of the other cases as controls independently | Subset case vs each group as control | Find associations that are different to an specific group |
 | Scenario 3 | all_vs_all | User doesn't have a particular group in mind and wants to run an exploration on the phenotype | All vs All approach | Allows for exploration or assumptions free analysis |
 
-- **case_group** : String containing name of the case group selected for contrasts.
+- **--case_group** : String containing name of the case group selected for contrasts.
 
 ## **Quantitative**
 
-- **trait_type** : Should be set to 'quantitative'.
+- **--trait_type** : Should be set to 'quantitative'.
+
 
 ## **Optional**
 
-- **continuous_var_transformation** : Transforms continuous variables using 'log', 'log10', 'log2', 'zscores' or 'None'.
-- **continuous_var_aggregation** : Defines how to aggregate different measurements. Choose between 'max', 'min', 'median' or 'mean'.
-- **q_filter** : Minimum allele frequency filter for selecting sites.
-- **thres_m** : Minimum threshold for missingess.
-- **thres_HWE** : Minimum threshold for Hardy-Weinberg Equilibrium
-- **plink_keep_pheno** : Space/tab-delimited text file with family IDs in the first column and within-family IDs in the second column, and removes all unlisted samples from the current analysis.
-- **saige_step1_extra_flags** : Additional flags for SAIGE, they should be formatted as "--LOCO=FALSE".
-- **outdir** : Output directory for results.
-- **gwas_cat** : Path to GWAS catalog CSV file. Defaults to 's3://lifebit-featured-datasets/projects/gel/gel-gwas/gwascat.csv'.
-- **output_tag** : Prefix to identify output files.
-- **top_n_sites** : Minimum number of top sites to be included in output.
-- **max_top_n_sites** : Maximum number of top sites to be included in output.
-- **saige_filename_pattern** : File pattern specifically for SAIGE files.
+- **--continuous_var_transformation** : Transforms continuous variables using 'log', 'log10', 'log2', 'zscores' or 'None'.
+- **--continuous_var_aggregation** : Defines how to aggregate different measurements. Choose between 'max', 'min', 'median' or 'mean'.
+- **--q_filter** : Minimum allele frequency filter for selecting sites.
+- **--thres_m** : Minimum threshold for missingess.
+- **--thres_HWE** : Minimum threshold for Hardy-Weinberg Equilibrium
+- **--plink_keep_pheno** : Space/tab-delimited text file with family IDs in the first column and within-family IDs in the second column, and removes all unlisted samples from the current analysis.
+- **--saige_step1_extra_flags** : Additional flags for SAIGE, they should be formatted as "--LOCO=FALSE".
+- **--outdir** : Output directory for results.
+- **--gwas_cat** : Path to GWAS catalog CSV file. Defaults to 's3://lifebit-featured-datasets/projects/gel/gel-gwas/gwascat.csv'.
+- **--output_tag** : Prefix to identify output files.
+- **--top_n_sites** : Minimum number of top sites to be included in output.
+- **--max_top_n_sites** : Maximum number of top sites to be included in output.
+- **--saige_filename_pattern** : File pattern specifically for SAIGE files.
+
+## LDSC
+- **--post_analysis** : String with `genetic_correlation_h2` or `heritability` for running genetic correlation analysis or heritability after GWAS.
+- **--gwas_summary** : Path/URL to external gwas summary statistics to run genetic correlation analysis between cohort of interest and external GWAS summary statistics. The following column names and format (can also be comma-separated instead of whitespace-separated) are required to ensure it works:
+```
+snpid hg18chr bp a1 a2 or se pval info ngt CEUaf
+rs3131972	1	742584	A	G	1.092	0.0817	0.2819	0.694	0	0.16055
+rs3131969	1	744045	A	G	1.087	0.0781	0.2855	0.939	0	0.133028
+rs3131967	1	744197	T	C	1.093	0.0835	0.2859	0.869	0	.
+rs1048488	1	750775	T	C	0.9158	0.0817	0.2817	0.694	0	0.836449
+rs12562034	1	758311	A	G	0.9391	0.0807	0.4362	0.977	0	0.0925926
+rs4040617	1	769185	A	G	0.9205	0.0777	0.2864	0.98	0	0.87156
+rs28576697	1	860508	T	C	1.079	0.2305	0.7423	0.123	0	0.74537
+rs1110052	1	863421	T	G	1.088	0.2209	0.702	0.137	0	0.752294
+rs7523549	1	869180	T	C	1.823	0.8756	0.4929	0.13	0	0.0137615
+``` 
 
