@@ -403,7 +403,7 @@ process prepare_files {
   file(saige_output) from ch_saige_output.collect()
 
   output:
-  set file("*top_n.csv"), file("*${param.output_tag}.csv") into (ch_ldsc_input, ch_report_input)
+  set file("*top_n.csv"), file("*${params.output_tag}.csv") into (ch_ldsc_input, ch_report_input)
 
   script:
 
@@ -431,7 +431,7 @@ if (params.post_analysis == 'heritability' || params.post_analysis == 'genetic_c
     set file("*top_n.csv"), file(summary_stats) from ch_ldsc_input
 
     output:
-    file("*transformed_${param.output_tag}.csv") into ch_ldsc_input2
+    file("${params.output_tag}_transformed_gwas_stats.txt") into ch_ldsc_input2
 
     script:
 
@@ -439,7 +439,8 @@ if (params.post_analysis == 'heritability' || params.post_analysis == 'genetic_c
     cp /opt/bin/* .
     
     convert_output.R \
-      --gwas_stats "$summary_stats"
+      --gwas_stats "$summary_stats" \
+      --output_tag ${params.output_tag}
     """
   }
   process munge_saige_output {
@@ -455,7 +456,6 @@ if (params.post_analysis == 'heritability' || params.post_analysis == 'genetic_c
     script:
 
     """
-    cp /opt/bin/* .
     mkdir assets/
     cp /assets/* assets/
     
@@ -482,20 +482,19 @@ if (params.post_analysis == 'heritability'){
     file(saige_output) from ch_saige_ldsc
 
     output:
-    file("${param.output_tag}_h2.log") into ch_ldsc_report_input
+    file("${params.output_tag}_h2.log") into ch_ldsc_report_input
 
     script:
 
     """
-    cp /opt/bin/* .
     mkdir assets/
     cp /assets/* assets/
     
     ldsc.py \
       --h2 $saige_output \
-      --ref-ld-chr assets/eur_w_ld_chr/ \
-      --w-ld-chr assets/eur_w_ld_chr/ \
-      --out ${param.output_tag}_h2
+      --ref-ld-chr assets/ \
+      --w-ld-chr assets/ \
+      --out ${params.output_tag}_h2
     """
   }
 }
@@ -506,10 +505,10 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_summary){
     publishDir "${params.outdir}/ldsc_inputs/", mode: 'copy'
 
     input:
-    file(summary_stats) from ch_gwas_summary
+    val(gwas_summary_file) from ch_gwas_summary
 
     output:
-    file("*transformed_$summary_stats") into ch_gwas_summary_ldsc
+    file("external_transformed_gwas_stats.txt") into ch_gwas_summary_ldsc
 
     script:
 
@@ -517,7 +516,8 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_summary){
     cp /opt/bin/* .
     
     convert_output.R \
-      --gwas_stats "$summary_stats"
+      --gwas_stats "$gwas_summary_file" \
+      --output_tag "external"
     """
   }
   //* Munge gwas stats
@@ -527,21 +527,20 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_summary){
     publishDir "${params.outdir}/ldsc_inputs/", mode: 'copy'
 
     input:
-    file(summary_stats) from ch_gwas_summary
+    file(summary_stats) from ch_gwas_summary_ldsc
 
     output:
-    file("gwas_summary.sumstats.gz") into ch_gwas_summary_ldsc
+    file("external_gwas_summary.sumstats.gz") into ch_gwas_summary_ldsc2
 
     script:
 
     """
-    cp /opt/bin/* .
     mkdir assets/
     cp /assets/* assets/
     
     munge_sumstats.py \
-          --sumstats $summary_stats \
-          --out gwas_summary \
+          --sumstats "$summary_stats" \
+          --out external_gwas_summary \
           --merge-alleles assets/w_hm3.snplist
     """
   }
@@ -551,23 +550,22 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_summary){
     publishDir "${params.outdir}/genetic_correlation/", mode: 'copy'
 
     input:
-    file(gwas_summary_ldsc) from ch_gwas_summary_ldsc
-    file(saige_ldsc) from ch_ldsc_input2
+    file(gwas_summary_ldsc) from ch_gwas_summary_ldsc2
+    file(saige_ldsc) from ch_saige_ldsc
     output:
-    file("${param.output_tag}_genetic_correlation.log") into ch_ldsc_report_input
+    file("${params.output_tag}_genetic_correlation.log") into ch_ldsc_report_input
 
     script:
 
     """
-    cp /opt/bin/* .
     mkdir assets/
     cp /assets/* assets/
     
     ldsc.py \
           --rg $saige_ldsc,$gwas_summary_ldsc \
-          --ref-ld-chr assets/eur_w_ld_chr/ \
-          --w-ld-chr assets/eur_w_ld_chr/ \
-          --out ${param.output_tag}_genetic_correlation \
+          --ref-ld-chr assets/ \
+          --w-ld-chr assets/ \
+          --out ${params.output_tag}_genetic_correlation \
           --no-intercept
     """
   }
@@ -582,7 +580,7 @@ if(params.post_analysis){
     input:
     file(saige_output) from ch_report_input.collect()
     file(gwas_cat) from ch_gwas_cat
-    file(ldsc_log) into ch_ldsc_report_input
+    file(ldsc_log) from ch_ldsc_report_input
 
     output:
     file "multiqc_report.html" into ch_report_outputs
@@ -609,7 +607,7 @@ if(params.post_analysis){
       --output_tag='${params.output_tag}'
 
     # Generates the report
-    Rscript -e "rmarkdown::render('gwas_report.Rmd', params = list(manhattan='${params.output_tag}_manhattan.png',qqplot='${params.output_tag}_qqplot_ci.png', gwascat='gwascat_subset.csv', saige_results='saige_results_top_n.csv', trait_type='${params.trait_type}', ldsc_log="$ldsc_log"))"
+    Rscript -e "rmarkdown::render('gwas_report.Rmd', params = list(manhattan='${params.output_tag}_manhattan.png',qqplot='${params.output_tag}_qqplot_ci.png', gwascat='gwascat_subset.csv', saige_results='saige_results_top_n.csv', trait_type='${params.trait_type}', ldsc_log='$ldsc_log'))"
     mv gwas_report.html multiqc_report.html
 
     # Generates the ipynb

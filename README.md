@@ -15,5 +15,7 @@ nextflow run main.nf \
   --design_mode 'case_vs_control_contrast' \
   --case_group "NOSE" \
   --trait_type "binary" \
-  --vcfs_list "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/vcfs.csv"
+  --vcfs_list "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/vcfs.csv" \
+  --post_analysis "genetic_correlation_h2" \
+  --gwas_summary "https://gist.githubusercontent.com/mcamarad/e98cdd5e69413fb6189ed70405c43ef4/raw/e4f8fc5bd62c70ef38c6cedfdfaa6d087f586054/gwas_summary_qt.csv"
 ```
