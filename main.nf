@@ -18,7 +18,7 @@ ch_gwas_summary = params.gwas_summary ? Channel.value(params.gwas_summary) : Cha
 
 Channel
   .fromFilePairs("${params.grm_plink_input}",size:3, flat : true)
-  .ifEmpty { exit 1, "PLINK files not found: ${params.grm_plink_input}" }
+  .ifEmpty { exit 1, "PLINK files not found: ${params.grm_plink_input}.\nPlease specify a valid --grm_plink_input value. eg. testdata/*.{bed,bim,fam}" }
   .set { plinkCh }
 Channel
   .fromPath(params.plink_keep_pheno)
