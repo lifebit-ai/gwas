@@ -102,14 +102,4 @@ DTable(table)
 
 # Genetic correlation and heritability - LDSC output
 
-```{r, comment=''}
-if(params$ldsc_log != "None"){
-
-cat(readLines(params$ldsc_log), sep = '\n')
-
-}
-if(params$ldsc_log == 'None'){
-cat(print('No post analysis selected. If you want to run heritability and genetic correlation, please provide --post_analysis param.'))
-}
-
-```
+If `--post_analysis` option was provided with input `heritability` or `genetic_correlation_h2`, then the output can be found as a text file in `Results` tab -> `results/` -> `heritability` or `genetic_correlation` folder, respectively. 
