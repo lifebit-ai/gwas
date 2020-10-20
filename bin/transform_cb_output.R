@@ -134,7 +134,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         # Store .json & csv with encoding mappings, will be used later on.
         encoding %>% 
             as.data.frame %>%
-            write.csv(file.path(column, ".csv", fsep = ""), quotes=TRUE, row.names=FALSE)
+            write.csv(file.path(column, ".csv", fsep = ""), quote=TRUE, row.names=FALSE)
         encoding_json = toJSON(encoding,keep_vec_names=TRUE)
         write(encoding_json, file = file.path(column, ".json", fsep = ""))
         #Use mapping list on aggregated columns to get
