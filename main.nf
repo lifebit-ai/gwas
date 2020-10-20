@@ -50,6 +50,7 @@ if (params.phenofile){
     output:
     file("${params.output_tag}_.phe") into ch_transform_cb
     file("*.json") into ch_encoding_json
+    file("*.csv") into ch_encoding_csv
 
     script:
     """

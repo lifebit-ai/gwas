@@ -13,14 +13,17 @@ These two files need to be passed to the pipeline in order to make it work.
 
 Adds a script that takes the phenotypic data and metadata associated and performs the following tasks:
 - Cleans the data from files with missing genotypic data
-- Reads column by column selected by the user and applies a corresponding aggregation multiple measurements and additionally transform the data if needed. Currently, is compatible with:
-  - Categorical (multi-level or not) -> Selects the first measurement until querying is allowed. Adds unknown label for NA, but they are not selected for contrast.
-  - Integer/Continuous -> Applies aggregation using mean, min, max, avg across measurements (instances and arrays) and transformation (log, log2, Z-score, None). It does the transformation by applying it by grouping all the arrays of an instance, and then transforming the resulting summarised instances.
-  - Dates and Time -> transforms it into YYYYMMDD integer which can be used as covariates
+- Reads column by column selected by the user and applies a corresponding aggregation for multiple measurements and additionally transform the data if needed. Currently, is compatible with:
+  - Categorical (multi-level or not) -> Selects the first measurement until querying is allowed. 
+    - Adds `Unknown` label instead of NA, they are treated as another group in analysis downstream and used as part of controls (when contrast group is specified) or as a constrast group (if no contrast group is specified)  -> **This behaviour will be reviewed in the future and modified accordingly.**
+  - Integer/Continuous -> Applies aggregation using mean, min, max, avg across measurements (instances and arrays) and transformation (log, log10, log2, Z-score, None). 
+    - The aggregation by applying it by grouping all the arrays of an instance, and then aggregating again the resulting summarised instances.
+    - If NAs are present across arrays the aggregation will ignore them when computing the aggregation.
+  - Dates and Time -> transforms them into `YYYYMMDD` integer which can be used as covariates
   - Text -> Removes free text
 - Generates `.phe` file for GWAS
 
-Assumes that sex comes from `participant phenotypic sex` -> This behaviour will be change in the future.
+Note: It doesn't assume that sex comes from any column in particular. If present it will be kept as a covariate for GWAS and transformed as any other categorical variable.
 
 ## 3. **Multiple design matrices**
 
