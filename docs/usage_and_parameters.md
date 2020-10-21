@@ -112,6 +112,7 @@ nextflow run main.nf \
 ## LDSC
 - **--post_analysis** : String with `genetic_correlation_h2` or `heritability` for running genetic correlation analysis or heritability after GWAS.
 - **--gwas_summary** : Path/URL to external gwas summary statistics to run genetic correlation analysis between cohort of interest and external GWAS summary statistics. The following column names and format (can also be comma-separated instead of whitespace-separated) are required to ensure it works:
+
 ```
 snpid hg18chr bp a1 a2 or se pval info ngt CEUaf
 rs3131972	1	742584	A	G	1.092	0.0817	0.2819	0.694	0	0.16055
@@ -124,4 +125,4 @@ rs28576697	1	860508	T	C	1.079	0.2305	0.7423	0.123	0	0.74537
 rs1110052	1	863421	T	G	1.088	0.2209	0.702	0.137	0	0.752294
 rs7523549	1	869180	T	C	1.823	0.8756	0.4929	0.13	0	0.0137615
 ``` 
-
+- **--external_gwas_tag** : String containing tag to be used to identify external GWAS resource for LDSC.

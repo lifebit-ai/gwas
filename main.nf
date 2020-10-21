@@ -409,8 +409,7 @@ process prepare_files {
   script:
 
   """
-  cp /opt/bin/* .
-  
+
   # creates 2 .csv files, saige_results_<params.output_tag>.csv, saige_results_top_n.csv
   concat_chroms.R \
     --saige_output_name='saige_results' \
@@ -437,8 +436,6 @@ if (params.post_analysis == 'heritability' || params.post_analysis == 'genetic_c
     script:
 
     """
-    cp /opt/bin/* .
-    
     convert_output.R \
       --gwas_stats "$summary_stats" \
       --output_tag ${params.output_tag}
@@ -509,16 +506,14 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_summary){
     val(gwas_summary_file) from ch_gwas_summary
 
     output:
-    file("external_transformed_gwas_stats.txt") into ch_gwas_summary_ldsc
+    file("${params.external_gwas_tag}_transformed_gwas_stats.txt") into ch_gwas_summary_ldsc
 
     script:
 
     """
-    cp /opt/bin/* .
-    
     convert_output.R \
       --gwas_stats "$gwas_summary_file" \
-      --output_tag "external"
+      --output_tag "${params.external_gwas_tag}"
     """
   }
   //* Munge gwas stats
@@ -531,7 +526,7 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_summary){
     file(summary_stats) from ch_gwas_summary_ldsc
 
     output:
-    file("external_gwas_summary.sumstats.gz") into ch_gwas_summary_ldsc2
+    file("${params.external_gwas_tag}_gwas_summary.sumstats.gz") into ch_gwas_summary_ldsc2
 
     script:
 
@@ -541,7 +536,7 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_summary){
     
     munge_sumstats.py \
           --sumstats "$summary_stats" \
-          --out external_gwas_summary \
+          --out "${params.external_gwas_tag}_gwas_summary" \
           --merge-alleles assets/w_hm3.snplist
     """
   }
