@@ -1,0 +1,8 @@
+.git/
+work/
+results/
+.nextflow*
+.gitignore
+README.md
+.vscode/
+testdata/

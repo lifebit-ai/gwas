@@ -1,7 +1,6 @@
 # Usage
 
 In order to use this pipeline, you can run the following example:
-
 **Binary**
 ```bash
 nextflow run main.nf \
@@ -28,6 +27,40 @@ nextflow run main.nf \
   --pheno_col "Height (HCM)" \
   --trait_type "quantitative" \
   --vcfs_list "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/vcfs.csv"
+```
+
+**LDSC - Genetic correlation with an external GWAS summary stats**
+```bash
+nextflow run main.nf \
+  --grm_plink_input "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/sampleA.{bed,bim,fam}" \
+  --phenofile "https://gist.githubusercontent.com/mcamarad/e98cdd5e69413fb6189ed70405c43ef4/raw/d602bec4b31d5d75f74f1dbb408bd392db57bdb6/cohort_data_phenos.csv" \
+  --metadata "https://gist.githubusercontent.com/mcamarad/e98cdd5e69413fb6189ed70405c43ef4/raw/d602bec4b31d5d75f74f1dbb408bd392db57bdb6/metadata.csv" \
+  --continuous_var_aggregation "mean" \
+  --continuous_var_transformation "zscore" \
+  --pheno_col "Specimen type" \
+  --design_mode 'case_vs_control_contrast' \
+  --case_group "NOSE" \
+  --trait_type "binary" \
+  --vcfs_list "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/vcfs.csv" \
+  --post_analysis "genetic_correlation_h2" \
+  --gwas_summary "https://gist.githubusercontent.com/mcamarad/e98cdd5e69413fb6189ed70405c43ef4/raw/e4f8fc5bd62c70ef38c6cedfdfaa6d087f586054/gwas_summary_qt.csv"
+```
+
+**LDSC - Heritability**
+
+```bash
+nextflow run main.nf \
+  --grm_plink_input "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/sampleA.{bed,bim,fam}" \
+  --phenofile "https://gist.githubusercontent.com/mcamarad/e98cdd5e69413fb6189ed70405c43ef4/raw/d602bec4b31d5d75f74f1dbb408bd392db57bdb6/cohort_data_phenos.csv" \
+  --metadata "https://gist.githubusercontent.com/mcamarad/e98cdd5e69413fb6189ed70405c43ef4/raw/d602bec4b31d5d75f74f1dbb408bd392db57bdb6/metadata.csv" \
+  --continuous_var_aggregation "mean" \
+  --continuous_var_transformation "zscore" \
+  --pheno_col "Specimen type" \
+  --design_mode 'case_vs_control_contrast' \
+  --case_group "NOSE" \
+  --trait_type "binary" \
+  --vcfs_list "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/vcfs.csv" \
+  --post_analysis "heritability" 
 ```
 
 # Parameters
@@ -59,6 +92,7 @@ nextflow run main.nf \
 
 - **--trait_type** : Should be set to 'quantitative'.
 
+
 ## **Optional**
 
 - **--continuous_var_transformation** : Transforms continuous variables using 'log', 'log10', 'log2', 'zscores' or 'None'.
@@ -75,3 +109,20 @@ nextflow run main.nf \
 - **--max_top_n_sites** : Maximum number of top sites to be included in output.
 - **--saige_filename_pattern** : File pattern specifically for SAIGE files.
 
+## LDSC
+- **--post_analysis** : String with `genetic_correlation_h2` or `heritability` for running genetic correlation analysis or heritability after GWAS.
+- **--gwas_summary** : Path/URL to external gwas summary statistics to run genetic correlation analysis between cohort of interest and external GWAS summary statistics. The following column names and format (can also be comma-separated instead of whitespace-separated) are required to ensure it works:
+
+```
+snpid hg18chr bp a1 a2 or se pval info ngt CEUaf
+rs3131972	1	742584	A	G	1.092	0.0817	0.2819	0.694	0	0.16055
+rs3131969	1	744045	A	G	1.087	0.0781	0.2855	0.939	0	0.133028
+rs3131967	1	744197	T	C	1.093	0.0835	0.2859	0.869	0	.
+rs1048488	1	750775	T	C	0.9158	0.0817	0.2817	0.694	0	0.836449
+rs12562034	1	758311	A	G	0.9391	0.0807	0.4362	0.977	0	0.0925926
+rs4040617	1	769185	A	G	0.9205	0.0777	0.2864	0.98	0	0.87156
+rs28576697	1	860508	T	C	1.079	0.2305	0.7423	0.123	0	0.74537
+rs1110052	1	863421	T	G	1.088	0.2209	0.702	0.137	0	0.752294
+rs7523549	1	869180	T	C	1.823	0.8756	0.4929	0.13	0	0.0137615
+``` 
+- **--external_gwas_tag** : String containing tag to be used to identify external GWAS resource for LDSC.

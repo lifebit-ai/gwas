@@ -15,7 +15,7 @@ Adds a script that takes the phenotypic data and metadata associated and perform
 - Cleans the data from files with missing genotypic data
 - Reads column by column selected by the user and applies a corresponding aggregation multiple measurements and additionally transform the data if needed. Currently, is compatible with:
   - Categorical (multi-level or not) -> Selects the first measurement until querying is allowed. Adds unknown label for NA, but they are not selected for contrast.
-  - Integer/Continuous -> Applies aggregation using mean, min, max, avg across measurements (instances and arrays) and transformation (log, log2, Z-score, None)
+  - Integer/Continuous -> Applies aggregation using mean, min, max, avg across measurements (instances and arrays) and transformation (log, log2, Z-score, None). It does the transformation by applying it by grouping all the arrays of an instance, and then transforming the resulting summarised instances.
   - Dates and Time -> transforms it into YYYYMMDD integer which can be used as covariates
   - Text -> Removes free text
 - Generates `.phe` file for GWAS
@@ -50,6 +50,8 @@ Assumes that sex comes from `participant phenotypic sex` -> This behaviour will 
       - [ ] Expand report with modules being run.
       - [ ] Add interactivity when exploring results.
    - [ ] PRS within pipeline
-   - [ ] LDSC within pipeline
+   - [x] LDSC within pipeline
    - [ ] Annovar within pipeline
    - [ ] GWAMA/METAL within pipeline
+
+

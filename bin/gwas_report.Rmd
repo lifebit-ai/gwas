@@ -15,6 +15,7 @@ params:
   gwascat: "gwascat_subset.csv"
   trait_type: 'binary'
   saige_results: "saige_results_top_n.csv"
+  ldsc_log: "None"
 title: "`r paste0('Genomics England GWAS Report' , '') `"
 author: ""
 date: ""
@@ -98,3 +99,7 @@ reordered_columns <- c( "chr_id",  "start", "end", "snps", "strand",  "mapped_ge
 table <- table[, reordered_columns]
 DTable(table)
 ```
+
+# Genetic correlation and heritability - LDSC output
+
+If `--post_analysis` option was provided with input `heritability` or `genetic_correlation_h2`, then the output can be found as a text file in `Results` tab -> `results/` -> `heritability` or `genetic_correlation` folder, respectively. 
