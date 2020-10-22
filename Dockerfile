@@ -78,6 +78,7 @@ RUN conda env export --name gel-gwas-1.0dev > gel-gwas-1.0dev.yml
 
 RUN mkdir /opt/bin
 COPY bin/* /opt/bin/
+COPY setup.R /
 
 RUN find /opt/bin/ -type f -iname "*.py" -exec chmod +x {} \; && \
     find /opt/bin/ -type f -iname "*.R" -exec chmod +x {} \; && \
@@ -85,6 +86,7 @@ RUN find /opt/bin/ -type f -iname "*.py" -exec chmod +x {} \; && \
     find /opt/bin/ -type f -iname "*.css" -exec chmod +x {} \; && \
     find /opt/bin/ -type f -iname "*.Rmd" -exec chmod +x {} \;
 
+RUN ./setup.R
 # Instruct R processes to use these empty files instead of clashing with a local version
 RUN touch .Rprofile
 RUN touch .Renviron

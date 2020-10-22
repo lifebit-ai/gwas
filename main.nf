@@ -579,19 +579,17 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_summary){
 
  //* gwas catalogue
 
-if (params.gwas_cat_study_id){
-  gwas_catalogue_ftp_ch = Channel
-      .fromPath(params.gwas_catalogue_ftp, checkIfExists: true)
-      .ifEmpty { exit 1, "GWAS catalogue ftp locations not found: ${params.gwas_catalogue_ftp}" }
-      .splitCsv(header: true)
-      .map { row -> tuple(row.study_accession, row.ftp_link_harmonised_summary_stats) }
-      .filter{ it[0] == params.gwas_cat_study_id}
-      .ifEmpty { exit 1, "The GWAS study accession number you provided does not come as a harmonized dataset that can be used as a base cohort "}
-      .flatten()
-      .last()
-}
-
 if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_cat_study_id){
+
+  gwas_catalogue_ftp_ch = Channel.fromPath(params.gwas_catalogue_ftp, checkIfExists: true)
+    .ifEmpty { exit 1, "GWAS catalogue ftp locations not found: ${params.gwas_catalogue_ftp}" }
+    .splitCsv(header: true)
+    .map { row -> tuple(row.study_accession, row.ftp_link_harmonised_summary_stats) }
+    .filter{ it[0] == params.gwas_cat_study_id}
+    .ifEmpty { exit 1, "The GWAS study accession number you provided does not come as a harmonized dataset that can be used as a base cohort "}
+    .flatten()
+    .last()
+
   process download_gwas_catalogue {
     label "high_memory"
     publishDir "${params.outdir}/GWAS_cat", mode: "copy"
@@ -616,7 +614,7 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_cat_study_id
     file gwas_catalogue_base from downloaded_gwas_catalogue_ch
     
     output:
-    file("${param.gwas_cat_study_id}.data") into transformed_base_ch
+    file("${params.gwas_cat_study_id}.data") into transformed_base_ch
     
     script:
     """
@@ -651,7 +649,7 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_cat_study_id
     """
   }
   //* Run genetic correlation
-  process genetic_correlation_h2 {
+  process genetic_correlation_h2_gwas_cat {
     tag "genetic_correlation_h2"
     publishDir "${params.outdir}/genetic_correlation/", mode: 'copy'
 
