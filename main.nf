@@ -10,6 +10,15 @@
 */
 
 /*--------------------------------------------------
+  Initial checks
+--------------------------------------------------*/
+
+if (params.gwas_summary && params.gwas_cat_study_id) {
+  exit 1, "You have provided both external gwas summary statistics and GWAS catalogue summary statistics: only one cohort can be used. \
+  \nPlease use only one of these inputs (i.e. only --gwas_summary or only --gwas_cat_study_id)."
+}
+
+/*--------------------------------------------------
   Channel setup
 ---------------------------------------------------*/
 ch_input_cb_data = params.phenofile ? Channel.value(params.phenofile) : Channel.empty()
@@ -537,6 +546,107 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_summary){
     munge_sumstats.py \
           --sumstats "$summary_stats" \
           --out "${params.external_gwas_tag}_gwas_summary" \
+          --merge-alleles assets/w_hm3.snplist
+    """
+  }
+  //* Run genetic correlation
+  process genetic_correlation_h2 {
+    tag "genetic_correlation_h2"
+    publishDir "${params.outdir}/genetic_correlation/", mode: 'copy'
+
+    input:
+    file(gwas_summary_ldsc) from ch_gwas_summary_ldsc2
+    file(saige_ldsc) from ch_saige_ldsc
+    output:
+    file("${params.output_tag}_genetic_correlation.log") into ch_ldsc_report_input
+
+    script:
+
+    """
+    mkdir assets/
+    cp /assets/* assets/
+    
+    ldsc.py \
+          --rg $saige_ldsc,$gwas_summary_ldsc \
+          --ref-ld-chr assets/ \
+          --w-ld-chr assets/ \
+          --out ${params.output_tag}_genetic_correlation \
+          --no-intercept
+    """
+  }
+
+}
+
+ //* gwas catalogue
+
+if (params.gwas_cat_study_id){
+  gwas_catalogue_ftp_ch = Channel
+      .fromPath(params.gwas_catalogue_ftp, checkIfExists: true)
+      .ifEmpty { exit 1, "GWAS catalogue ftp locations not found: ${params.gwas_catalogue_ftp}" }
+      .splitCsv(header: true)
+      .map { row -> tuple(row.study_accession, row.ftp_link_harmonised_summary_stats) }
+      .filter{ it[0] == params.gwas_cat_study_id}
+      .ifEmpty { exit 1, "The GWAS study accession number you provided does not come as a harmonized dataset that can be used as a base cohort "}
+      .flatten()
+      .last()
+}
+
+if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_cat_study_id){
+  process download_gwas_catalogue {
+    label "high_memory"
+    publishDir "${params.outdir}/GWAS_cat", mode: "copy"
+    
+    input:
+    val(ftp_link) from gwas_catalogue_ftp_ch
+    
+    output:
+    file("*.h.tsv.gz") into downloaded_gwas_catalogue_ch
+    
+    script:
+    """
+    wget ${ftp_link}
+    """
+  }
+
+  process transform_gwas_catalogue {
+    label "high_memory"
+    publishDir "${params.outdir}/GWAS_cat", mode: "copy"
+    
+    input:
+    file gwas_catalogue_base from downloaded_gwas_catalogue_ch
+    
+    output:
+    file("${param.gwas_cat_study_id}.data") into transformed_base_ch
+    
+    script:
+    """
+    transform_gwas_catalogue.R --input_gwas_cat "${gwas_catalogue_base}" \
+                               --outprefix "${params.gwas_cat_study_id}"
+    """
+    }
+
+  
+  //* Munge gwas cat stats
+
+  process munge_gwas_cat_summary {
+    tag "munge_gwas_summary"
+    publishDir "${params.outdir}/ldsc_inputs/", mode: 'copy'
+
+    input:
+    file(summary_stats) from transformed_base_ch
+
+    output:
+    file("${params.gwas_cat_study_id}_gwas_summary.sumstats.gz") into ch_gwas_summary_ldsc2
+
+    script:
+
+    """
+    mkdir assets/
+    cp /assets/* assets/
+    
+    munge_sumstats.py \
+          --sumstats "$summary_stats" \
+          --out "${params.gwas_cat_study_id}_gwas_summary" \
           --merge-alleles assets/w_hm3.snplist
     """
   }
