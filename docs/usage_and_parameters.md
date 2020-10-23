@@ -125,4 +125,7 @@ rs28576697	1	860508	T	C	1.079	0.2305	0.7423	0.123	0	0.74537
 rs1110052	1	863421	T	G	1.088	0.2209	0.702	0.137	0	0.752294
 rs7523549	1	869180	T	C	1.823	0.8756	0.4929	0.13	0	0.0137615
 ``` 
+- **--gwas_cat_study_id** : String containing study ID for GWAS study in GWAS catalogue.
+- **--gwas_cat_study_size** : Integer contaning sample size for GWAS study.
+- **--gwas_catalogue_ftp** : String https link or path to where gwas catalogue download is provided. Defaults to `https://lifebit-featured-datasets.s3-eu-west-1.amazonaws.com/projects/gel/prs/ftp_locations_harmonized.csv`.
 - **--external_gwas_tag** : String containing tag to be used to identify external GWAS resource for LDSC.
