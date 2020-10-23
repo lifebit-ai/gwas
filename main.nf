@@ -546,8 +546,7 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_summary){
     munge_sumstats.py \
           --sumstats "$summary_stats" \
           --out "${params.external_gwas_tag}_gwas_summary" \
-          --merge-alleles assets/w_hm3.snplist \
-          --signed-sumstats BETA,0
+          --merge-alleles assets/w_hm3.snplist
     """
   }
   //* Run genetic correlation
@@ -646,7 +645,8 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_cat_study_id
     munge_sumstats.py \
           --sumstats "$summary_stats" \
           --out "${params.gwas_cat_study_id}_gwas_summary" \
-          --merge-alleles assets/w_hm3.snplist
+          --merge-alleles assets/w_hm3.snplist \
+          --signed-sumstats BETA,0
     """
   }
   //* Run genetic correlation
