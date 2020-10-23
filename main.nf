@@ -547,6 +547,7 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_summary){
           --sumstats "$summary_stats" \
           --out "${params.external_gwas_tag}_gwas_summary" \
           --merge-alleles assets/w_hm3.snplist
+          --signed-sumstats BETA,0 \
     """
   }
   //* Run genetic correlation
