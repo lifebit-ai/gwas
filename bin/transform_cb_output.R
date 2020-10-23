@@ -131,7 +131,12 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         # Encode unique values and create mapping list
         encoding = as.list(1:length(pheno_values))
         names(encoding) = pheno_values
-        # Store .json with encoding mappings, will be used later on.
+        # Store .json & csv with encoding mappings, will be used later on.
+        #csv
+        encoding_csv = data.frame(code = 1:length(pheno_values),
+                                  original = pheno_values)
+        write.csv(encoding_csv, file.path(column, ".csv", fsep = ""), quote=TRUE, row.names=FALSE)
+        #json
         encoding_json = toJSON(encoding,keep_vec_names=TRUE)
         write(encoding_json, file = file.path(column, ".json", fsep = ""))
         #Use mapping list on aggregated columns to get
@@ -155,16 +160,16 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         # pick transformation function - tried a case_when but it seems... 
         # ...I cannot make it give back functions
         if (aggregation == 'mean'){
-            aggregation_fun = function(x) mean(x)
+            aggregation_fun = function(x) mean(x, na.rm=TRUE)
         }
         if (aggregation == 'median') {
-            aggregation_fun = function(x) median(x)
+            aggregation_fun = function(x) median(x, na.rm=TRUE)
         }
         if (aggregation == 'max') {
-            aggregation_fun = function(x) max(x)
+            aggregation_fun = function(x) max(x, na.rm=TRUE)
         }
         if (aggregation == 'min'){
-            aggregation_fun = function(x) min(x)
+            aggregation_fun = function(x) min(x, na.rm=TRUE)
         }
 
         #Apply aggregation & transformation
@@ -193,7 +198,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
             pheno_cols = log2(pheno_cols)
         } 
         if (transformation == 'zscore') {
-            pheno_cols = (pheno_cols - mean(pheno_cols)) / sd(pheno_cols)
+            pheno_cols = (pheno_cols - mean(pheno_cols, na.rm=TRUE)) / sd(pheno_cols, na.rm=TRUE)
         }
         if (transformation == 'None'){
             pheno_cols = pheno_cols
