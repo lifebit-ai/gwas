@@ -646,7 +646,8 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_cat_study_id
           --sumstats "$summary_stats" \
           --out "${params.gwas_cat_study_id}_gwas_summary" \
           --merge-alleles assets/w_hm3.snplist \
-          --signed-sumstats BETA,0
+          --signed-sumstats BETA,0 \
+          --N ${params.gwas_cat_study_size}
     """
   }
   //* Run genetic correlation
