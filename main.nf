@@ -21,6 +21,7 @@ if (params.gwas_summary && params.gwas_cat_study_id) {
 /*--------------------------------------------------
   Channel setup
 ---------------------------------------------------*/
+ch_hapmap3_snplist =  params.hapmap3_snplist ? Channel.value(file(params.hapmap3_snplist)) :  "null"
 ch_input_cb_data = params.phenofile ? Channel.value(params.phenofile) : Channel.empty()
 ch_input_meta_data = params.metadata ? Channel.value(params.metadata) : Channel.empty()
 ch_gwas_summary = params.gwas_summary ? Channel.value(params.gwas_summary) : Channel.empty()
@@ -456,6 +457,7 @@ if (params.post_analysis == 'heritability' || params.post_analysis == 'genetic_c
 
     input:
     file(saige_summary_stats) from ch_ldsc_input2
+    file(hapmap3_snplist) from ch_hapmap3_snplist
 
     output:
     file("${params.output_tag}_ldsc.sumstats.gz") into ch_saige_ldsc
@@ -463,12 +465,9 @@ if (params.post_analysis == 'heritability' || params.post_analysis == 'genetic_c
     script:
 
     """
-    mkdir assets/
-    cp /assets/* assets/
-    
     munge_sumstats.py --sumstats $saige_summary_stats \
                       --out "${params.output_tag}_ldsc" \
-                      --merge-alleles assets/w_hm3.snplist \
+                      --merge-alleles $hapmap3_snplist \
                       --a1 Allele1 \
                       --a2 Allele2 \
                       --signed-sumstats Tstat,0 \
