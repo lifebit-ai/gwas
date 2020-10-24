@@ -22,6 +22,7 @@ if (params.gwas_summary && params.gwas_cat_study_id) {
   Channel setup
 ---------------------------------------------------*/
 ch_hapmap3_snplist =  params.hapmap3_snplist ? Channel.value(file(params.hapmap3_snplist)) :  "null"
+ch_ld_scores_tar_bz2 =  params.ld_scores_tar_bz2 ? Channel.value(file(params.ld_scores_tar_bz2)) :  "null"
 ch_input_cb_data = params.phenofile ? Channel.value(params.phenofile) : Channel.empty()
 ch_input_meta_data = params.metadata ? Channel.value(params.metadata) : Channel.empty()
 ch_gwas_summary = params.gwas_summary ? Channel.value(params.gwas_summary) : Channel.empty()
@@ -486,16 +487,15 @@ if (params.post_analysis == 'heritability'){
 
     input:
     file(saige_output) from ch_saige_ldsc
+    file(ld_scores_tar_bz2) from ch_ld_scores_tar_bz2
 
     output:
     file("${params.output_tag}_h2.log") into ch_ldsc_report_input
 
     script:
-
     """
-    mkdir assets/
-    cp /assets/* assets/
-    
+    tar -xvjf ${ld_scores_tar_bz2}
+
     ldsc.py \
       --h2 $saige_output \
       --ref-ld-chr assets/ \
@@ -532,6 +532,7 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_summary){
 
     input:
     file(summary_stats) from ch_gwas_summary_ldsc
+    file(hapmap3_snplist) from ch_hapmap3_snplist
 
     output:
     file("${params.external_gwas_tag}_gwas_summary.sumstats.gz") into ch_gwas_summary_ldsc2
@@ -539,15 +540,13 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_summary){
     script:
 
     """
-    mkdir assets/
-    cp /assets/* assets/
-    
     munge_sumstats.py \
-          --sumstats "$summary_stats" \
+          --sumstats $summary_stats \
           --out "${params.external_gwas_tag}_gwas_summary" \
-          --merge-alleles assets/w_hm3.snplist
+          --merge-alleles $hapmap3_snplist
     """
   }
+
   //* Run genetic correlation
   process genetic_correlation_h2 {
     tag "genetic_correlation_h2"
@@ -556,19 +555,20 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_summary){
     input:
     file(gwas_summary_ldsc) from ch_gwas_summary_ldsc2
     file(saige_ldsc) from ch_saige_ldsc
+    file(ld_scores_tar_bz2) from ch_ld_scores_tar_bz2
+
     output:
     file("${params.output_tag}_genetic_correlation.log") into ch_ldsc_report_input
 
     script:
 
     """
-    mkdir assets/
-    cp /assets/* assets/
-    
+    tar -xvjf ${ld_scores_tar_bz2}
+
     ldsc.py \
           --rg $saige_ldsc,$gwas_summary_ldsc \
-          --ref-ld-chr assets/ \
-          --w-ld-chr assets/ \
+          --ref-ld-chr . \
+          --w-ld-chr . \
           --out ${params.output_tag}_genetic_correlation \
           --no-intercept
     """
@@ -631,6 +631,7 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_cat_study_id
 
     input:
     file(summary_stats) from transformed_base_ch
+    file(hapmap3_snplist) from ch_hapmap3_snplist
 
     output:
     file("${params.gwas_cat_study_id}_gwas_summary.sumstats.gz") into ch_gwas_summary_ldsc2
@@ -638,17 +639,15 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_cat_study_id
     script:
 
     """
-    mkdir assets/
-    cp /assets/* assets/
-    
     munge_sumstats.py \
           --sumstats "$summary_stats" \
           --out "${params.gwas_cat_study_id}_gwas_summary" \
-          --merge-alleles assets/w_hm3.snplist \
+          --merge-alleles $hapmap3_snplist \
           --signed-sumstats BETA,0 \
           --N ${params.gwas_cat_study_size}
     """
   }
+
   //* Run genetic correlation
   process genetic_correlation_h2_gwas_cat {
     tag "genetic_correlation_h2"
@@ -657,19 +656,19 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_cat_study_id
     input:
     file(gwas_summary_ldsc) from ch_gwas_summary_ldsc2
     file(saige_ldsc) from ch_saige_ldsc
+    file(ld_scores_tar_bz2) from ch_ld_scores_tar_bz2
+
     output:
     file("${params.output_tag}_genetic_correlation.log") into ch_ldsc_report_input
 
     script:
-
     """
-    mkdir assets/
-    cp /assets/* assets/
-    
+    tar -xvjf ${ld_scores_tar_bz2}
+
     ldsc.py \
           --rg $saige_ldsc,$gwas_summary_ldsc \
-          --ref-ld-chr assets/ \
-          --w-ld-chr assets/ \
+          --ref-ld-chr ${ld_scores_tar_bz2.simpleName} \
+          --w-ld-chr ${ld_scores_tar_bz2.simpleName} \
           --out ${params.output_tag}_genetic_correlation \
           --no-intercept
     """

@@ -17,7 +17,8 @@ RUN apt-get update && \
               libperl-dev \
               libxt-dev \
               speedtest-cli \
-              procps
+              procps \
+              gawk
 
 #Install htslib developmental version specific commit
 RUN mkdir htslib && \
@@ -78,8 +79,6 @@ RUN conda env export --name gel-gwas-1.0dev > gel-gwas-1.0dev.yml
 
 RUN mkdir /opt/bin
 COPY bin/* /opt/bin/
-RUN mkdir /opt/assets
-COPY assets/* /assets/
 COPY setup.R /
 
 RUN find /opt/bin/ -type f -iname "*.py" -exec chmod +x {} \; && \
