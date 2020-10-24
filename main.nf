@@ -598,7 +598,7 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_cat_study_id
     val(ftp_link) from gwas_catalogue_ftp_ch
     
     output:
-    file("*.h.tsv.gz") into downloaded_gwas_catalogue_ch
+    file("*.h.tsv*") into downloaded_gwas_catalogue_ch
     
     script:
     """
