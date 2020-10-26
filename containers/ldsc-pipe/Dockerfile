@@ -29,10 +29,7 @@ RUN for i in `ls /ldsc/ldscore/*py | grep -v __init__` ; do sed -i '1 i #!/usr/b
 
 ENV PATH /opt/conda/envs/ldsc/bin:$PATH
 
-RUN mv /opt/conda/envs/ldsc/bin/python /opt/conda/envs/ldsc/bin/python3
-RUN mv /opt/conda/envs/ldsc/bin/python2 /opt/conda/envs/ldsc/bin/python
-
-RUN find /ldsc/ -type f -iname "*.py" -exec chmod x {} \;
+RUN find /ldsc/ -type f -iname "*.py" -exec chmod +x {} \;
 RUN touch .Rprofile
 RUN touch .Renviron
 
