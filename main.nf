@@ -541,9 +541,9 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_summary){
 
     """
     munge_sumstats.py \
-          --sumstats $summary_stats \
+          --sumstats "$summary_stats" \
           --out "${params.external_gwas_tag}_gwas_summary" \
-          --merge-alleles $hapmap3_snplist
+          --merge-alleles "$hapmap3_snplist"
     """
   }
 
@@ -667,8 +667,8 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_cat_study_id
 
     ldsc.py \
           --rg $saige_ldsc,$gwas_summary_ldsc \
-          --ref-ld-chr ${ld_scores_tar_bz2.simpleName} \
-          --w-ld-chr ${ld_scores_tar_bz2.simpleName} \
+          --ref-ld-chr ${ld_scores_tar_bz2.simpleName}/ \
+          --w-ld-chr ${ld_scores_tar_bz2.simpleName}/ \
           --out ${params.output_tag}_genetic_correlation \
           --no-intercept
     """
