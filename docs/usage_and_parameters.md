@@ -46,6 +46,27 @@ nextflow run main.nf \
   --gwas_summary "https://gist.githubusercontent.com/mcamarad/e98cdd5e69413fb6189ed70405c43ef4/raw/e4f8fc5bd62c70ef38c6cedfdfaa6d087f586054/gwas_summary_qt.csv"
 ```
 
+**LDSC - Genetic correlation with GWAS catalogue summary stats**
+```bash
+nextflow run main.nf \
+  --grm_plink_input "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/sampleA.{bed,bim,fam}" \
+  --phenofile "https://gist.githubusercontent.com/mcamarad/e98cdd5e69413fb6189ed70405c43ef4/raw/d602bec4b31d5d75f74f1dbb408bd392db57bdb6/cohort_data_phenos.csv" \
+  --metadata "https://gist.githubusercontent.com/mcamarad/e98cdd5e69413fb6189ed70405c43ef4/raw/d602bec4b31d5d75f74f1dbb408bd392db57bdb6/metadata.csv" \
+  --continuous_var_aggregation "mean" \
+  --continuous_var_transformation "zscore" \
+  --pheno_col "Specimen type" \
+  --design_mode 'case_vs_control_contrast' \
+  --case_group "NOSE" \
+  --trait_type "binary" \
+  --vcfs_list "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/vcfs.csv" \
+  --post_analysis "genetic_correlation_h2" \
+  --gwas_cat_study_id "GCST004420-ci" \
+  --gwas_cat_study_size = 3631 \
+  --gwas_catalogue_ftp = "https://lifebit-featured-datasets.s3-eu-west-1.amazonaws.com/projects/gel/prs/ftp_locations_harmonized.csv" \
+  --hapmap3_snplist = "https://lifebit-featured-datasets.s3-eu-west-1.amazonaws.com/projects/gel/gel-gwas/assets/w_hm3.snplist" \
+  --ld_scores_tar_bz2 = "https://storage.googleapis.com/broad-alkesgroup-public/LDSCORE/eur_w_ld_chr.tar.bz2" \
+```
+
 **LDSC - Heritability**
 
 ```bash
@@ -129,3 +150,5 @@ rs7523549	1	869180	T	C	1.823	0.8756	0.4929	0.13	0	0.0137615
 - **--gwas_cat_study_size** : Integer contaning sample size for GWAS study.
 - **--gwas_catalogue_ftp** : String https link or path to where gwas catalogue download is provided. Defaults to `https://lifebit-featured-datasets.s3-eu-west-1.amazonaws.com/projects/gel/prs/ftp_locations_harmonized.csv`.
 - **--external_gwas_tag** : String containing tag to be used to identify external GWAS resource for LDSC.
+- **--hapmap3_snplist** : String containing link to HapMap3 SNP list. i.e. "https://lifebit-featured-datasets.s3-eu-west-1.amazonaws.com/projects/gel/gel-gwas/assets/w_hm3.snplist"
+- **--ld_scores_tar_bz2** : String containing link to LD Scores `*.tar.bz2` file. i.e. "https://storage.googleapis.com/broad-alkesgroup-public/LDSCORE/eur_w_ld_chr.tar.bz2"
