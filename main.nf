@@ -10,8 +10,19 @@
 */
 
 /*--------------------------------------------------
+  Initial checks
+--------------------------------------------------*/
+
+if (params.gwas_summary && params.gwas_cat_study_id) {
+  exit 1, "You have provided both external gwas summary statistics and GWAS catalogue summary statistics: only one cohort can be used. \
+  \nPlease use only one of these inputs (i.e. only --gwas_summary or only --gwas_cat_study_id)."
+}
+
+/*--------------------------------------------------
   Channel setup
 ---------------------------------------------------*/
+ch_hapmap3_snplist =  params.hapmap3_snplist ? Channel.value(file(params.hapmap3_snplist)) :  "null"
+ch_ld_scores_tar_bz2 =  params.ld_scores_tar_bz2 ? Channel.value(file(params.ld_scores_tar_bz2)) :  "null"
 ch_input_cb_data = params.phenofile ? Channel.value(params.phenofile) : Channel.empty()
 ch_input_meta_data = params.metadata ? Channel.value(params.metadata) : Channel.empty()
 ch_gwas_summary = params.gwas_summary ? Channel.value(params.gwas_summary) : Channel.empty()
@@ -447,6 +458,7 @@ if (params.post_analysis == 'heritability' || params.post_analysis == 'genetic_c
 
     input:
     file(saige_summary_stats) from ch_ldsc_input2
+    file(hapmap3_snplist) from ch_hapmap3_snplist
 
     output:
     file("${params.output_tag}_ldsc.sumstats.gz") into ch_saige_ldsc
@@ -454,12 +466,9 @@ if (params.post_analysis == 'heritability' || params.post_analysis == 'genetic_c
     script:
 
     """
-    mkdir assets/
-    cp /assets/* assets/
-    
     munge_sumstats.py --sumstats $saige_summary_stats \
                       --out "${params.output_tag}_ldsc" \
-                      --merge-alleles assets/w_hm3.snplist \
+                      --merge-alleles $hapmap3_snplist \
                       --a1 Allele1 \
                       --a2 Allele2 \
                       --signed-sumstats Tstat,0 \
@@ -478,20 +487,19 @@ if (params.post_analysis == 'heritability'){
 
     input:
     file(saige_output) from ch_saige_ldsc
+    file(ld_scores_tar_bz2) from ch_ld_scores_tar_bz2
 
     output:
     file("${params.output_tag}_h2.log") into ch_ldsc_report_input
 
     script:
-
     """
-    mkdir assets/
-    cp /assets/* assets/
-    
+    tar -xvjf ${ld_scores_tar_bz2}
+
     ldsc.py \
       --h2 $saige_output \
-      --ref-ld-chr assets/ \
-      --w-ld-chr assets/ \
+      --ref-ld-chr ${ld_scores_tar_bz2.simpleName}/ \
+      --w-ld-chr ${ld_scores_tar_bz2.simpleName}/ \
       --out ${params.output_tag}_h2
     """
   }
@@ -524,6 +532,7 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_summary){
 
     input:
     file(summary_stats) from ch_gwas_summary_ldsc
+    file(hapmap3_snplist) from ch_hapmap3_snplist
 
     output:
     file("${params.external_gwas_tag}_gwas_summary.sumstats.gz") into ch_gwas_summary_ldsc2
@@ -531,15 +540,13 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_summary){
     script:
 
     """
-    mkdir assets/
-    cp /assets/* assets/
-    
     munge_sumstats.py \
           --sumstats "$summary_stats" \
           --out "${params.external_gwas_tag}_gwas_summary" \
-          --merge-alleles assets/w_hm3.snplist
+          --merge-alleles $hapmap3_snplist
     """
   }
+
   //* Run genetic correlation
   process genetic_correlation_h2 {
     tag "genetic_correlation_h2"
@@ -548,19 +555,120 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_summary){
     input:
     file(gwas_summary_ldsc) from ch_gwas_summary_ldsc2
     file(saige_ldsc) from ch_saige_ldsc
+    file(ld_scores_tar_bz2) from ch_ld_scores_tar_bz2
+
     output:
     file("${params.output_tag}_genetic_correlation.log") into ch_ldsc_report_input
 
     script:
 
     """
-    mkdir assets/
-    cp /assets/* assets/
-    
+    tar -xvjf ${ld_scores_tar_bz2}
+
     ldsc.py \
           --rg $saige_ldsc,$gwas_summary_ldsc \
-          --ref-ld-chr assets/ \
-          --w-ld-chr assets/ \
+          --ref-ld-chr ${ld_scores_tar_bz2.simpleName}/ \
+          --w-ld-chr ${ld_scores_tar_bz2.simpleName}/ \
+          --out ${params.output_tag}_genetic_correlation \
+          --no-intercept
+    """
+  }
+
+}
+
+ //* gwas catalogue
+
+if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_cat_study_id){
+
+  gwas_catalogue_ftp_ch = Channel.fromPath(params.gwas_catalogue_ftp, checkIfExists: true)
+    .ifEmpty { exit 1, "GWAS catalogue ftp locations not found: ${params.gwas_catalogue_ftp}" }
+    .splitCsv(header: true)
+    .map { row -> tuple(row.study_accession, row.ftp_link_harmonised_summary_stats) }
+    .filter{ it[0] == params.gwas_cat_study_id}
+    .ifEmpty { exit 1, "The GWAS study accession number you provided does not come as a harmonized dataset that can be used as a base cohort "}
+    .flatten()
+    .last()
+
+  process download_gwas_catalogue {
+    label "high_memory"
+    publishDir "${params.outdir}/GWAS_cat", mode: "copy"
+    
+    input:
+    val(ftp_link) from gwas_catalogue_ftp_ch
+    
+    output:
+    file("*.h.tsv*") into downloaded_gwas_catalogue_ch
+    
+    script:
+    """
+    wget ${ftp_link}
+    """
+  }
+
+  process transform_gwas_catalogue {
+    label "high_memory"
+    publishDir "${params.outdir}/GWAS_cat", mode: "copy"
+    
+    input:
+    file gwas_catalogue_base from downloaded_gwas_catalogue_ch
+    
+    output:
+    file("${params.gwas_cat_study_id}.data") into transformed_base_ch
+    
+    script:
+    """
+    transform_gwas_catalogue.R --input_gwas_cat "${gwas_catalogue_base}" \
+                               --outprefix "${params.gwas_cat_study_id}"
+    """
+    }
+
+  
+  //* Munge gwas cat stats
+
+  process munge_gwas_cat_summary {
+    tag "munge_gwas_summary"
+    publishDir "${params.outdir}/ldsc_inputs/", mode: 'copy'
+
+    input:
+    file(summary_stats) from transformed_base_ch
+    file(hapmap3_snplist) from ch_hapmap3_snplist
+
+    output:
+    file("${params.gwas_cat_study_id}_gwas_summary.sumstats.gz") into ch_gwas_summary_ldsc2
+
+    script:
+
+    """
+    munge_sumstats.py \
+          --sumstats "$summary_stats" \
+          --out "${params.gwas_cat_study_id}_gwas_summary" \
+          --merge-alleles $hapmap3_snplist \
+          --signed-sumstats BETA,0 \
+          --N ${params.gwas_cat_study_size}
+    """
+  }
+
+  //* Run genetic correlation
+  process genetic_correlation_h2_gwas_cat {
+    tag "genetic_correlation_h2"
+    publishDir "${params.outdir}/genetic_correlation/", mode: 'copy'
+
+    input:
+    file(gwas_summary_ldsc) from ch_gwas_summary_ldsc2
+    file(saige_ldsc) from ch_saige_ldsc
+    file(ld_scores_tar_bz2) from ch_ld_scores_tar_bz2
+
+    output:
+    file("${params.output_tag}_genetic_correlation.log") into ch_ldsc_report_input
+
+    script:
+    """
+    tar -xvjf ${ld_scores_tar_bz2}
+
+    ldsc.py \
+          --rg $saige_ldsc,$gwas_summary_ldsc \
+          --ref-ld-chr ${ld_scores_tar_bz2.simpleName}/ \
+          --w-ld-chr ${ld_scores_tar_bz2.simpleName}/ \
           --out ${params.output_tag}_genetic_correlation \
           --no-intercept
     """
