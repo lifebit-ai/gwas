@@ -87,7 +87,7 @@ RUN find /opt/bin/ -type f -iname "*.py" -exec chmod +x {} \; && \
     find /opt/bin/ -type f -iname "*.css" -exec chmod +x {} \; && \
     find /opt/bin/ -type f -iname "*.Rmd" -exec chmod +x {} \;
 
-RUN ./setup.R
+RUN /setup.R
 # Instruct R processes to use these empty files instead of clashing with a local version
 RUN touch .Rprofile
 RUN touch .Renviron
