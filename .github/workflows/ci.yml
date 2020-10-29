@@ -80,8 +80,8 @@ jobs:
     strategy:
       matrix:
         nxf_ver: ['20.01.0', '']
-        continuous_var_aggregation: [mean, min, max, median]
-        continuous_var_transformation: [log, log10, log2, zscores, None]
+        continuous_var_aggregation: [median]
+        continuous_var_transformation: [None]
     steps:
       - uses: actions/checkout@v1
       - name: Install Nextflow
