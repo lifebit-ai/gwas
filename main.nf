@@ -23,9 +23,9 @@ if (params.gwas_summary && params.gwas_cat_study_id) {
 ---------------------------------------------------*/
 ch_hapmap3_snplist =  params.hapmap3_snplist ? Channel.value(file(params.hapmap3_snplist)) :  "null"
 ch_ld_scores_tar_bz2 =  params.ld_scores_tar_bz2 ? Channel.value(file(params.ld_scores_tar_bz2)) :  "null"
-ch_input_cb_data = params.phenofile ? Channel.value(params.phenofile) : Channel.empty()
-ch_input_meta_data = params.metadata ? Channel.value(params.metadata) : Channel.empty()
-ch_gwas_summary = params.gwas_summary ? Channel.value(params.gwas_summary) : Channel.empty()
+ch_input_cb_data = params.phenofile ? Channel.value(file(params.phenofile)) : Channel.empty()
+ch_input_meta_data = params.metadata ? Channel.value(file(params.metadata)) : Channel.empty()
+ch_gwas_summary = params.gwas_summary ? Channel.value(file(params.gwas_summary)) : Channel.empty()
 
 Channel
   .fromFilePairs("${params.grm_plink_input}",size:3, flat : true)
