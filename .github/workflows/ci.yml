@@ -10,7 +10,7 @@ jobs:
         nxf_ver: ['20.01.0', '']
         continuous_var_aggregation: [mean, min, max, median]
         continuous_var_transformation: [log, log10, log2, zscores, None]
-        design_mode: ['case_vs_control_contrast','case_vs_group_contrasts', 'all_contrasts']
+        design_mode: ['case_vs_control_contrast']
     steps:
       - uses: actions/checkout@v1
       - name: Install Nextflow
@@ -46,7 +46,7 @@ jobs:
         nxf_ver: ['20.01.0', '']
         continuous_var_aggregation: [median]
         continuous_var_transformation: [None]
-        design_mode: ['case_vs_control_contrast','case_vs_group_contrasts', 'all_contrasts']
+        design_mode: ['case_vs_control_contrast']
     steps:
       - uses: actions/checkout@v1
       - name: Install Nextflow
@@ -64,7 +64,7 @@ jobs:
         nxf_ver: ['20.01.0', '']
         continuous_var_aggregation: [median]
         continuous_var_transformation: [None]
-        design_mode: ['case_vs_control_contrast','case_vs_group_contrasts', 'all_contrasts']
+        design_mode: ['case_vs_control_contrast']
     steps:
       - uses: actions/checkout@v1
       - name: Install Nextflow
