@@ -167,7 +167,7 @@ if (params.trait_type == 'binary' && params.phenofile && !params.case_group && p
   /*--------------------------------------------------
   Pre-GWAS filtering - download, filter and convert VCFs
   ---------------------------------------------------*/
-
+if (params.trait_type == 'binary'){
   process gwas_filtering_bin {
     tag "$name"
     publishDir "${params.outdir}/gwas_filtering", mode: 'copy'
