@@ -511,7 +511,7 @@ if (params.post_analysis == 'genetic_correlation_h2' && params.gwas_summary){
     publishDir "${params.outdir}/ldsc_inputs/", mode: 'copy'
 
     input:
-    val(gwas_summary_file) from ch_gwas_summary
+    file(gwas_summary_file) from ch_gwas_summary
 
     output:
     file("${params.external_gwas_tag}_transformed_gwas_stats.txt") into ch_gwas_summary_ldsc
