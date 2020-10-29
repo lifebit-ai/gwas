@@ -18,3 +18,18 @@ jobs:
       - name: Binary trait aggregation min no transformation design mode case_vs_control_contrast genetic correlation and h2
         run: |
           nextflow run ${GITHUB_WORKSPACE} -profile test_binary_min_none_case_vs_control_contrast_genetic_correlation_h2
+  test_gwas_catalogue:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        nxf_ver: ['20.01.0', '']
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install Nextflow
+        run: |
+          export NXF_VER=${{ matrix.nxf_ver }}
+          wget -qO- get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+      - name: General test with binary trait
+        run: |
+          nextflow run ${GITHUB_WORKSPACE} -profile test_gwas_catalogue
