@@ -58,13 +58,13 @@ if (params.phenofile && params.testing){
     file(input_cb_data) from ch_input_cb_data_test
 
     output:
-    file("${params.test_outprefix}_gwas.csv") into ch_input_cb_data_test2
-    file("${params.test_outprefix}_phewas.csv") into ch_input_cb_data_phewas
-    file("${params.test_outprefix}_IDs.csv") into ch_conversion_platekeys
+    file("${params.output_tag}_gwas.csv") into ch_input_cb_data_test2
+    file("${params.output_tag}_phewas.csv") into ch_input_cb_data_phewas
+    file("${params.output_tag}_IDs.csv") into ch_conversion_platekeys
 
     script:
     """
-    test_data_munging.R --input_file "$input_cb_data" \
+    test_data_munging.R --input_file "${input_cb_data}" \
                         --ids_column "${params.test_ids_column}" \
                         --outprefix "${params.output_tag}"
     """

@@ -22,7 +22,7 @@ option_list = list(
               help="String containing input Real Pheno file."),
   make_option(c("--ids_column"), action="store", default='None', type='character',
               help="String containing column key for IDs."),
-  make_option(c("--outprefix"), action="store", default='', type='character',
+  make_option(c("--outprefix"), action="store", default='covid_1', type='character',
               help="String containing output simulated prefixes.")
 )
 
@@ -31,7 +31,7 @@ args = parse_args(OptionParser(option_list=option_list))
 # Args to variables
 input_file              = args$input_file
 ids_column              = args$ids_column
-outprefix               = paste0(args$outprefix, "_")
+outprefix               = args$outprefix
 
 
 ###########################
