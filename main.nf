@@ -59,7 +59,7 @@ if (params.phenofile && params.testing){
     val input_cb_data from ch_input_cb_data_test
 
     output:
-    file("${params.test_outprefix}_gwas.csv") into ch_input_cb_data
+    file("${params.test_outprefix}_gwas.csv") into ch_input_cb_data_test2
     file("${params.test_outprefix}_phewas.csv") into ch_input_cb_data_phewas
     file("${params.test_outprefix}_IDs.csv") into ch_conversion_platekeys
 
@@ -70,13 +70,41 @@ if (params.phenofile && params.testing){
                           --outprefix "${params.output_tag}"
     """
   }
+  process transforms_cb_output_testing {
+    tag "$name"
+    publishDir "${params.outdir}/design_matrix", mode: 'copy'
+
+    input:
+    val input_cb_data from ch_input_cb_data_test2
+    val input_meta_data from ch_input_meta_data
+
+    output:
+    file("${params.output_tag}_.phe") into ch_transform_cb
+    file("*.json") into ch_encoding_json
+    file("*.csv") into ch_encoding_csv
+
+    script:
+    """
+    cp /opt/bin/* .
+
+    mkdir -p ${params.outdir}/design_matrix
+    
+    transform_cb_output.R --input_cb_data "$input_cb_data" \
+                          --input_meta_data "$input_meta_data" \
+                          --phenoCol "${params.pheno_col}" \
+                          --continuous_var_transformation "${params.continuous_var_transformation}" \
+                          --continuous_var_aggregation "${params.continuous_var_aggregation}" \
+                          --outdir "." \
+                          --output_tag "${params.output_tag}"
+    """
+  }
 }
 
 
 /*--------------------------------------------------
   Ingest output from CB
 ---------------------------------------------------*/
-if (params.phenofile){
+if (params.phenofile && !params.testing){
   process transforms_cb_output {
     tag "$name"
     publishDir "${params.outdir}/design_matrix", mode: 'copy'
