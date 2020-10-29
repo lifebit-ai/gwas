@@ -87,7 +87,7 @@ colnames(cb_data) = colnames(cb_data) %>%
 
 # Use phenotype metadata (data dictionary) to determine the type of each phenotype -> This will be given by CB
 pheno_dictionary = fread(input_meta_data) %>%
-        as.tibble # Change by metadata input var
+        as.tibble # Change by pheno_metadata input var
 pheno_dictionary$'Field Name' = str_replace_all(pheno_dictionary$'Field Name'," ", "_") %>%
         str_replace_all("\\(","") %>%
         str_replace_all("\\)","") %>% 
