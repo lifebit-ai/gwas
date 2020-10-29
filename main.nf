@@ -21,11 +21,11 @@ if (params.gwas_summary && params.gwas_cat_study_id) {
 /*--------------------------------------------------
   Channel setup
 ---------------------------------------------------*/
-ch_hapmap3_snplist =  params.hapmap3_snplist ? Channel.value(file(params.hapmap3_snplist)) :  "null"
-ch_ld_scores_tar_bz2 =  params.ld_scores_tar_bz2 ? Channel.value(file(params.ld_scores_tar_bz2)) :  "null"
-ch_pheno_data = params.pheno_data ? Channel.value(file(params.pheno_data)) : Channel.empty()
-ch_pheno_metadata = params.pheno_metadata ? Channel.value(file(params.pheno_metadata)) : Channel.empty()
-ch_gwas_summary = params.gwas_summary ? Channel.value(file(params.gwas_summary)) : Channel.empty()
+ch_hapmap3_snplist =  params.hapmap3_snplist ? Channel.value(params.hapmap3_snplist) :  "null"
+ch_ld_scores_tar_bz2 =  params.ld_scores_tar_bz2 ? Channel.value(params.ld_scores_tar_bz2) :  "null"
+ch_pheno_data = params.pheno_data ? Channel.value(params.pheno_data) : Channel.empty()
+ch_pheno_metadata = params.pheno_metadata ? Channel.value(params.pheno_metadata) : Channel.empty()
+ch_gwas_summary = params.gwas_summary ? Channel.value(params.gwas_summary) : Channel.empty()
 
 Channel
   .fromFilePairs("${params.grm_plink_input}",size:3, flat : true)
@@ -55,8 +55,8 @@ if (params.pheno_data){
     publishDir "${params.outdir}/design_matrix", mode: 'copy'
 
     input:
-    val pheno_data from ch_pheno_data
-    val pheno_metadata from ch_pheno_metadata
+    file(pheno_data) from ch_pheno_data
+    file(pheno_metadata) from ch_pheno_metadata
 
     output:
     file("${params.output_tag}_.phe") into ch_transform_cb
