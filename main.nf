@@ -23,9 +23,9 @@ if (params.gwas_summary && params.gwas_cat_study_id) {
 ---------------------------------------------------*/
 ch_hapmap3_snplist =  params.hapmap3_snplist ? Channel.value(file(params.hapmap3_snplist)) :  "null"
 ch_ld_scores_tar_bz2 =  params.ld_scores_tar_bz2 ? Channel.value(file(params.ld_scores_tar_bz2)) :  "null"
-ch_input_cb_data = params.phenofile ? Channel.value(params.phenofile) : Channel.empty()
-ch_input_meta_data = params.metadata ? Channel.value(params.metadata) : Channel.empty()
-ch_gwas_summary = params.gwas_summary ? Channel.value(params.gwas_summary) : Channel.empty()
+ch_pheno_data = params.pheno_data ? Channel.value(file(params.pheno_data)) : Channel.empty()
+ch_pheno_metadata = params.pheno_metadata ? Channel.value(file(params.pheno_metadata)) : Channel.empty()
+ch_gwas_summary = params.gwas_summary ? Channel.value(file(params.gwas_summary)) : Channel.empty()
 
 Channel
   .fromFilePairs("${params.grm_plink_input}",size:3, flat : true)
@@ -49,14 +49,14 @@ Channel
 /*--------------------------------------------------
   Ingest output from CB
 ---------------------------------------------------*/
-if (params.phenofile){
+if (params.pheno_data){
   process transforms_cb_output {
     tag "$name"
     publishDir "${params.outdir}/design_matrix", mode: 'copy'
 
     input:
-    val input_cb_data from ch_input_cb_data
-    val input_meta_data from ch_input_meta_data
+    val pheno_data from ch_pheno_data
+    val pheno_metadata from ch_pheno_metadata
 
     output:
     file("${params.output_tag}_.phe") into ch_transform_cb
@@ -69,8 +69,8 @@ if (params.phenofile){
 
     mkdir -p ${params.outdir}/design_matrix
     
-    transform_cb_output.R --input_cb_data "${params.phenofile}" \
-                          --input_meta_data "${params.metadata}" \
+    transform_cb_output.R --input_cb_data $pheno_data \
+                          --input_meta_data $pheno_metadata \
                           --phenoCol "${params.pheno_col}" \
                           --continuous_var_transformation "${params.continuous_var_transformation}" \
                           --continuous_var_aggregation "${params.continuous_var_aggregation}" \
@@ -82,7 +82,7 @@ if (params.phenofile){
 //TODO: Check this later and finish it with the processes 
 if (params.trait_type == 'binary'){
 
-  if (params.phenofile && params.case_group && params.design_mode == 'case_vs_control_contrast') {
+  if (params.pheno_data && params.case_group && params.design_mode == 'case_vs_control_contrast') {
     process add_design_matrix_case_vs_control_contrast{
       tag "$name"
       publishDir "${params.outdir}/contrasts", mode: 'copy'
@@ -111,7 +111,7 @@ if (params.trait_type == 'binary'){
     }
   }
 
-  if (params.phenofile &&  params.case_group && params.design_mode == 'case_vs_groups_contrasts') {
+  if (params.pheno_data &&  params.case_group && params.design_mode == 'case_vs_groups_contrasts') {
     process add_design_matrix_case_vs_groups_contrasts{
       tag "$name"
       publishDir "${params.outdir}/contrasts", mode: 'copy'
@@ -139,7 +139,7 @@ if (params.trait_type == 'binary'){
     }
   }
 
-  if (params.phenofile && params.design_mode == 'all_contrasts') {
+  if (params.pheno_data && params.design_mode == 'all_contrasts') {
 
     process add_design_matrix_all_contrasts{
       tag "$name"
