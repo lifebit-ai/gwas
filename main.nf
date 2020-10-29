@@ -146,7 +146,7 @@ if (params.trait_type == 'binary' && params.phenofile && params.design_mode == '
     file(json) from ch_encoding_json
 
     output:
-    set file("${params.output_tag}_design_matrix_control_*.phe") into phenoCh_gwas_filtering
+    file("${params.output_tag}_design_matrix_control_*.phe") into phenoCh_gwas_filtering
 
     script:
     """
