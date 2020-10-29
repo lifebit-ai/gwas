@@ -51,7 +51,7 @@ Channel
 ---------------------------------------------------*/
 if (params.phenofile && params.testing){
   ch_input_cb_data.into{ch_input_cb_data_test}
-  ch_input_cb_data = Channel.empty()
+  ch_input_cb_data = Channel.close()
   process switch_platekeys {
     tag "$name"
     publishDir "${params.outdir}/switch_platekeys", mode: 'copy'
