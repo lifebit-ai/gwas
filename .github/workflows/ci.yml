@@ -30,7 +30,7 @@ jobs:
         continuous_var_transformation: [None]
         design_mode: ['case_vs_control_contrast']
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Install Nextflow
         run: |
           export NXF_VER=${{ matrix.nxf_ver }}
