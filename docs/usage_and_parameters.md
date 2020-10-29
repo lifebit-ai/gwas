@@ -152,3 +152,6 @@ rs7523549	1	869180	T	C	1.823	0.8756	0.4929	0.13	0	0.0137615
 - **--external_gwas_tag** : String containing tag to be used to identify external GWAS resource for LDSC.
 - **--hapmap3_snplist** : String containing link to HapMap3 SNP list. i.e. "https://lifebit-featured-datasets.s3-eu-west-1.amazonaws.com/projects/gel/gel-gwas/assets/w_hm3.snplist"
 - **--ld_scores_tar_bz2** : String containing link to LD Scores `*.tar.bz2` file. i.e. "https://storage.googleapis.com/broad-alkesgroup-public/LDSCORE/eur_w_ld_chr.tar.bz2"
+
+## Testing mode
+- **--testing** : String that allows the user to use synthetic genotypic data with real pheno data for developing and testing purposes. i.e. "True"
