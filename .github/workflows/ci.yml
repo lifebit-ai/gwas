@@ -56,7 +56,7 @@ jobs:
           sudo mv nextflow /usr/local/bin/
       - name: Binary trait and genetic correlation against GWAS cat summary stats
         run: |
-        nextflow run ${GITHUB_WORKSPACE} --design_mode ${{ matrix.design_mode }} --continuous_var_transformation ${{ matrix.continuous_var_transformation }}  --continuous_var_aggregation ${{ matrix.continuous_var_aggregation }} -profile test_binary_gwas_catalogue
+          nextflow run ${GITHUB_WORKSPACE} --design_mode ${{ matrix.design_mode }} --continuous_var_transformation ${{ matrix.continuous_var_transformation }}  --continuous_var_aggregation ${{ matrix.continuous_var_aggregation }} -profile test_binary_gwas_catalogue
   test_binary_genetic_correlation_h2:
     runs-on: ubuntu-latest
     strategy:
@@ -74,7 +74,7 @@ jobs:
           sudo mv nextflow /usr/local/bin/
       - name: Binary trait with genetic correlation against quantitative trait
         run: |
-        nextflow run ${GITHUB_WORKSPACE} --design_mode ${{ matrix.design_mode }} --continuous_var_transformation ${{ matrix.continuous_var_transformation }}  --continuous_var_aggregation ${{ matrix.continuous_var_aggregation }} -profile test_binary_genetic_correlation_h2
+          nextflow run ${GITHUB_WORKSPACE} --design_mode ${{ matrix.design_mode }} --continuous_var_transformation ${{ matrix.continuous_var_transformation }}  --continuous_var_aggregation ${{ matrix.continuous_var_aggregation }} -profile test_binary_genetic_correlation_h2
   test_qt:
     runs-on: ubuntu-latest
     strategy:
@@ -91,7 +91,7 @@ jobs:
           sudo mv nextflow /usr/local/bin/
       - name: Quantitative trait GWAS-only
         run: |
-        nextflow run ${GITHUB_WORKSPACE} --continuous_var_transformation ${{ matrix.continuous_var_transformation }}  --continuous_var_aggregation ${{ matrix.continuous_var_aggregation }} -profile test_qt
+          nextflow run ${GITHUB_WORKSPACE} --continuous_var_transformation ${{ matrix.continuous_var_transformation }}  --continuous_var_aggregation ${{ matrix.continuous_var_aggregation }} -profile test_qt
   test_qt_h2:
     runs-on: ubuntu-latest
     strategy:
@@ -108,7 +108,7 @@ jobs:
           sudo mv nextflow /usr/local/bin/
       - name: Quantitative trait with H2
         run: |
-        nextflow run ${GITHUB_WORKSPACE} --continuous_var_transformation ${{ matrix.continuous_var_transformation }}  --continuous_var_aggregation ${{ matrix.continuous_var_aggregation }} -profile test_qt_h2
+          nextflow run ${GITHUB_WORKSPACE} --continuous_var_transformation ${{ matrix.continuous_var_transformation }}  --continuous_var_aggregation ${{ matrix.continuous_var_aggregation }} -profile test_qt_h2
   test_qt_gwas_catalogue:
     runs-on: ubuntu-latest
     strategy:
@@ -125,7 +125,7 @@ jobs:
           sudo mv nextflow /usr/local/bin/
       - name: Test with quantitative trait and genetic correlation using GWAS catalogue summary stats
         run: |
-        nextflow run ${GITHUB_WORKSPACE} --continuous_var_transformation ${{ matrix.continuous_var_transformation }}  --continuous_var_aggregation ${{ matrix.continuous_var_aggregation }} -profile test_qt_gwas_catalogue
+          nextflow run ${GITHUB_WORKSPACE} --continuous_var_transformation ${{ matrix.continuous_var_transformation }}  --continuous_var_aggregation ${{ matrix.continuous_var_aggregation }} -profile test_qt_gwas_catalogue
   test_qt_genetic_correlation_h2:
     runs-on: ubuntu-latest
     strategy:
@@ -142,4 +142,4 @@ jobs:
           sudo mv nextflow /usr/local/bin/
       - name: Test with quantitative trait and genetic correlation using qt trait
         run: |
-        nextflow run ${GITHUB_WORKSPACE} --continuous_var_transformation ${{ matrix.continuous_var_transformation }}  --continuous_var_aggregation ${{ matrix.continuous_var_aggregation }} -profile test_qt_genetic_correlation_h2
+          nextflow run ${GITHUB_WORKSPACE} --continuous_var_transformation ${{ matrix.continuous_var_transformation }}  --continuous_var_aggregation ${{ matrix.continuous_var_aggregation }} -profile test_qt_genetic_correlation_h2
