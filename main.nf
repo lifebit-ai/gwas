@@ -45,6 +45,33 @@ Channel
   .ifEmpty { exit 1, "Cannot find GWAS catalogue CSV  file : ${params.gwas_cat}" }
   .set { ch_gwas_cat }
 
+/*--------------------------------------------------
+  Testing mode: 
+  Change platekeys by testing data platekeys
+---------------------------------------------------*/
+if (params.phenofile && params.testing){
+  ch_input_cb_data.into{ch_input_cb_data_test}
+  ch_input_cb_data = Channel.empty()
+  process switch_platekeys {
+    tag "$name"
+    publishDir "${params.outdir}/switch_platekeys", mode: 'copy'
+    input:
+    val input_cb_data from ch_input_cb_data_test
+
+    output:
+    file("${params.test_outprefix}_gwas.csv") into ch_input_cb_data
+    file("${params.test_outprefix}_phewas.csv") into ch_input_cb_data_phewas
+    file("${params.test_outprefix}_IDs.csv") into ch_conversion_platekeys
+
+    script:
+    """
+    ./test_data_munging.R --input_file $input_cb_data \
+                          --ids_column "${params.test_ids_column}" \
+                          --outprefix "${params.output_tag}"
+    """
+  }
+}
+
 
 /*--------------------------------------------------
   Ingest output from CB
@@ -69,8 +96,8 @@ if (params.phenofile){
 
     mkdir -p ${params.outdir}/design_matrix
     
-    transform_cb_output.R --input_cb_data "${params.phenofile}" \
-                          --input_meta_data "${params.metadata}" \
+    transform_cb_output.R --input_cb_data "$input_cb_data" \
+                          --input_meta_data "$input_meta_data" \
                           --phenoCol "${params.pheno_col}" \
                           --continuous_var_transformation "${params.continuous_var_transformation}" \
                           --continuous_var_aggregation "${params.continuous_var_aggregation}" \
@@ -81,7 +108,7 @@ if (params.phenofile){
 }
 //TODO: Check this later and finish it with the processes 
 if (params.trait_type == 'binary'){
-
+  
   if (params.phenofile && params.case_group && params.design_mode == 'case_vs_control_contrast') {
     process add_design_matrix_case_vs_control_contrast{
       tag "$name"

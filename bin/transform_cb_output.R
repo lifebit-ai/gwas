@@ -187,6 +187,10 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
             pheno_cols = lapply(pheno_cols, function(x) aggregation_fun(x))
         }
         pheno_cols = pheno_cols %>% as.vector
+        
+        if (str_detect(column, 'pc[0-9]')){
+            transformation = 'None'
+        }
 
         if (transformation == 'log'){
             pheno_cols = log(pheno_cols)
