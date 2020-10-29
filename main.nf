@@ -74,8 +74,8 @@ if (params.phenofile && params.testing){
     publishDir "${params.outdir}/design_matrix", mode: 'copy'
 
     input:
-    val input_cb_data from ch_input_cb_data_test2
-    val input_meta_data from ch_input_meta_data
+    file(input_cb_data) from ch_input_cb_data_test2
+    file(input_meta_data) from ch_input_meta_data
 
     output:
     file("${params.output_tag}_.phe") into ch_transform_cb
