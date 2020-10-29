@@ -67,12 +67,6 @@ cb_data = fread(input_cb_data) %>% as.tibble
 # Remove columns full of NAs (empty string in CSV)
 cb_data = cb_data %>% select_if(~!all(is.na(.)))
 
-##################################################
-# Keep only participants for which we have a VCF #
-##################################################
-
-cb_data = cb_data %>% filter(!`Platekey in aggregate VCF-0.0`== "")
-
 ################################
 # Re-encode cb_data phenotypes #
 ################################
@@ -93,6 +87,11 @@ pheno_dictionary$'Field Name' = str_replace_all(pheno_dictionary$'Field Name'," 
         str_replace_all("\\)","") %>% 
         str_to_lower()
 
+##################################################
+# Keep only participants for which we have a VCF #
+##################################################
+
+cb_data = cb_data %>% filter(!`platekey_in_aggregate_vcf-0.0`== "")
 #Compress multiple measures into a single measurement
 
 
