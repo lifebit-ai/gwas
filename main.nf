@@ -108,7 +108,7 @@ if (params.phenofile){
 }
 //TODO: Check this later and finish it with the processes 
 if (params.trait_type == 'binary' && params.phenofile && params.case_group && params.design_mode != 'all_contrasts') {
-  process add_design_matrix_case_group{
+  process add_design_matrix_case_group {
     tag "$name"
     publishDir "${params.outdir}/contrasts", mode: 'copy'
 
@@ -117,7 +117,7 @@ if (params.trait_type == 'binary' && params.phenofile && params.case_group && pa
     file(json) from ch_encoding_json
 
     output:
-    set file("${params.output_tag}_design_matrix_control_*.phe") into phenoCh_gwas_filtering
+    file("${params.output_tag}_design_matrix_control_*.phe") into phenoCh_gwas_filtering
 
     script:
     """
@@ -146,7 +146,7 @@ if (params.trait_type == 'binary' && params.phenofile && params.design_mode == '
     file(json) from ch_encoding_json
 
     output:
-    file("${params.output_tag}_design_matrix_control_*.phe") into phenoCh_gwas_filtering
+    set file("${params.output_tag}_design_matrix_control_*.phe") into phenoCh_gwas_filtering
 
     script:
     """
