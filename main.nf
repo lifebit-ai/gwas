@@ -55,7 +55,7 @@ if (params.phenofile && params.testing){
     tag "$name"
     publishDir "${params.outdir}/switch_platekeys", mode: 'copy'
     input:
-    val input_cb_data from ch_input_cb_data_test
+    file(input_cb_data) from ch_input_cb_data_test
 
     output:
     file("${params.test_outprefix}_gwas.csv") into ch_input_cb_data_test2
@@ -64,9 +64,9 @@ if (params.phenofile && params.testing){
 
     script:
     """
-    ./test_data_munging.R --input_file "$input_cb_data" \
-                          --ids_column "${params.test_ids_column}" \
-                          --outprefix "${params.output_tag}"
+    test_data_munging.R --input_file "$input_cb_data" \
+                        --ids_column "${params.test_ids_column}" \
+                        --outprefix "${params.output_tag}"
     """
   }
   process transforms_cb_output_testing {
