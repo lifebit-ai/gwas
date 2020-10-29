@@ -65,7 +65,7 @@ if (params.phenofile && params.testing){
 
     script:
     """
-    ./test_data_munging.R --input_file $input_cb_data \
+    ./test_data_munging.R --input_file "$input_cb_data" \
                           --ids_column "${params.test_ids_column}" \
                           --outprefix "${params.output_tag}"
     """
@@ -207,7 +207,6 @@ if (params.trait_type == 'binary'){
 
     output:
     set val(name), val(chr), file("${name}.filtered_final.vcf.gz"), file("${name}.filtered_final.vcf.gz.csi") into filteredVcfsCh
-    // file("${name}_filtered.{bed,bim,fam}") into plinkTestCh
 
     script:
     // TODO: (High priority) Only extract needed individuals from VCF files with `bcftools -S samples.txt` - get from samples file?
@@ -279,7 +278,6 @@ if (params.trait_type != 'binary') {
 
   output:
   set val(name), val(chr), file("${name}.filtered_final.vcf.gz"), file("${name}.filtered_final.vcf.gz.csi") into filteredVcfsCh
-  // file("${name}_filtered.{bed,bim,fam}") into plinkTestCh
 
   script:
   // TODO: (High priority) Only extract needed individuals from VCF files with `bcftools -S samples.txt` - get from samples file?
