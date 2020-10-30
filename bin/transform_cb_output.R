@@ -82,7 +82,7 @@ colnames(cb_data) = colnames(cb_data) %>%
 # Use phenotype metadata (data dictionary) to determine the type of each phenotype -> This will be given by CB
 pheno_dictionary = fread(input_meta_data) %>%
         as.tibble # Change by metadata input var
-pheno_dictionary$'Field Name' = str_replace_all(pheno_dictionary$'Field Name'," ", "_") %>%
+pheno_dictionary$'name' = str_replace_all(pheno_dictionary$'name'," ", "_") %>%
         str_replace_all("\\(","") %>%
         str_replace_all("\\)","") %>% 
         str_to_lower()
@@ -100,8 +100,8 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
     #Clean column name
     pheno_cols = data[, str_detect(colnames(data), column)]
 
-    pheno_dtype = filter(pheno_dictionary, str_detect(pheno_dictionary$`Field Name`, column)) %>% 
-            pull(`FieldID Type`)
+    pheno_dtype = filter(pheno_dictionary, str_detect(pheno_dictionary$`name`, column)) %>% 
+            pull(`valueType`)
     ################################
     # Individual ID                #
     ################################
