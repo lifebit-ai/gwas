@@ -186,7 +186,6 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
             pheno_cols = lapply(pheno_cols, function(x) aggregation_fun(x))
         }
         pheno_cols = pheno_cols %>% as.vector
-        print(pheno_cols)
         
         if (str_detect(column, 'pc[0-9]')){
             transformation = 'None'
@@ -201,7 +200,11 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         if (transformation == 'log2') {
             pheno_cols = log2(pheno_cols)
         } 
-        if (transformation == 'zscore') {
+        #Deals with sd of vectors with only 1 non-NA value
+        if (transformation == 'zscore' & sum(!is.na(pheno_cols)) < 2 ) {
+            pheno_cols = pheno_cols
+        }
+        if (transformation == 'zscore' & sum(!is.na(pheno_cols)) >= 2 ) {
             pheno_cols = (pheno_cols - mean(pheno_cols, na.rm=TRUE)) / sd(pheno_cols, na.rm=TRUE)
         }
         if (transformation == 'None'){
