@@ -241,7 +241,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         ## Sets text to NA
         return(rep(NA, dim(pheno_cols)[1]))
     }
-
+    print(column)
 }
 
 # Run across all columns
