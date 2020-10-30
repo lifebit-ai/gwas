@@ -103,13 +103,15 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
     pheno_dtype = filter(pheno_dictionary, str_detect(pheno_dictionary$`name`, column)) %>% 
             pull(`valueType`)
     
-    print(column)
+    
     ################################
     # Individual ID                #
     ################################
     if (column == "individual_id|i"){
 
         pheno_cols = data[[column]]
+        print(column)
+        print(length(pheno_cols))
         return(as.vector(pheno_cols))
     }
     ################################
@@ -118,6 +120,9 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
     if (str_detect(pheno_dtype, "Categorical") == TRUE){
         if (str_detect(column, 'platekey')){
             pheno_cols = pheno_cols[[1]] %>% as.vector
+
+            print(column)
+            print(length(pheno_cols))
             return(pheno_cols)
         }
         # Fill the gaps and get list of unique values
@@ -142,6 +147,8 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         write(encoding_json, file = file.path(column, ".json", fsep = ""))
         #Use mapping list on aggregated columns to get
         encoded_col = lapply(pheno_cols, function(x) encoding[x]) %>% unlist() %>% as.vector
+        print(column)
+        print(length(encoded_cols))
         return(encoded_col)
     }
     ################################
@@ -151,6 +158,8 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         # Transform year of birth into age
         current_year = format(Sys.time(), "%Y") %>% as.integer
         age = current_year - data[[column]] %>% as.vector
+        print(column)
+        print(length(age))
         return(age)
     }
     ################################
@@ -212,6 +221,8 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         if (transformation == 'None'){
             pheno_cols = pheno_cols
         }
+        print(column)
+        print(length(pheno_cols))
         return(pheno_cols)
 
     }
@@ -233,6 +244,8 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
             # If only one array, applies directly the transformation
             pheno_cols = lapply(pheno_cols, function(x) format(as.Date(x, "%d/%m/%Y"), "%Y%m%d") %>% as.integer) %>% as.vector
         }
+        print(column)
+        print(length(pheno_cols[[1]]))
         return(pheno_cols[[1]])
     }
     ################################
@@ -240,7 +253,10 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
     ################################ 
     if (str_detect(pheno_dtype, 'Text')){
         ## Sets text to NA
-        return(rep(NA, dim(pheno_cols)[1]))
+        pheno_cols = rep(NA, dim(pheno_cols)[1])
+        print(column)
+        print(length(pheno_cols))
+        return(pheno_cols)
     }
 }
 
