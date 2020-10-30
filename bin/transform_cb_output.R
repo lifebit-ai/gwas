@@ -91,7 +91,7 @@ pheno_dictionary$'name' = str_replace_all(pheno_dictionary$'name'," ", "_") %>%
 # Keep only participants for which we have a VCF #
 ##################################################
 
-cb_data = cb_data %>% filter(!`platekey_in_aggregate_vcf-0.0`== "")
+cb_data = cb_data %>% filter(!`platekey_in_aggregate_vcf-0.0`== "") %>% select(-i)
 #Compress multiple measures into a single measurement
 
 
