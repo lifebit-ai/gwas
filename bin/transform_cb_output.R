@@ -210,7 +210,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         if (transformation == 'None'){
             pheno_cols = pheno_cols
         }
-
+        print(pheno_cols)
         return(pheno_cols)
 
     }
