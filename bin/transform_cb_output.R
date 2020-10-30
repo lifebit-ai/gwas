@@ -105,7 +105,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
     ################################
     # Individual ID                #
     ################################
-    if (column == "individual_id"){
+    if (column == "individual_id|i"){
 
         pheno_cols = data[[column]]
         return(as.vector(pheno_cols))
@@ -186,6 +186,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
             pheno_cols = lapply(pheno_cols, function(x) aggregation_fun(x))
         }
         pheno_cols = pheno_cols %>% as.vector
+        print(pheno_cols)
         
         if (str_detect(column, 'pc[0-9]')){
             transformation = 'None'
