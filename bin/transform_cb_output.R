@@ -102,6 +102,8 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
 
     pheno_dtype = filter(pheno_dictionary, str_detect(pheno_dictionary$`name`, column)) %>% 
             pull(`valueType`)
+    
+    print(column)
     ################################
     # Individual ID                #
     ################################
@@ -210,7 +212,6 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         if (transformation == 'None'){
             pheno_cols = pheno_cols
         }
-        print(pheno_cols)
         return(pheno_cols)
 
     }
@@ -241,7 +242,6 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         ## Sets text to NA
         return(rep(NA, dim(pheno_cols)[1]))
     }
-    print(column)
 }
 
 # Run across all columns
