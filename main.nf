@@ -23,9 +23,9 @@ if (params.gwas_summary && params.gwas_cat_study_id) {
 ---------------------------------------------------*/
 ch_hapmap3_snplist =  params.hapmap3_snplist ? Channel.value(file(params.hapmap3_snplist)) :  "null"
 ch_ld_scores_tar_bz2 =  params.ld_scores_tar_bz2 ? Channel.value(file(params.ld_scores_tar_bz2)) :  "null"
-ch_input_cb_data = params.phenofile ? Channel.value(params.phenofile) : Channel.empty()
-ch_input_meta_data = params.metadata ? Channel.value(params.metadata) : Channel.empty()
-ch_gwas_summary = params.gwas_summary ? Channel.value(params.gwas_summary) : Channel.empty()
+ch_input_cb_data = params.phenofile ? Channel.value(file(params.phenofile)) : Channel.empty()
+ch_input_meta_data = params.metadata ? Channel.value(file(params.metadata)) : Channel.empty()
+ch_gwas_summary = params.gwas_summary ? Channel.value(file(params.gwas_summary)) : Channel.empty()
 
 Channel
   .fromFilePairs("${params.grm_plink_input}",size:3, flat : true)
@@ -45,11 +45,65 @@ Channel
   .ifEmpty { exit 1, "Cannot find GWAS catalogue CSV  file : ${params.gwas_cat}" }
   .set { ch_gwas_cat }
 
+/*--------------------------------------------------
+  Testing mode: 
+  Change platekeys by testing data platekeys
+---------------------------------------------------*/
+if (params.phenofile && params.testing){
+  ch_input_cb_data.into{ch_input_cb_data_test}
+  process switch_platekeys {
+    tag "$name"
+    publishDir "${params.outdir}/switch_platekeys", mode: 'copy'
+    input:
+    file(input_cb_data) from ch_input_cb_data_test
+
+    output:
+    file("${params.output_tag}_gwas.csv") into ch_input_cb_data_test2
+    file("${params.output_tag}_phewas.csv") into ch_input_cb_data_phewas
+    file("${params.output_tag}_IDs.csv") into ch_conversion_platekeys
+
+    script:
+    """
+    test_data_munging.R --input_file "${input_cb_data}" \
+                        --ids_column "${params.test_ids_column}" \
+                        --outprefix "${params.output_tag}"
+    """
+  }
+  process transforms_cb_output_testing {
+    tag "$name"
+    publishDir "${params.outdir}/design_matrix", mode: 'copy'
+
+    input:
+    file(input_cb_data) from ch_input_cb_data_test2
+    file(input_meta_data) from ch_input_meta_data
+
+    output:
+    file("${params.output_tag}_.phe") into ch_transform_cb
+    file("*.json") into ch_encoding_json
+    file("*.csv") into ch_encoding_csv
+
+    script:
+    """
+    cp /opt/bin/* .
+
+    mkdir -p ${params.outdir}/design_matrix
+    
+    transform_cb_output.R --input_cb_data "$input_cb_data" \
+                          --input_meta_data "$input_meta_data" \
+                          --phenoCol "${params.pheno_col}" \
+                          --continuous_var_transformation "${params.continuous_var_transformation}" \
+                          --continuous_var_aggregation "${params.continuous_var_aggregation}" \
+                          --outdir "." \
+                          --output_tag "${params.output_tag}"
+    """
+  }
+}
+
 
 /*--------------------------------------------------
   Ingest output from CB
 ---------------------------------------------------*/
-if (params.phenofile){
+if (params.phenofile && !params.testing){
   process transforms_cb_output {
     tag "$name"
     publishDir "${params.outdir}/design_matrix", mode: 'copy'
@@ -69,8 +123,8 @@ if (params.phenofile){
 
     mkdir -p ${params.outdir}/design_matrix
     
-    transform_cb_output.R --input_cb_data "${params.phenofile}" \
-                          --input_meta_data "${params.metadata}" \
+    transform_cb_output.R --input_cb_data "$input_cb_data" \
+                          --input_meta_data "$input_meta_data" \
                           --phenoCol "${params.pheno_col}" \
                           --continuous_var_transformation "${params.continuous_var_transformation}" \
                           --continuous_var_aggregation "${params.continuous_var_aggregation}" \
@@ -80,96 +134,67 @@ if (params.phenofile){
   }
 }
 //TODO: Check this later and finish it with the processes 
-if (params.trait_type == 'binary'){
+if (params.trait_type == 'binary' && params.phenofile && params.case_group && params.design_mode != 'all_contrasts') {
+  process add_design_matrix_case_group {
+    tag "$name"
+    publishDir "${params.outdir}/contrasts", mode: 'copy'
 
-  if (params.phenofile && params.case_group && params.design_mode == 'case_vs_control_contrast') {
-    process add_design_matrix_case_vs_control_contrast{
-      tag "$name"
-      publishDir "${params.outdir}/contrasts", mode: 'copy'
+    input:
+    file(pheFile) from ch_transform_cb
+    file(json) from ch_encoding_json
 
-      input:
-      file(pheFile) from ch_transform_cb
-      file(json) from ch_encoding_json
+    output:
+    file("${params.output_tag}_design_matrix_control_*.phe") into phenoCh_gwas_filtering
 
-      output:
-      file("${params.output_tag}_design_matrix_control_*.phe") into phenoCh_gwas_filtering
+    script:
+    """
+    cp /opt/bin/* .
 
-      script:
-      """
-      cp /opt/bin/* .
+    mkdir -p ${params.outdir}/contrasts
 
-      mkdir -p ${params.outdir}/contrasts
-
-      create_design.R --input_file ${pheFile} \
-                      --mode "${params.design_mode}" \
-                      --case_group "${params.case_group}" \
-                      --outdir . \
-                      --output_tag ${params.output_tag} \
-                      --phenoCol "${params.pheno_col}"
-                        
-      """
-    }
+    create_design.R --input_file ${pheFile} \
+                    --mode "${params.design_mode}" \
+                    --case_group "${params.case_group}" \
+                    --outdir . \
+                    --output_tag ${params.output_tag} \
+                    --phenoCol "${params.pheno_col}"
+                      
+    """
   }
+}
 
-  if (params.phenofile &&  params.case_group && params.design_mode == 'case_vs_groups_contrasts') {
-    process add_design_matrix_case_vs_groups_contrasts{
-      tag "$name"
-      publishDir "${params.outdir}/contrasts", mode: 'copy'
+if (params.trait_type == 'binary' && params.phenofile && params.design_mode == 'all_contrasts') {
+  process add_design_matrix_all{
+    tag "$name"
+    publishDir "${params.outdir}/contrasts", mode: 'copy'
 
-      input:
-      file(pheFile) from ch_transform_cb
-      file(json) from ch_encoding_json
+    input:
+    file(pheFile) from ch_transform_cb
+    file(json) from ch_encoding_json
 
-      output:
-      file("${output_tag}_design_matrix_control_*.phe'") into phenoCh_gwas_filtering
+    output:
+    file("${params.output_tag}_design_matrix_control_*.phe") into phenoCh_gwas_filtering
 
-      script:
-      """
-      cp /opt/bin/* .
+    script:
+    """
+    cp /opt/bin/* .
 
-      mkdir -p ${params.outdir}/contrasts
+    mkdir -p ${params.outdir}/contrasts
 
-      create_design.R --input_file ${pheFile} \
-                      --case_group "${params.case_group}" \
-                      --outdir . \
-                      --output_tag ${output_tag} \
-                      --phenoCol "${params.pheno_col}"
-                        
-      """
-    }
+    create_design.R --input_file ${pheFile} \
+                    --mode "${params.design_mode}" \
+                    --outdir . \
+                    --output_tag ${params.output_tag} \
+                    --phenoCol "${params.pheno_col}"
+                      
+    """
   }
+}
 
-  if (params.phenofile && params.design_mode == 'all_contrasts') {
-
-    process add_design_matrix_all_contrasts{
-      tag "$name"
-      publishDir "${params.outdir}/contrasts", mode: 'copy'
-
-      input:
-      file(pheFile) from ch_transform_cb
-
-      output:
-      file("${output_tag}_design_matrix_control_*.phe'") into phenoCh_gwas_filtering
-
-      script:
-      """
-      cp /opt/bin/* .
-
-      mkdir -p ${params.outdir}/contrasts
-
-      create_design.R --input_file ${pheFile} \
-                      --mode ${params.design_mode}
-                      --outdir . \
-                      --output_tag ${output_tag} \
-                      --phenoCol "${params.pheno_col}"
-                        
-      """
-    }
-  }
   /*--------------------------------------------------
   Pre-GWAS filtering - download, filter and convert VCFs
   ---------------------------------------------------*/
-
+if (params.trait_type == 'binary'){
   process gwas_filtering_bin {
     tag "$name"
     publishDir "${params.outdir}/gwas_filtering", mode: 'copy'
@@ -181,7 +206,6 @@ if (params.trait_type == 'binary'){
 
     output:
     set val(name), val(chr), file("${name}.filtered_final.vcf.gz"), file("${name}.filtered_final.vcf.gz.csi") into filteredVcfsCh
-    file("${name}_filtered.{bed,bim,fam}") into plinkTestCh
 
     script:
     // TODO: (High priority) Only extract needed individuals from VCF files with `bcftools -S samples.txt` - get from samples file?
@@ -253,7 +277,6 @@ if (params.trait_type != 'binary') {
 
   output:
   set val(name), val(chr), file("${name}.filtered_final.vcf.gz"), file("${name}.filtered_final.vcf.gz.csi") into filteredVcfsCh
-  file("${name}_filtered.{bed,bim,fam}") into plinkTestCh
 
   script:
   // TODO: (High priority) Only extract needed individuals from VCF files with `bcftools -S samples.txt` - get from samples file?
@@ -753,7 +776,7 @@ if(!params.post_analysis){
     --output_tag='${params.output_tag}'
 
   # Generates the report
-  Rscript -e "rmarkdown::render('gwas_report.Rmd', params = list(manhattan='${params.output_tag}_manhattan.png',qqplot='${params.output_tag}_qqplot_ci.png', gwascat='gwascat_subset.csv', saige_results='saige_results_top_n.csv', trait_type='${params.trait_type}', ldsc_log="None"))"
+  Rscript -e "rmarkdown::render('gwas_report.Rmd', params = list(manhattan='${params.output_tag}_manhattan.png',qqplot='${params.output_tag}_qqplot_ci.png', gwascat='gwascat_subset.csv', saige_results='saige_results_top_n.csv', trait_type='${params.trait_type}'))"
   mv gwas_report.html multiqc_report.html
 
   # Generates the ipynb

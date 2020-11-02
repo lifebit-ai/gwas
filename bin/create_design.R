@@ -79,27 +79,25 @@ encodings = read_json(paste0(phenoCol,'.json'))
 # In case group not specified it will run all combinations, 
 # otherwise it will subset for the case group and generate only those files
 
-if (case_group != 'None'){
+if (case_group != 'None' & mode == 'case_vs_group_contrasts'){
   case_group = encodings[[case_group]]
-  if (mode == 'case_vs_group_contrasts'){
-      case_group = as.integer(case_group)
-      design = crossing(control = data$PHE, case = data$PHE) %>%
-                  filter((case == case_group) & !(case == control))
-      design_list = sapply(1:nrow(design), function(x) build_phenoFiles(x, data, design, out_path), simplify=FALSE)
 
-      data$PHE = case_when(data$PHE == case_group ~ 1,
-                          TRUE ~ 0)
-      write.table(data, paste0(out_path,'design_matrix_control_all','_case_',case_group,'.phe'), sep='\t',  quote=FALSE, row.names=FALSE)
-  }
-  if (mode == 'case_vs_control_contrast'){
-    data$PHE = case_when(data$PHE == case_group ~ 1,
-                          TRUE ~ 0)
-    write.table(data, paste0(out_path,'design_matrix_control_all','_case_',case_group,'.phe'), sep='\t',  quote=FALSE, row.names=FALSE)
-  }
+  case_group = as.integer(case_group)
+  design = crossing(control = data$PHE, case = data$PHE) %>%
+              filter((case == case_group) & !(case == control))
+  design_list = sapply(1:nrow(design), function(x) build_phenoFiles(x, data, design, out_path), simplify=FALSE)
 
-  
-
+  data$PHE = case_when(data$PHE == case_group ~ 1,
+                      TRUE ~ 0)
+  write.table(data, paste0(out_path,'design_matrix_control_all','_case_',case_group,'.phe'), sep='\t',  quote=FALSE, row.names=FALSE)
 }
+if (case_group != 'None' & mode == 'case_vs_control_contrast'){
+  case_group = encodings[[case_group]]
+  data$PHE = case_when(data$PHE == case_group ~ 1,
+                        TRUE ~ 0)
+  write.table(data, paste0(out_path,'design_matrix_control_all','_case_',case_group,'.phe'), sep='\t',  quote=FALSE, row.names=FALSE)
+}
+
 
 if (case_group == 'None' & mode == 'all_contrasts'){
 design = crossing(control = data$PHE, case = data$PHE) %>%
