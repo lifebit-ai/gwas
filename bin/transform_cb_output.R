@@ -67,12 +67,6 @@ cb_data = fread(input_cb_data) %>% as.tibble
 # Remove columns full of NAs (empty string in CSV)
 cb_data = cb_data %>% select_if(~!all(is.na(.)))
 
-##################################################
-# Keep only participants for which we have a VCF #
-##################################################
-
-cb_data = cb_data %>% filter(!`Platekey in aggregate VCF-0.0`== "")
-
 ################################
 # Re-encode cb_data phenotypes #
 ################################
@@ -87,12 +81,17 @@ colnames(cb_data) = colnames(cb_data) %>%
 
 # Use phenotype metadata (data dictionary) to determine the type of each phenotype -> This will be given by CB
 pheno_dictionary = fread(input_meta_data) %>%
-        as.tibble # Change by pheno_metadata input var
-pheno_dictionary$'Field Name' = str_replace_all(pheno_dictionary$'Field Name'," ", "_") %>%
+        as.tibble # Change by metadata input var
+pheno_dictionary$`name` = str_replace_all(pheno_dictionary$`name`," ", "_") %>%
         str_replace_all("\\(","") %>%
         str_replace_all("\\)","") %>% 
         str_to_lower()
 
+##################################################
+# Keep only participants for which we have a VCF #
+##################################################
+
+cb_data = cb_data %>% filter(!`platekey_in_aggregate_vcf-0.0`== "") %>% select(-i)
 #Compress multiple measures into a single measurement
 
 
@@ -101,14 +100,18 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
     #Clean column name
     pheno_cols = data[, str_detect(colnames(data), column)]
 
-    pheno_dtype = filter(pheno_dictionary, str_detect(pheno_dictionary$`Field Name`, column)) %>% 
-            pull(`FieldID Type`)
+    pheno_dtype = filter(pheno_dictionary, str_detect(pheno_dictionary$`name`, column)) %>% 
+            pull(`valueType`)
+    
+    
     ################################
     # Individual ID                #
     ################################
-    if (column == "individual_id"){
+    if (column == "individual_id|i"){
 
         pheno_cols = data[[column]]
+        print(column)
+        print(length(pheno_cols))
         return(as.vector(pheno_cols))
     }
     ################################
@@ -117,6 +120,9 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
     if (str_detect(pheno_dtype, "Categorical") == TRUE){
         if (str_detect(column, 'platekey')){
             pheno_cols = pheno_cols[[1]] %>% as.vector
+
+            print(column)
+            print(length(pheno_cols))
             return(pheno_cols)
         }
         # Fill the gaps and get list of unique values
@@ -141,6 +147,8 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         write(encoding_json, file = file.path(column, ".json", fsep = ""))
         #Use mapping list on aggregated columns to get
         encoded_col = lapply(pheno_cols, function(x) encoding[x]) %>% unlist() %>% as.vector
+        print(column)
+        print(length(encoded_cols))
         return(encoded_col)
     }
     ################################
@@ -150,6 +158,8 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         # Transform year of birth into age
         current_year = format(Sys.time(), "%Y") %>% as.integer
         age = current_year - data[[column]] %>% as.vector
+        print(column)
+        print(length(age))
         return(age)
     }
     ################################
@@ -187,6 +197,10 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
             pheno_cols = lapply(pheno_cols, function(x) aggregation_fun(x))
         }
         pheno_cols = pheno_cols %>% as.vector
+        
+        if (str_detect(column, 'pc[0-9]')){
+            transformation = 'None'
+        }
 
         if (transformation == 'log'){
             pheno_cols = log(pheno_cols)
@@ -197,13 +211,18 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         if (transformation == 'log2') {
             pheno_cols = log2(pheno_cols)
         } 
-        if (transformation == 'zscore') {
+        #Deals with sd of vectors with only 1 non-NA value
+        if (transformation == 'zscore' & sum(!is.na(pheno_cols)) < 2 ) {
+            pheno_cols = pheno_cols
+        }
+        if (transformation == 'zscore' & sum(!is.na(pheno_cols)) >= 2 ) {
             pheno_cols = (pheno_cols - mean(pheno_cols, na.rm=TRUE)) / sd(pheno_cols, na.rm=TRUE)
         }
         if (transformation == 'None'){
             pheno_cols = pheno_cols
         }
-
+        print(column)
+        print(length(pheno_cols))
         return(pheno_cols)
 
     }
@@ -225,6 +244,8 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
             # If only one array, applies directly the transformation
             pheno_cols = lapply(pheno_cols, function(x) format(as.Date(x, "%d/%m/%Y"), "%Y%m%d") %>% as.integer) %>% as.vector
         }
+        print(column)
+        print(length(pheno_cols[[1]]))
         return(pheno_cols[[1]])
     }
     ################################
@@ -232,9 +253,11 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
     ################################ 
     if (str_detect(pheno_dtype, 'Text')){
         ## Sets text to NA
-        return(rep(NA, dim(pheno_cols)[1]))
+        pheno_cols = rep(NA, dim(pheno_cols)[1])
+        print(column)
+        print(length(pheno_cols))
+        return(pheno_cols)
     }
-
 }
 
 # Run across all columns
