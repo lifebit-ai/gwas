@@ -110,8 +110,6 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
     if (column == "individual_id|i"){
 
         pheno_cols = data[[column]]
-        print(column)
-        print(length(pheno_cols))
         return(as.vector(pheno_cols))
     }
     ################################
@@ -119,10 +117,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
     ################################
     if (str_detect(pheno_dtype, "Categorical") == TRUE){
         if (str_detect(column, 'platekey')){
-            pheno_cols = pheno_cols[[1]] %>% as.vector
-
-            print(column)
-            print(length(pheno_cols))
+            pheno_cols = pheno_cols[[1]] %>% as.vector()
             return(pheno_cols)
         }
         # Fill the gaps and get list of unique values
@@ -147,8 +142,6 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         write(encoding_json, file = file.path(column, ".json", fsep = ""))
         #Use mapping list on aggregated columns to get
         encoded_col = lapply(pheno_cols, function(x) encoding[x]) %>% unlist() %>% as.vector
-        print(column)
-        print(length(encoded_cols))
         return(encoded_col)
     }
     ################################
@@ -157,9 +150,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
     if ((str_detect(column,"birth") == TRUE)){
         # Transform year of birth into age
         current_year = format(Sys.time(), "%Y") %>% as.integer
-        age = current_year - data[[column]] %>% as.vector
-        print(column)
-        print(length(age))
+        age = current_year - pheno_cols %>% as.vector()
         return(age)
     }
     ################################
@@ -196,7 +187,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         if (is.vector(pheno_cols) && length(dim(pheno_cols)) == 1) {
             pheno_cols = lapply(pheno_cols, function(x) aggregation_fun(x))
         }
-        pheno_cols = pheno_cols %>% as.vector
+        pheno_cols = pheno_cols[[1]] %>% as.vector()
         
         if (str_detect(column, 'pc[0-9]')){
             transformation = 'None'
@@ -221,8 +212,6 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         if (transformation == 'None'){
             pheno_cols = pheno_cols
         }
-        print(column)
-        print(length(pheno_cols))
         return(pheno_cols)
 
     }
@@ -244,8 +233,6 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
             # If only one array, applies directly the transformation
             pheno_cols = lapply(pheno_cols, function(x) format(as.Date(x, "%d/%m/%Y"), "%Y%m%d") %>% as.integer) %>% as.vector
         }
-        print(column)
-        print(length(pheno_cols[[1]]))
         return(pheno_cols[[1]])
     }
     ################################
@@ -254,8 +241,6 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
     if (str_detect(pheno_dtype, 'Text')){
         ## Sets text to NA
         pheno_cols = rep(NA, dim(pheno_cols)[1])
-        print(column)
-        print(length(pheno_cols))
         return(pheno_cols)
     }
 }
@@ -274,8 +259,8 @@ cb_data_transformed = sapply(columns_to_transform, function(x) encode_pheno_valu
 #TODO: Add more covariates
 column_to_PHE = phenoCol %>% str_replace_all("\\(","") %>%
         str_replace_all("\\)","") %>%
-        str_replace("-[^-]+$", "") %>% 
-        str_replace(' ','_') %>% 
+        str_replace_all("-[^-]+$", "") %>% 
+        str_replace_all(' ','_') %>% 
         str_to_lower
 cb_data_transformed = as_tibble(cb_data_transformed)
 
@@ -293,7 +278,7 @@ cb_data_transformed[['individual_id']] = NULL
 ##################################################
 # Write .phe file                                #
 ##################################################
-cb_data_transformed = cb_data_transformed %>% select(FID, IID, PAT, MAT, PHE, everything(), -!!as.symbol(column_to_PHE), -`platekey`, -`platekey_in_aggregate_vcf`)
+cb_data_transformed = cb_data_transformed %>% select(FID, IID, PAT, MAT, PHE, everything(), -!!as.symbol(column_to_PHE), -`platekey_in_aggregate_vcf`)
 ### FID, IID this has to be the platekey metadata -> Agg VCF columns. 
 write.table(cb_data_transformed, paste0(out_path,'.phe'), sep='\t',  quote=FALSE, row.names=FALSE)
 
