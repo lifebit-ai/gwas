@@ -145,7 +145,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         }
         if (dim(pheno_cols)[2] > 1 & query_df != 'None' & sum(str_detect(query_df$`name`, column)) > 0) {
             # identify rows with queried values
-            query_values = query_df[str_detect(query_df$name, column)),]
+            query_values = query_df[str_detect(query_df$name, column),]
             query_mask = apply(pheno_cols, 2, function(x) x %in% query_values$values)
             # get the values that are in the query
             values = sapply(1:dim(pheno_cols)[1], function(x) pheno_cols[x, query_mask[x,]])
