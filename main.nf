@@ -81,7 +81,7 @@ if (params.sim_config_file && params.sim_pheno_data){
 
     output:
     file("${params.output_tag}_pheno_data.csv") into ch_pheno_data_sim
-    file("${params.output_tag}_pheno_metadata.csv") into ch_pheno_metadata
+    file("${params.output_tag}_pheno_metadata.csv") into ch_pheno_metadata_sim
 
     script:
     """
@@ -101,6 +101,7 @@ if ((params.pheno_data && params.testing) || params.sim_pheno_data || params.sim
   }
   if (params.sim_config_file){
     ch_pheno_data_sim.into{ch_pheno_data_test}
+    ch_pheno_metadata_sim.into{ch_pheno_metadata}
   }
   
   process switch_platekeys {
