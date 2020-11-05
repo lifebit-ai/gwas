@@ -65,7 +65,7 @@ if (params.sim_config_file && !params.sim_pheno_data){
 
     script:
     """
-    simulate_phenodata.R --config_file "${config_file}" \
+    simulate_phenodata.R --config_file "${sim_config}" \
                          --outprefix "${params.output_tag}"
     """
   }
@@ -85,7 +85,7 @@ if (params.sim_config_file && params.sim_pheno_data){
 
     script:
     """
-    simulate_phenodata.R --config_file "${config_file}" \
+    simulate_phenodata.R --config_file "${sim_config}" \
                          --pheno_data "${sim_pheno_data}" \
                          --outprefix "${params.output_tag}"
     """
