@@ -143,24 +143,28 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
             pheno_cols = apply(pheno_cols, 1, function(x) x[1])
 
         }
-        if (dim(pheno_cols)[2] > 1 & query_df != 'None' & sum(str_detect(query_df$`name`, column)) > 0) {
-            # identify rows with queried values
-            query_values = query_df[str_detect(query_df$name, column),]
-            query_mask = apply(pheno_cols, 2, function(x) x %in% query_values$values)
-            # get the values that are in the query
-            values = sapply(1:dim(pheno_cols)[1], function(x) pheno_cols[x, query_mask[x,]])
-            # get the first entry for the list of values queried for each row with queried values 
-            # and get a list of the first value encounter in each row
-            # There shouldn't be empty rows in this variables because the query was used to generate the cohort
-            values = as.vector(unlist(apply(rbind(values), 2, function(x) unlist(x)[1])))
-            # Substitute the original first column by the new column of first encountered values
-            pheno_cols[[1]] = values
-            #Select the first column of values
-            pheno_cols = apply(pheno_cols, 1, function(x) x[1])
-        }
-        if (dim(pheno_cols)[2] > 1 & query_df != 'None' & sum(str_detect(query_df$`name`, column)) == 0) {
-            #when the column is not on the query file, just apply the standard filter -> take the first column
-            pheno_cols = apply(pheno_cols, 1, function(x) x[1])
+        if (dim(pheno_cols)[2] > 1 & query_df != 'None') {
+            if (sum(str_detect(query_df$`name`, column)) > 0){
+                # identify rows with queried values
+                query_values = query_df[str_detect(query_df$name, column),]
+                query_mask = apply(pheno_cols, 2, function(x) x %in% query_values$values)
+                # get the values that are in the query
+                values = sapply(1:dim(pheno_cols)[1], function(x) pheno_cols[x, query_mask[x,]])
+                # get the first entry for the list of values queried for each row with queried values 
+                # and get a list of the first value encounter in each row
+                # There shouldn't be empty rows in this variables because the query was used to generate the cohort
+                values = as.vector(unlist(apply(rbind(values), 2, function(x) unlist(x)[1])))
+                # Substitute the original first column by the new column of first encountered values
+                pheno_cols[[1]] = values
+                #Select the first column of values
+                pheno_cols = apply(pheno_cols, 1, function(x) x[1])
+            }
+            #Cannot make it flat because if query == 'None' it would break the pipeline
+            if(sum(str_detect(query_df$`name`, column)) == 0){
+                #when the column is not on the query file, just apply the standard filter -> take the first column
+                pheno_cols = apply(pheno_cols, 1, function(x) x[1])
+            }
+            
         }    
         # Encode unique values and create mapping list
         encoding = as.list(1:length(pheno_values))
