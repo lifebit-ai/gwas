@@ -71,7 +71,7 @@ if (params.pheno_data && params.testing){
     """
   }
   if (params.query){
-    process transforms_cb_output_testing {
+    process transforms_cb_output_testing_query {
     tag "$name"
     publishDir "${params.outdir}/design_matrix", mode: 'copy'
 
@@ -103,7 +103,7 @@ if (params.pheno_data && params.testing){
    }
   }
   if (!params.query){
-    process transforms_cb_output_testing {
+    process transforms_cb_output_testing_noquery {
     tag "$name"
     publishDir "${params.outdir}/design_matrix", mode: 'copy'
 
@@ -139,15 +139,15 @@ if (params.pheno_data && params.testing){
 /*--------------------------------------------------
   Ingest output from CB
 ---------------------------------------------------*/
-if (params.pheno_data && !params.testing){
-  process transforms_cb_output {
+if (params.pheno_data && !params.testing && params.query){
+  process transforms_cb_output_query {
     tag "$name"
     publishDir "${params.outdir}/design_matrix", mode: 'copy'
 
     input:
     file(pheno_data) from ch_pheno_data
     file(pheno_metadata) from ch_pheno_metadata
-    val(query_file) from ch_query
+    file(query_file) from ch_query
 
     output:
     file("${params.output_tag}_.phe") into ch_transform_cb
@@ -171,6 +171,38 @@ if (params.pheno_data && !params.testing){
     """
   }
 }
+if (params.pheno_data && !params.testing && !params.query){
+  process transforms_cb_output_noquery {
+    tag "$name"
+    publishDir "${params.outdir}/design_matrix", mode: 'copy'
+
+    input:
+    file(pheno_data) from ch_pheno_data
+    file(pheno_metadata) from ch_pheno_metadata
+
+    output:
+    file("${params.output_tag}_.phe") into ch_transform_cb
+    file("*.json") into ch_encoding_json
+    file("*.csv") into ch_encoding_csv
+
+    script:
+    """
+    cp /opt/bin/* .
+
+    mkdir -p ${params.outdir}/design_matrix
+    
+    transform_cb_output.R --input_cb_data "$pheno_data" \
+                          --input_meta_data "$pheno_metadata" \
+                          --phenoCol "${params.pheno_col}" \
+                          --query_file "${ch_query}" \
+                          --continuous_var_transformation "${params.continuous_var_transformation}" \
+                          --continuous_var_aggregation "${params.continuous_var_aggregation}" \
+                          --outdir "." \
+                          --output_tag "${params.output_tag}"
+    """
+  }
+}
+
 //TODO: Check this later and finish it with the processes 
 if (params.trait_type == 'binary' && params.pheno_data && params.case_group && params.design_mode != 'all_contrasts') {
   process add_design_matrix_case_group {
