@@ -93,7 +93,7 @@ nextflow run main.nf \
 - **--pheno_col** : String with the name of the phenotypic column to be used as trait. Note for CB users, it must match the name of the column, i.e. 'Specimen type'.
 - **--pheno_data** : path/url to file that contains phenotypic information about cohort to be analysed.
 - **--pheno_metadata** : path/url to file that contains metadata from phenotypic information.
-- **--query** : Under development. It will allow the user to query through multiple instances & arrays of the same phenotype.
+- **--query** : Path to file that will allow the user to query through multiple instances & arrays of the same phenotype to avoid contamination of values not selected. When two or more values selected are present in a individual for a phenotype, it arbitrarily assigns the first of the list of queried values as the final value.
 - **--programme** : Under development. It will allow the user to select between cohorts.
 
 ## **Binary**
