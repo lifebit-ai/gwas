@@ -60,7 +60,7 @@ if (params.sim_config_file && !params.sim_pheno_data){
     file(sim_config) from ch_sim_config_file
 
     output:
-    file("${params.output_tag}_pheno_data.csv") into ch_pheno_data
+    file("${params.output_tag}_pheno_data.csv") into ch_pheno_data_sim
     file("${params.output_tag}_pheno_metadata.csv") into ch_pheno_metadata
 
     script:
@@ -80,7 +80,7 @@ if (params.sim_config_file && params.sim_pheno_data){
     file(sim_pheno_data) from ch_sim_pheno_data
 
     output:
-    file("${params.output_tag}_pheno_data.csv") into ch_pheno_data
+    file("${params.output_tag}_pheno_data.csv") into ch_pheno_data_sim
     file("${params.output_tag}_pheno_metadata.csv") into ch_pheno_metadata
 
     script:
@@ -96,7 +96,13 @@ if (params.sim_config_file && params.sim_pheno_data){
   Change platekeys by testing data platekeys
 ---------------------------------------------------*/
 if ((params.pheno_data && params.testing) || params.sim_pheno_data || params.sim_config_file){
-  ch_pheno_data.into{ch_pheno_data_test}
+  if (params.pheno_data && params.testing){
+    ch_pheno_data.into{ch_pheno_data_test}
+  }
+  if (params.sim_config_file){
+    ch_pheno_data_sim.into{ch_pheno_data_test}
+  }
+  
   process switch_platekeys {
     tag "$name"
     publishDir "${params.outdir}/switch_platekeys", mode: 'copy'
