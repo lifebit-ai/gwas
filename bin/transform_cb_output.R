@@ -97,6 +97,9 @@ if (query_file != 'None'){
     query_df = fromJSON(query_file, flatten=T)$search[, c('values','column.id')]
     query_df = left_join(query_df, pheno_dictionary, by = c('column.id' = 'id')) %>% select(values, name)
 }
+if (query_file == 'None'){
+    query_df = 'None'
+}
 ##################################################
 # Keep only participants for which we have a VCF #
 ##################################################
