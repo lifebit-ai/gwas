@@ -286,7 +286,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
 columns_to_transform = colnames(cb_data) %>%
         str_replace("-[^-]+$", "") %>%
         unique
-cb_data_transformed = sapply(columns_to_transform, function(x) encode_pheno_values(x, cb_data, pheno_dictionary, transformation, aggregation), simplify=FALSE) %>% as.data.frame
+cb_data_transformed = sapply(columns_to_transform, function(x) encode_pheno_values(x, cb_data, pheno_dictionary, transformation, aggregation, query_df), simplify=FALSE) %>% as.data.frame
 
 #####################
 # Make final output #
