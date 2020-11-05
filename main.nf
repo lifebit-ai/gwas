@@ -23,7 +23,7 @@ if (params.gwas_summary && params.gwas_cat_study_id) {
 ---------------------------------------------------*/
 ch_hapmap3_snplist =  params.hapmap3_snplist ? Channel.value(file(params.hapmap3_snplist)) :  "null"
 ch_ld_scores_tar_bz2 =  params.ld_scores_tar_bz2 ? Channel.value(file(params.ld_scores_tar_bz2)) :  "null"
-ch_query =  params.query ? Channel.value(file(params.query)) :  Channel.value("None")
+ch_query =  params.query ? Channel.value(file(params.query)) : "None"
 ch_pheno_data = params.pheno_data ? Channel.value(file(params.pheno_data)) : Channel.empty()
 ch_pheno_metadata = params.pheno_metadata ? Channel.value(file(params.pheno_metadata)) : Channel.empty()
 ch_gwas_summary = params.gwas_summary ? Channel.value(file(params.gwas_summary)) : Channel.empty()
@@ -70,14 +70,15 @@ if (params.pheno_data && params.testing){
                         --outprefix "${params.output_tag}"
     """
   }
-  process transforms_cb_output_testing {
+  if (params.query){
+    process transforms_cb_output_testing {
     tag "$name"
     publishDir "${params.outdir}/design_matrix", mode: 'copy'
 
     input:
     file(pheno_data) from ch_pheno_data_test2
     file(pheno_metadata) from ch_pheno_metadata
-    val(query_file) from ch_query
+    file(query_file) from ch_query
 
     output:
     file("${params.output_tag}_.phe") into ch_transform_cb
@@ -99,6 +100,38 @@ if (params.pheno_data && params.testing){
                           --outdir "." \
                           --output_tag "${params.output_tag}"
     """
+   }
+  }
+  if (!params.query){
+    process transforms_cb_output_testing {
+    tag "$name"
+    publishDir "${params.outdir}/design_matrix", mode: 'copy'
+
+    input:
+    file(pheno_data) from ch_pheno_data_test2
+    file(pheno_metadata) from ch_pheno_metadata
+
+    output:
+    file("${params.output_tag}_.phe") into ch_transform_cb
+    file("*.json") into ch_encoding_json
+    file("*.csv") into ch_encoding_csv
+
+    script:
+    """
+    cp /opt/bin/* .
+
+    mkdir -p ${params.outdir}/design_matrix
+    
+    transform_cb_output.R --input_cb_data "$pheno_data" \
+                          --input_meta_data "$pheno_metadata" \
+                          --phenoCol "${params.pheno_col}" \
+                          --query_file "${ch_query}" \
+                          --continuous_var_transformation "${params.continuous_var_transformation}" \
+                          --continuous_var_aggregation "${params.continuous_var_aggregation}" \
+                          --outdir "." \
+                          --output_tag "${params.output_tag}"
+    """
+   }
   }
 }
 
