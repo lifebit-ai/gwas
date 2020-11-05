@@ -21,6 +21,8 @@ if (params.gwas_summary && params.gwas_cat_study_id) {
 /*--------------------------------------------------
   Channel setup
 ---------------------------------------------------*/
+ch_sim_config_file = params.sim_config_file ? Channel.value(file(params.sim_config_file)) : false
+ch_sim_pheno_data = params.sim_pheno_data ? Channel.value(file(params.sim_pheno_data)) : false
 ch_hapmap3_snplist =  params.hapmap3_snplist ? Channel.value(file(params.hapmap3_snplist)) :  "null"
 ch_ld_scores_tar_bz2 =  params.ld_scores_tar_bz2 ? Channel.value(file(params.ld_scores_tar_bz2)) :  "null"
 ch_query =  params.query ? Channel.value(file(params.query)) : "None"
@@ -47,10 +49,53 @@ Channel
   .set { ch_gwas_cat }
 
 /*--------------------------------------------------
+  Simulation mode: 
+  Create simulated pheno files from a config file
+---------------------------------------------------*/
+if (params.sim_config_file && !params.sim_pheno_data){
+  process simulate_with_config {
+    tag "$name"
+    publishDir "${params.outdir}/simulate_pheno", mode: 'copy'
+    input:
+    file(sim_config) from ch_sim_config_file
+
+    output:
+    file("${params.output_tag}_pheno_data.csv") into ch_pheno_data
+    file("${params.output_tag}_pheno_metadata.csv") into ch_pheno_metadata
+
+    script:
+    """
+    simulate_phenodata.R --config_file "${config_file}" \
+                         --outprefix "${params.output_tag}"
+    """
+  }
+}
+
+if (params.sim_config_file && params.sim_pheno_data){
+  process simulate_with_real_pheno {
+    tag "$name"
+    publishDir "${params.outdir}/simulate_pheno", mode: 'copy'
+    input:
+    file(sim_config) from ch_sim_config_file
+    file(sim_pheno_data) from ch_sim_pheno_data
+
+    output:
+    file("${params.output_tag}_pheno_data.csv") into ch_pheno_data
+    file("${params.output_tag}_pheno_metadata.csv") into ch_pheno_metadata
+
+    script:
+    """
+    simulate_phenodata.R --config_file "${config_file}" \
+                         --pheno_data "${sim_pheno_data}" \
+                         --outprefix "${params.output_tag}"
+    """
+  }
+}
+/*--------------------------------------------------
   Testing mode: 
   Change platekeys by testing data platekeys
 ---------------------------------------------------*/
-if (params.pheno_data && params.testing){
+if ((params.pheno_data && params.testing) || params.sim_pheno_data || params.sim_config_file){
   ch_pheno_data.into{ch_pheno_data_test}
   process switch_platekeys {
     tag "$name"

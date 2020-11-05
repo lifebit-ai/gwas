@@ -1,0 +1,41 @@
+params:    
+    n_samples: 100
+    col_params:
+        cat_col:
+            n_instances: 1
+            n_arrays: 4
+            type: "Categorical"
+            values: ['A', 'B', 'NA']
+            prob: [0.4, 0.4, 0.2]
+            n_missing_col: 2
+        int_col:
+            n_instances: 2
+            n_arrays: 4
+            type: "Integer"
+            mean: 1
+            sd: 4
+            distribution: 'normal'
+            min: 0
+            max: 2
+            frac_missing: 0.33
+            n_missing_col: 3
+            positive_only: True
+        cont_col:
+            n_instances: 2
+            n_arrays: 4
+            type: "Continuous"
+            mean: 1
+            sd: 4
+            distribution: 'normal'
+            frac_missing: 0.33
+            n_missing_col: 3
+            positive_only: True
+        date_col:
+            n_instances: 2
+            n_arrays: 4
+            type: "Date"
+            starting_date: "1954-12-01"
+            end_date: "2020-08-01"
+            frac_missing: 0.33
+            n_missing_col: 3
+        
