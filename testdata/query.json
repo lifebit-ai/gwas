@@ -1,0 +1,49 @@
+{
+    "columns":[ {
+        "id":40,
+                "instance":0,
+                "array":{
+                    "type":"exact",
+                    "value":0
+
+                }
+    }],
+    "type":"csv",
+    "filename":"cancer_phenotype_data",
+    "parentId":"1298319283",
+    "kind":"dataset",
+    "search":[
+        {
+            "column":{
+                "id":40,
+                "instance":0,
+                "array":{
+                    "type":"exact",
+                    "value":0
+
+                }
+
+            },
+            "values":[
+                "Yes"
+            ]
+        },
+        {
+            "column":{
+                "id":41,
+                "instance":0,
+                "array":{
+                    "type":"exact",
+                    "value":0
+
+                }
+
+            },
+            "values":[
+                "Yes",
+                "No"
+            ]
+        }
+    ]
+
+}

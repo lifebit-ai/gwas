@@ -25,6 +25,8 @@ option_list = list(
               help="String containing input Cohort Browser data."),
   make_option(c("--input_meta_data"), action="store", default='assets/Metadata phenotypes - Mapping file.csv', type='character',
               help="String containing input metadata for columns in Cohort Browser output."),
+  make_option(c("--query_file"), action="store", default='None', type='character',
+              help="String containing path/URL to query file."),  
   make_option(c("--phenoCol"), action="store", default='None', type='character',
               help="String representing phenotype that will be used for GWAS comparison(s)."),
   make_option(c("--continuous_var_transformation"), action="store", default='log', type='character',
@@ -42,6 +44,7 @@ args = parse_args(OptionParser(option_list=option_list))
 
 input_cb_data                 = args$input_cb_data
 input_meta_data               = args$input_meta_data
+query_file                    = args$query_file
 phenoCol                      = args$phenoCol
 aggregation                   = args$continuous_var_aggregation
 transformation                = args$continuous_var_transformation
@@ -51,8 +54,6 @@ outdir                        = sub("/$","",args$outdir)
 system(paste0("mkdir -p ", outdir), intern=T)
 
 out_path = paste0(outdir, "/", outprefix)
-
-
 
 if (!(aggregation %in% c('mean', 'max', 'min', 'median'))){
     stop('Selected transformation for continuous variables not supported.')
@@ -66,6 +67,7 @@ cb_data = fread(input_cb_data) %>% as.tibble
 
 # Remove columns full of NAs (empty string in CSV)
 cb_data = cb_data %>% select_if(~!all(is.na(.)))
+
 
 ################################
 # Re-encode cb_data phenotypes #
@@ -87,6 +89,14 @@ pheno_dictionary$`name` = str_replace_all(pheno_dictionary$`name`," ", "_") %>%
         str_replace_all("\\)","") %>% 
         str_to_lower()
 
+##########################################################
+# Read query file and prepare list of lists
+##########################################################
+
+if (query_file != 'None'){
+    query_df = fromJSON(query_file, flatten=T)$search[, c('values','column.id')]
+    query_df = left_join(query_df, pheno_dictionary, by = c('column.id' = 'id')) %>% select(values, name)
+}
 ##################################################
 # Keep only participants for which we have a VCF #
 ##################################################
@@ -94,8 +104,11 @@ pheno_dictionary$`name` = str_replace_all(pheno_dictionary$`name`," ", "_") %>%
 cb_data = cb_data %>% filter(!`platekey_in_aggregate_vcf-0.0`== "") %>% select(-i)
 #Compress multiple measures into a single measurement
 
+##################################################
+# Functions
+##################################################
 
-encode_pheno_values = function(column, data, pheno_dictionary, transformation, aggregation){
+encode_pheno_values = function(column, data, pheno_dictionary, transformation, aggregation, query_df = 'None'){
     
     #Clean column name
     pheno_cols = data[, str_detect(colnames(data), column)]
@@ -113,7 +126,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         return(as.vector(pheno_cols))
     }
     ################################
-    # Categorical               #
+    # Categorical                  #
     ################################
     if (str_detect(pheno_dtype, "Categorical") == TRUE){
         if (str_detect(column, 'platekey')){
@@ -124,11 +137,31 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         pheno_cols[pheno_cols == ''] = "UNKNOWN"
         pheno_values = pheno_cols %>% unlist() %>% sort() %>% unique()
         # Decide aggregation behaviour for samples with paired measures
-        if (dim(pheno_cols)[2] > 1) {
+        if (dim(pheno_cols)[2] > 1 & query_df == 'None') {
             # Arbitrary : get the first column
             # Adds variable called query match that is specific for the column 
             pheno_cols = apply(pheno_cols, 1, function(x) x[1])
+
         }
+        if (dim(pheno_cols)[2] > 1 & query_df != 'None' & sum(str_detect(query_df$`name`, column)) > 0) {
+            # identify rows with queried values
+            query_values = query_df[str_detect(query_df$name, column)),]
+            query_mask = apply(pheno_cols, 2, function(x) x %in% query_values$values)
+            # get the values that are in the query
+            values = sapply(1:dim(pheno_cols)[1], function(x) pheno_cols[x, query_mask[x,]])
+            # get the first entry for the list of values queried for each row with queried values 
+            # and get a list of the first value encounter in each row
+            # There shouldn't be empty rows in this variables because the query was used to generate the cohort
+            values = as.vector(unlist(apply(rbind(values), 2, function(x) unlist(x)[1]))
+            # Substitute the original first column by the new column of first encountered values
+            pheno_cols[[1]] = values
+            #Select the first column of values
+            pheno_cols = apply(pheno_cols, 1, function(x) x[1])
+        }
+        if (dim(pheno_cols)[2] > 1 & query_df != 'None' & sum(str_detect(query_df$`name`, column)) == 0) {
+            #when the column is not on the query file, just apply the standard filter -> take the first column
+            pheno_cols = apply(pheno_cols, 1, function(x) x[1])
+        }    
         # Encode unique values and create mapping list
         encoding = as.list(1:length(pheno_values))
         names(encoding) = pheno_values
@@ -244,6 +277,9 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         return(pheno_cols)
     }
 }
+#####################
+# Run encoding
+#####################
 
 # Run across all columns
 # encode_pheno_values('specimen_type', cb_data, pheno_dictionary, transformation)
