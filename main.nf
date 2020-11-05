@@ -130,7 +130,7 @@ if (params.pheno_data && !params.testing){
     transform_cb_output.R --input_cb_data "$pheno_data" \
                           --input_meta_data "$pheno_metadata" \
                           --phenoCol "${params.pheno_col}" \
-                          --query_file "${query_file"} \
+                          --query_file "${query_file}" \
                           --continuous_var_transformation "${params.continuous_var_transformation}" \
                           --continuous_var_aggregation "${params.continuous_var_aggregation}" \
                           --outdir "." \
