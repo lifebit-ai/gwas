@@ -152,7 +152,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
             # get the first entry for the list of values queried for each row with queried values 
             # and get a list of the first value encounter in each row
             # There shouldn't be empty rows in this variables because the query was used to generate the cohort
-            values = as.vector(unlist(apply(rbind(values), 2, function(x) unlist(x)[1]))
+            values = as.vector(unlist(apply(rbind(values), 2, function(x) unlist(x)[1])))
             # Substitute the original first column by the new column of first encountered values
             pheno_cols[[1]] = values
             #Select the first column of values
