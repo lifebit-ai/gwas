@@ -229,7 +229,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         if (is.vector(pheno_cols) && length(dim(pheno_cols)) == 1) {
             pheno_cols = lapply(pheno_cols, function(x) aggregation_fun(x))
         }
-        if (is.tibble(pheno_cols) && dim(pheno_cols[2]) == 1){
+        if (is.tibble(pheno_cols) && dim(pheno_cols)[2] == 1){
             pheno_cols = pheno_cols[[1]] %>% as.vector()
         }
         pheno_cols = pheno_cols %>% as.vector()
