@@ -140,13 +140,14 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         pheno_cols[pheno_cols == ''] = "UNKNOWN"
         pheno_values = pheno_cols %>% unlist() %>% sort() %>% unique()
         # Decide aggregation behaviour for samples with paired measures
-        if (dim(pheno_cols)[2] > 1 & query_df == 'None') {
+        condition = dim(pheno_cols)[2]
+        if (condition > 1 & query_df == 'None') {
             # Arbitrary : get the first column
             # Adds variable called query match that is specific for the column 
             pheno_cols = apply(pheno_cols, 1, function(x) x[1])
 
         }
-        if (dim(pheno_cols)[2] > 1 & query_df != 'None') {
+        if (condition > 1 & query_df != 'None') {
             if (sum(str_detect(query_df$`name`, column)) > 0){
                 # identify rows with queried values
                 query_values = query_df[str_detect(query_df$name, column),]
