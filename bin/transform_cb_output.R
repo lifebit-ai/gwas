@@ -138,6 +138,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         }
         # Fill the gaps and get list of unique values
         pheno_cols[pheno_cols == ''] = "UNKNOWN"
+        pheno_cols[pheno_cols == NA] = "UNKNOWN"
         pheno_values = pheno_cols %>% unlist() %>% sort() %>% unique()
         # Decide aggregation behaviour for samples with paired measures
         condition = dim(pheno_cols)[2]
