@@ -278,7 +278,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
             # If only one array, applies directly the transformation
             pheno_cols = lapply(pheno_cols, function(x) format(as.Date(x), "%Y%m%d") %>% as.integer) %>% as.vector
         }
-        return(pheno_cols[[1]])
+        return(pheno_cols)
     }
     ################################
     # Free text              #
