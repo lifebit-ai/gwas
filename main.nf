@@ -256,7 +256,7 @@ if (params.pheno_data && !params.testing && !params.query){
 }
 
 //TODO: Check this later and finish it with the processes 
-if (params.trait_type == 'binary' && params.pheno_data && params.case_group && params.design_mode != 'all_contrasts') {
+if (params.trait_type == 'binary' && params.case_group && params.design_mode != 'all_contrasts') {
   process add_design_matrix_case_group {
     tag "$name"
     publishDir "${params.outdir}/contrasts", mode: 'copy'
@@ -285,7 +285,7 @@ if (params.trait_type == 'binary' && params.pheno_data && params.case_group && p
   }
 }
 
-if (params.trait_type == 'binary' && params.pheno_data && params.design_mode == 'all_contrasts') {
+if (params.trait_type == 'binary' && params.design_mode == 'all_contrasts') {
   process add_design_matrix_all{
     tag "$name"
     publishDir "${params.outdir}/contrasts", mode: 'copy'
