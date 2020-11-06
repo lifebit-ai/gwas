@@ -69,8 +69,8 @@ simulate_pheno = function(config, col_names){
                                  prob=config[['col_params']][[col_names]][['prob']]))
         # Get all NA for n random columns
         col_to_na = sample(colnames(sym_cols), config[['col_params']][[col_names]][['n_missing_col']])
-        sym_cols[sym_cols == 'NA'] = NA
-        sym_cols[, col_to_na] = NA
+        sym_cols[sym_cols == 'NA'] = ""
+        sym_cols[, col_to_na] = ""
         return(sym_cols %>% as.tibble())
         
     }

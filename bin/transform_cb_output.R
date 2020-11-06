@@ -229,8 +229,10 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         if (is.vector(pheno_cols) && length(dim(pheno_cols)) == 1) {
             pheno_cols = lapply(pheno_cols, function(x) aggregation_fun(x))
         }
-        pheno_cols = pheno_cols[[1]] %>% as.vector()
-        
+        if (is.tibble(pheno_cols) && dim(pheno_cols[2]) == 1){
+            pheno_cols = pheno_cols[[1]] %>% as.vector()
+        }
+        pheno_cols = pheno_cols %>% as.vector()
         if (str_detect(column, 'pc[0-9]')){
             transformation = 'None'
         }
@@ -263,17 +265,18 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
     if (str_detect(pheno_dtype, 'Time|Date')){
         # Transform - turns it into a big integer
         # Fill empty gaps with current date
-        pheno_cols[pheno_cols == ''] = format(Sys.time(), "%d/%m/%Y")
+        pheno_cols[pheno_cols == ''] = format(Sys.time(), "%Y-%m-%d")
+        pheno_cols[pheno_cols == NA] = format(Sys.time(), "%Y-%m-%d")
         ## Multiple array support
         if (dim(pheno_cols)[2] > 1) {
             # Turns the dates into a big integer
-            pheno_cols = apply(pheno_cols, 1, function(x) format(as.Date(x, "%d/%m/%Y"), "%Y%m%d") %>% as.integer)
+            pheno_cols = apply(pheno_cols, 1, function(x) format(as.Date(x), "%Y%m%d") %>% as.integer)
             # Aggregate - gets the first column - arbitrary
             pheno_cols = apply(pheno_cols, 1, function(x) x[1])
         }
         if (is.vector(pheno_cols) && length(dim(pheno_cols)) == 1) {
             # If only one array, applies directly the transformation
-            pheno_cols = lapply(pheno_cols, function(x) format(as.Date(x, "%d/%m/%Y"), "%Y%m%d") %>% as.integer) %>% as.vector
+            pheno_cols = lapply(pheno_cols, function(x) format(as.Date(x), "%Y%m%d") %>% as.integer) %>% as.vector
         }
         return(pheno_cols[[1]])
     }
