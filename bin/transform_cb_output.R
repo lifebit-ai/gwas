@@ -272,7 +272,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
             # Turns the dates into a big integer
             pheno_cols = apply(pheno_cols, 1, function(x) format(as.Date(x), "%Y%m%d") %>% as.integer)
             # Aggregate - gets the first column - arbitrary
-            pheno_cols = apply(pheno_cols, 1, function(x) x[1])
+            pheno_cols = pheno_cols[1,]
         }
         if (is.vector(pheno_cols) && length(dim(pheno_cols)) == 1) {
             # If only one array, applies directly the transformation
