@@ -191,8 +191,8 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         #Use mapping list on aggregated columns to get
         encoded_col = lapply(pheno_cols, function(x) encoding[x]) %>% unlist() %>% as.vector
         print(column)
-        print(encoded_cols)
-        print(length(encoded_cols))
+        print(encoded_col)
+        print(length(encoded_col))
         return(encoded_col)
     }
     ################################
