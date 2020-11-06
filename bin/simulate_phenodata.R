@@ -158,7 +158,7 @@ if (pheno_data == 'None'){
 value_type = sapply(names(config[['col_params']]), function(x) config[['col_params']][[x]][['type']]) %>% as.vector()
 
 metadata = data.frame('id'=1:length(names(config[['col_params']])), valueType=value_type, name=names(config[['col_params']])) 
-platekeys_ids = data.frame(id=c(length(names(config[['col_params']])+1, length(names(config[['col_params']])+2)
+platekeys_ids = data.frame(id=c(length(names(config[['col_params']]))+1, length(names(config[['col_params']]))+2)
                            valueType=c("Categorical", "Categorical"),
                            name=c("Platekey_in_aggregate_VCF", "i"))
 
