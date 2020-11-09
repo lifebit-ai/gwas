@@ -95,7 +95,7 @@ if (params.sim_config_file && params.sim_pheno_data){
   Testing mode: 
   Change platekeys by testing data platekeys
 ---------------------------------------------------*/
-if ((params.pheno_data && params.testing) || params.sim_pheno_data || params.sim_config_file){
+if ((params.pheno_data || params.sim_pheno_data || params.sim_config_file) && params.testing ){
   if (params.pheno_data && params.testing){
     ch_pheno_data.into{ch_pheno_data_test}
   }
