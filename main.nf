@@ -117,7 +117,7 @@ if ((params.pheno_data || params.sim_pheno_data || params.sim_config_file) && pa
 
     script:
     """
-    test_data_munging.R --input_file "${pheno_data}" \
+    test_data_munging.R --input_file "$pheno_data" \
                         --ids_column "${params.test_ids_column}" \
                         --outprefix "${params.output_tag}"
     """
