@@ -12,7 +12,7 @@ params:
             n_instances: 2
             n_arrays: 4
             type: "Integer"
-            mean: 1
+            mean: 3
             sd: 4
             distribution: 'normal'
             min: 0
@@ -24,8 +24,8 @@ params:
             n_instances: 2
             n_arrays: 4
             type: "Continuous"
-            mean: 1
-            sd: 4
+            mean: 1.5
+            sd: 3
             distribution: 'normal'
             frac_missing: 0.33
             n_missing_col: 3
