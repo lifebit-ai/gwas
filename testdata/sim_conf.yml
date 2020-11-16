@@ -13,7 +13,7 @@ params:
             n_arrays: 4
             type: "Integer"
             mean: 3
-            sd: 4
+            sd: 2
             distribution: 'normal'
             min: 0
             max: 2
@@ -25,7 +25,7 @@ params:
             n_arrays: 4
             type: "Continuous"
             mean: 1.5
-            sd: 3
+            sd: 2
             distribution: 'normal'
             frac_missing: 0.33
             n_missing_col: 3
