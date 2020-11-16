@@ -126,10 +126,6 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
     if (column == "individual_id|i"){
 
         pheno_cols = data[[column]]
-        print(column)
-        print(pheno_cols)
-        print(length(pheno_cols))
-        return(as.vector(pheno_cols))
     }
     ################################
     # Categorical                  #
@@ -137,9 +133,6 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
     if (str_detect(pheno_dtype, "Categorical") == TRUE){
         if (str_detect(column, 'platekey')){
             pheno_cols = pheno_cols[[1]] %>% as.vector()
-            print(column)
-            print(pheno_cols)
-            print(length(pheno_cols))
             return(pheno_cols)
         }
         # Fill the gaps and get list of unique values
@@ -190,9 +183,6 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         write(encoding_json, file = file.path(column, ".json", fsep = ""))
         #Use mapping list on aggregated columns to get
         encoded_col = lapply(pheno_cols, function(x) encoding[x]) %>% unlist() %>% as.vector
-        print(column)
-        print(encoded_col)
-        print(length(encoded_col))
         return(encoded_col)
     }
     ################################
@@ -202,9 +192,6 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         # Transform year of birth into age
         current_year = format(Sys.time(), "%Y") %>% as.integer
         age = current_year - pheno_cols %>% as.vector()
-        print(column)
-        print(age)
-        print(length(age))
         return(age)
     }
     ################################
