@@ -79,7 +79,7 @@ simulate_pheno = function(config, col_names){
         if (config[['col_params']][[col_names]][['distribution']] == 'normal'){
             sym_cols = sapply(combinations,
                               function(x){
-                                  set.seed(config[['seed']] + sample(1:10, 1))
+                                  set.seed(config[['seed']] + sample(0:3, 1))
                                   rnorm(config[['n_samples']],
                                         config[['col_params']][[col_names]][['mean']],
                                         config[['col_params']][[col_names]][['sd']])})
@@ -88,7 +88,7 @@ simulate_pheno = function(config, col_names){
         if (config[['col_params']][[col_names]][['distribution']] == 'uniform'){
             sym_cols = sapply(combinations,
                               function(x){
-                                  set.seed(config[['seed']]+ sample(1:10, 1))
+                                  set.seed(config[['seed']]+ sample(0:3, 1))
                                   runif(config[['n_samples']],
                                     config[['col_params']][[col_names]][['min']],
                                     config[['col_params']][[col_names]][['max']])})
@@ -111,7 +111,7 @@ simulate_pheno = function(config, col_names){
         if (config[['col_params']][[col_names]][['distribution']] == 'normal'){
             sym_cols = sapply(combinations,
                               function(x){
-                                  set.seed(config[['seed']] + sample(1:10, 1))
+                                  set.seed(config[['seed']] + sample(0:3, 1))
                                   rnorm(config[['n_samples']],
                                         config[['col_params']][[col_names]][['mean']],
                                         config[['col_params']][[col_names]][['sd']])})
@@ -119,7 +119,7 @@ simulate_pheno = function(config, col_names){
         if (config[['col_params']][[col_names]][['distribution']] == 'uniform'){
             sym_cols = sapply(combinations,
                               function(x){
-                                  set.seed(config[['seed']] + sample(1:10, 1))
+                                  set.seed(config[['seed']] + sample(0:3, 1))
                                   runif(config[['n_samples']],
                                     config[['col_params']][[col_names]][['min']],
                                     config[['col_params']][[col_names]][['max']])})

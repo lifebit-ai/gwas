@@ -123,7 +123,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
     ################################
     # Individual ID                #
     ################################
-    if (column == "individual_id|i"){
+    if (column == "individual_id|i|eid"){
 
         pheno_cols = data[[column]]
     }
