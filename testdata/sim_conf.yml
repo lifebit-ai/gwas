@@ -26,7 +26,7 @@ params:
             n_arrays: 4
             type: "Continuous"
             mean: 1.5
-            sd: 2
+            sd: 20
             distribution: 'normal'
             frac_missing: 0
             n_missing_col: 0
