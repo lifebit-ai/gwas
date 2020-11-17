@@ -2,9 +2,11 @@
 
 Adds the option of running heritability in your GWAS summary statistics as well as computing the genetic correlation between your trait of interest and a second trait with gwas summary statistics  
 
-## 1. Information about the method
+## 1. Information about the method & how it is used
 
 Vignette: https://github.com/bulik/ldsc/wiki/Heritability-and-Genetic-Correlation
+
+**IMPORTANT NOTE**: it uses `BETA` column as `BETA`, outputs of SAIGE provide this column by default. 
 
 ### 1.1 - Inputs
 - **--post_analysis** : String with `genetic_correlation_h2` or `heritability` for running genetic correlation analysis or heritability after GWAS.
