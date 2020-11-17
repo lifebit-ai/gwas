@@ -107,7 +107,7 @@ cat("top_n_sites        : ", top_n_sites        ,"\n",sep="")
 paths <- list.files(".", pattern = filename_pattern, full.names = TRUE)
 list_of_dfs <- lapply(paths,data.table::fread)
 saige_results <- plyr::rbind.fill(list_of_dfs)
-saige_results[['p.value']][is.na(saige_results[['p.value']])] = 0.999999
+saige_results['p.value'][is.na(saige_results['p.value'])] = 0.999999
 saige_results_sorted_topN <- saige_results[order(saige_results[['p.value']]),][1:top_n_sites,]
 data.table::fwrite(saige_results, paste0(saige_output_name, "_", output_tag, ".csv"), sep = ",")
 data.table::fwrite(saige_results_sorted_topN, "saige_results_top_n.csv", sep = ",")

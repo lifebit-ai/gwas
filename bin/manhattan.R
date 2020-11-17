@@ -149,6 +149,8 @@ cat("manhattan_colour_2 : ", manhattan_colour_2 ,"\n",sep="")
 
 analysis <- data.table::fread(saige_output)
 
+analysis[[p_val_col]] = as.numeric(analysis[[p_val_col]])
+
 png(filename = paste0(output_tag, "_", "manhattan" , ".png") ,
     width    = width,
     height   = height,
