@@ -24,11 +24,10 @@ params:
             n_instances: 2
             n_arrays: 4
             type: "Continuous"
-            mean: 1.5
-            sd: 2
+            mean: 1.8
+            sd: 0.3
             distribution: 'normal'
             frac_missing: 0.33
-            n_missing_col: 3
             positive_only: True
         date_col:
             n_instances: 2
