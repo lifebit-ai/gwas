@@ -79,19 +79,19 @@ simulate_pheno = function(config, col_names){
         if (config[['col_params']][[col_names]][['distribution']] == 'normal'){
             sym_cols = sapply(combinations,
                               function(x){
-                                  set.seed(config[['seed']] + sample(0:3, 1))
+                                  set.seed(config[['seed']])
                                   rnorm(config[['n_samples']],
-                                        config[['col_params']][[col_names]][['mean']],
-                                        config[['col_params']][[col_names]][['sd']])})
+                                        config[['col_params']][[col_names]][['mean']] + rnorm(1, 0, sd=0.05),
+                                        config[['col_params']][[col_names]][['sd']] + rnorm(1, 0, sd=0.05))})
         }
         #Sample from a uniform distribution
         if (config[['col_params']][[col_names]][['distribution']] == 'uniform'){
             sym_cols = sapply(combinations,
                               function(x){
-                                  set.seed(config[['seed']]+ sample(0:3, 1))
+                                  set.seed(config[['seed']])
                                   runif(config[['n_samples']],
-                                    config[['col_params']][[col_names]][['min']],
-                                    config[['col_params']][[col_names]][['max']])})
+                                    config[['col_params']][[col_names]][['min']]  + rnorm(1, 0, sd=0.05),
+                                    config[['col_params']][[col_names]][['max']]  + rnorm(1, 0, sd=0.05))})
         }
         #If only want positive values, use absolute values for negatives
         if (config[['col_params']][[col_names]][['positive_only']]) {
@@ -111,18 +111,18 @@ simulate_pheno = function(config, col_names){
         if (config[['col_params']][[col_names]][['distribution']] == 'normal'){
             sym_cols = sapply(combinations,
                               function(x){
-                                  set.seed(config[['seed']] + sample(0:3, 1))
+                                  set.seed(config[['seed']])
                                   rnorm(config[['n_samples']],
-                                        config[['col_params']][[col_names]][['mean']],
-                                        config[['col_params']][[col_names]][['sd']])})
+                                        config[['col_params']][[col_names]][['mean']] + rnorm(1, 0, sd=0.05),
+                                        config[['col_params']][[col_names]][['sd']] + rnorm(1, 0, sd=0.05))})
         }
         if (config[['col_params']][[col_names]][['distribution']] == 'uniform'){
             sym_cols = sapply(combinations,
                               function(x){
-                                  set.seed(config[['seed']] + sample(0:3, 1))
+                                  set.seed(config[['seed']])
                                   runif(config[['n_samples']],
-                                    config[['col_params']][[col_names]][['min']],
-                                    config[['col_params']][[col_names]][['max']])})
+                                    config[['col_params']][[col_names]][['min']]  + rnorm(1, 0, sd=0.05),
+                                    config[['col_params']][[col_names]][['max']]  + rnorm(1, 0, sd=0.05))})
         }
         
         if (config[['col_params']][[col_names]][['positive_only']]) {
