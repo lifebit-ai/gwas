@@ -616,7 +616,7 @@ if (params.post_analysis == 'heritability' || params.post_analysis == 'genetic_c
                       --merge-alleles $hapmap3_snplist \
                       --a1 Allele1 \
                       --a2 Allele2 \
-                      --signed-sumstats Tstat,0 \
+                      --signed-sumstats BETA,0 \
                       --p p.value \
                       --snp SNPID \
                       --info inputationInfo
