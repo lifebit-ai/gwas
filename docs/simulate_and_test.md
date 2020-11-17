@@ -13,6 +13,7 @@ Example of config file:
 ```
 params:    
     n_samples: 100
+    seed: 777
     col_params:
         cat_col:
             n_instances: 1
