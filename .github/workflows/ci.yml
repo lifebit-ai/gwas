@@ -3,6 +3,25 @@ name: tests for lifebit-ai/gel-gwas
 on: [push, pull_request]
 
 jobs:
+  test_ingest:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        nxf_ver: ['20.01.0', '']
+        continuous_var_aggregation: [mean]
+        continuous_var_transformation: [log]
+        design_mode: ['case_vs_control_contrast']
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install Nextflow
+        run: |
+          export NXF_VER=${{ matrix.nxf_ver }}
+          wget -qO- get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+      - name: Ingest testing data
+        run: |
+          nextflow run ${GITHUB_WORKSPACE} --design_mode ${{ matrix.design_mode }} --continuous_var_transformation ${{ matrix.continuous_var_transformation }}  --continuous_var_aggregation ${{ matrix.continuous_var_aggregation }} -profile test_ingest
+
   test_binary:
     runs-on: ubuntu-latest
     strategy:
