@@ -82,19 +82,15 @@ cb_data = cb_data %>% select_if(~!all(is.na(.)))
 colnames(cb_data) = colnames(cb_data) %>% 
         to_snake_case(sep_in = ":|\\(|\\)|(?<!\\d)\\.")
 
-print('Trim suffix done')
-
 # Use phenotype metadata (data dictionary) to determine the type of each phenotype -> This will be given by CB
 pheno_dictionary = fread(input_meta_data) %>%
         as.tibble # Change by metadata input var
 colnames(pheno_dictionary) = colnames(pheno_dictionary) %>% to_snake_case(sep_in = ":|\\(|\\)|(?<!\\d)\\.")
 
 name_col = colnames(pheno_dictionary)[str_detect(colnames(pheno_dictionary), '^name|^field.*name$')]
-print(name_col)
 pheno_dictionary[[name_col]] = pheno_dictionary[[name_col]] %>%
         to_snake_case(sep_in = ":|\\(|\\)|(?<!\\d)\\.")
 
-print('Preparing pheno_dictionary done')
 ##########################################################
 # Read query file and prepare list of lists
 ##########################################################
