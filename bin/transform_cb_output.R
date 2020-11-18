@@ -133,23 +133,23 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
     # Causes bugs when working with testing and GEL
 
     #Real
-    if (sum(c('value_type', 'type') %in% colnames(pheno_dictionary)) > 0){
+    if (sum(c('value_type', 'type') %in% colnames(pheno_dictionary)) > 1){
         type_col = colnames(pheno_dictionary)[str_detect(colnames(pheno_dictionary), '^value.*type$')]
     }
     #Testing
-    if (sum(c('value_type', 'field_id_type') %in% colnames(pheno_dictionary)) > 0){
+    if (sum(c('value_type', 'field_id_type') %in% colnames(pheno_dictionary)) > 1){
         type_col = colnames(pheno_dictionary)[str_detect(colnames(pheno_dictionary), '^field.*type$')]
     }
-    
     pheno_dtype = filter(pheno_dictionary, str_detect(pheno_dictionary[[name_col]], column)) %>% 
             pull(!!as.symbol(type_col))
     
     ################################
     # Individual ID                #
     ################################
-    if (column == "individual_id|i|eid"){
+    if (column %in% c("individual_id", 'i', 'eid')){
 
         pheno_cols = data[[column]]
+        return(pheno_cols)
     }
     ################################
     # Categorical                  #
@@ -355,6 +355,3 @@ cb_data_transformed[donor_id_col] = NULL
 cb_data_transformed = cb_data_transformed %>% select(FID, IID, PAT, MAT, PHE, everything(), -!!as.symbol(column_to_PHE), -!!as.symbol(id_column))
 ### FID, IID this has to be the platekey metadata -> Agg VCF columns. 
 write.table(cb_data_transformed, paste0(out_path,'.phe'), sep='\t',  quote=FALSE, row.names=FALSE)
-
-
-
