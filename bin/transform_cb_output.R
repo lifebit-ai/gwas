@@ -33,10 +33,13 @@ option_list = list(
               help="String representing the type of transformation desired for integer and continuous input data"),
   make_option(c("--continuous_var_aggregation"), action="store", default='mean', type='character',
               help="String representing the type of aggregation desired for input data"),
+  make_option(c("--id_column"), action="store", default='Platekey_in_aggregate_VCF-0.0', type='character',
+              help="String representing the column name for platekeys/sample IDs in the genomic data"),
   make_option(c("--outdir"), action="store", default='.', type='character',
               help="String containing the output directory"),
   make_option(c("--output_tag"), action="store", default='CB', type='character',
               help="String containing the prefix to be used in the output files")
+
  
 )
 
@@ -48,6 +51,7 @@ query_file                    = args$query_file
 phenoCol                      = args$phenoCol
 aggregation                   = args$continuous_var_aggregation
 transformation                = args$continuous_var_transformation
+id_column                     = args$id_column
 outprefix                     = paste0(args$output_tag, "_")
 outdir                        = sub("/$","",args$outdir)
 
@@ -76,26 +80,29 @@ cb_data = cb_data %>% select_if(~!all(is.na(.)))
 # Trim suffix that denotes multiple entries of columns and replace spaces by "-"
 #colnames(cb_data) = colnames(cb_data) %>% str_replace("-[^-]+$", "")
 colnames(cb_data) = colnames(cb_data) %>% 
-        str_replace_all(" ", "_") %>% 
-        str_replace_all("\\(","") %>%
-        str_replace_all("\\)","") %>%
-        str_to_lower()
+        to_snake_case(sep_in = ":|\\(|\\)|(?<!\\d)\\.")
+
+print('Trim suffix done')
 
 # Use phenotype metadata (data dictionary) to determine the type of each phenotype -> This will be given by CB
 pheno_dictionary = fread(input_meta_data) %>%
         as.tibble # Change by metadata input var
-pheno_dictionary$`name` = str_replace_all(pheno_dictionary$`name`," ", "_") %>%
-        str_replace_all("\\(","") %>%
-        str_replace_all("\\)","") %>% 
-        str_to_lower()
+colnames(pheno_dictionary) = colnames(pheno_dictionary) %>% to_snake_case(sep_in = ":|\\(|\\)|(?<!\\d)\\.")
 
+name_col = colnames(pheno_dictionary)[str_detect(colnames(pheno_dictionary), '^name|^field.*name$')]
+print(name_col)
+pheno_dictionary[[name_col]] = pheno_dictionary[[name_col]] %>%
+        to_snake_case(sep_in = ":|\\(|\\)|(?<!\\d)\\.")
+
+print('Preparing pheno_dictionary done')
 ##########################################################
 # Read query file and prepare list of lists
 ##########################################################
 
 if (query_file != 'None'){
+    pheno_id = colnames(pheno_dictionary)[str_detect(colnames(pheno_dictionary), 'id')]
     query_df = fromJSON(query_file, flatten=T)$search[, c('values','column.id')]
-    query_df = left_join(query_df, pheno_dictionary, by = c('column.id' = 'id')) %>% select(values, name)
+    query_df = left_join(query_df, pheno_dictionary, by = c('column.id' = pheno_id)) %>% select(values, name)
 }
 if (query_file == 'None'){
     query_df = 'None'
@@ -103,22 +110,43 @@ if (query_file == 'None'){
 ##################################################
 # Keep only participants for which we have a VCF #
 ##################################################
-
-cb_data = cb_data %>% filter(!`platekey_in_aggregate_vcf-0.0`== "") %>% select(-i)
+id_column = id_column %>% to_snake_case(sep_in = ":|\\(|\\)|(?<!\\d)\\.") %>% 
+            str_replace_all("-[^-]+$", "")
+platekey_col = colnames(cb_data)[str_detect(colnames(cb_data), id_column)]
+if ('i' %in% colnames(cb_data)){
+    cb_data = cb_data %>% filter(!cb_data[[platekey_col]] == "") %>% select(-i)
+}
+if (-('i' %in% colnames(cb_data))){
+    cb_data = cb_data %>% filter(!cb_data[[platekey_col]] == "")
+}
 #Compress multiple measures into a single measurement
+
 
 ##################################################
 # Functions
 ##################################################
 
 encode_pheno_values = function(column, data, pheno_dictionary, transformation, aggregation, query_df = 'None'){
-    
     #Clean column name
     pheno_cols = data[, str_detect(colnames(data), column)]
 
-    pheno_dtype = filter(pheno_dictionary, str_detect(pheno_dictionary$`name`, column)) %>% 
-            pull(`valueType`)
+    name_col = colnames(pheno_dictionary)[str_detect(colnames(pheno_dictionary), '^name|^field.*name$')]
+
+    # Temporal fix for working with testing version of phenodata and real pheno seamlessly
+    # valueType in testing points to the type of visualization, in real data points to the real datatype
+    # Causes bugs when working with testing and GEL
+
+    #Real
+    if (sum(c('value_type', 'type') %in% colnames(pheno_dictionary)) > 0){
+        type_col = colnames(pheno_dictionary)[str_detect(colnames(pheno_dictionary), '^value.*type$')]
+    }
+    #Testing
+    if (sum(c('value_type', 'field_id_type') %in% colnames(pheno_dictionary)) > 0){
+        type_col = colnames(pheno_dictionary)[str_detect(colnames(pheno_dictionary), '^field.*type$')]
+    }
     
+    pheno_dtype = filter(pheno_dictionary, str_detect(pheno_dictionary[[name_col]], column)) %>% 
+            pull(!!as.symbol(type_col))
     
     ################################
     # Individual ID                #
@@ -148,7 +176,8 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
 
         }
         if (condition > 1 & query_df != 'None') {
-            if (sum(str_detect(query_df$`name`, column)) > 0){
+            query_df$name = query_df$name %>% to_snake_case(sep_in = ":|\\(|\\)|(?<!\\d)\\.")
+            if (sum(str_detect(query_df$name, column)) > 0){
                 # identify rows with queried values
                 query_values = query_df[str_detect(query_df$name, column),]
                 query_mask = apply(pheno_cols, 2, function(x) x %in% query_values$values)
@@ -164,7 +193,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
                 pheno_cols = apply(pheno_cols, 1, function(x) x[1])
             }
             #Cannot make it flat because if query == 'None' it would break the pipeline
-            if(sum(str_detect(query_df$`name`, column)) == 0){
+            if(sum(str_detect(query_df$name, column)) == 0){
                 #when the column is not on the query file, just apply the standard filter -> take the first column
                 pheno_cols = apply(pheno_cols, 1, function(x) x[1])
             }
@@ -255,9 +284,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         if (transformation == 'None'){
             pheno_cols = pheno_cols
         }
-        print(column)
-        print(pheno_cols)
-        print(length(pheno_cols))
+
         return(pheno_cols)
 
     }
@@ -280,9 +307,6 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
             # If only one array, applies directly the transformation
             pheno_cols = lapply(pheno_cols, function(x) format(as.Date(x), "%Y%m%d") %>% as.integer) %>% as.vector
         }
-        print(column)
-        print(pheno_cols)
-        print(length(pheno_cols))
         return(pheno_cols)
     }
     ################################
@@ -291,9 +315,6 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
     if (str_detect(pheno_dtype, 'Text')){
         ## Sets text to NA
         pheno_cols = rep(NA, dim(pheno_cols)[1])
-        print(column)
-        print(pheno_cols)
-        print(length(pheno_cols))
         return(pheno_cols)
     }
 }
@@ -313,28 +334,29 @@ cb_data_transformed = sapply(columns_to_transform, function(x) encode_pheno_valu
 #####################
 
 #TODO: Add more covariates
-column_to_PHE = phenoCol %>% str_replace_all("\\(","") %>%
-        str_replace_all("\\)","") %>%
-        str_replace_all("-[^-]+$", "") %>% 
-        str_replace_all(' ','_') %>% 
-        str_to_lower
+column_to_PHE = phenoCol %>% to_snake_case(sep_in = ":|\\(|\\)|(?<!\\d)\\.") %>% 
+        str_replace_all("-[^-]+$", "")
+
 cb_data_transformed = as_tibble(cb_data_transformed)
 
+platekey_col = platekey_col %>% str_replace("-[^-]+$", "")
 ##Build the .phe file format
-cb_data_transformed$FID = cb_data_transformed[['platekey_in_aggregate_vcf']]
-cb_data_transformed$IID = cb_data_transformed[['platekey_in_aggregate_vcf']]
+cb_data_transformed$FID = cb_data_transformed[[platekey_col]]
+cb_data_transformed$IID = cb_data_transformed[[platekey_col]]
 cb_data_transformed$PAT = 0
 cb_data_transformed$MAT = 0
 # This should be provided either by default from the CB output or as an argument or calculated from the VCF data
 cb_data_transformed$PHE = cb_data_transformed[[column_to_PHE]]
 
-cb_data_transformed[['individual_id']] = NULL
+donor_id_col = colnames(cb_data_transformed)[str_detect(colnames(cb_data_transformed), 'individual_id|eid')]
+cb_data_transformed[donor_id_col] = NULL
 
 
 ##################################################
 # Write .phe file                                #
 ##################################################
-cb_data_transformed = cb_data_transformed %>% select(FID, IID, PAT, MAT, PHE, everything(), -!!as.symbol(column_to_PHE), -`platekey_in_aggregate_vcf`)
+
+cb_data_transformed = cb_data_transformed %>% select(FID, IID, PAT, MAT, PHE, everything(), -!!as.symbol(column_to_PHE), -!!as.symbol(id_column))
 ### FID, IID this has to be the platekey metadata -> Agg VCF columns. 
 write.table(cb_data_transformed, paste0(out_path,'.phe'), sep='\t',  quote=FALSE, row.names=FALSE)
 

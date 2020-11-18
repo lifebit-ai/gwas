@@ -116,6 +116,7 @@ nextflow run main.nf \
 
 ## **Optional**
 
+- **--id_column** : String containing genomic samples IDs, i.e `Platekey in aggregate VCF-0.0`. Defaults to `Platekey_in_aggregate_VCF-0.0`.
 - **--continuous_var_transformation** : Transforms continuous variables using 'log', 'log10', 'log2', 'zscores' or 'None'.
 - **--continuous_var_aggregation** : Defines how to aggregate different measurements. Choose between 'max', 'min', 'median' or 'mean'.
 - **--q_filter** : Minimum allele frequency filter for selecting sites.
