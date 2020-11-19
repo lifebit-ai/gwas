@@ -10,6 +10,7 @@ library(dplyr)
 library(stringr)
 library(optparse)
 library(jsonlite)
+library(snakecase)
     })
 
 ###########################
@@ -72,6 +73,8 @@ out_path = paste0(outdir, "/", outprefix)
 
 data = data.table::fread(input_file)
 
+phenoCol = phenoCol %>%to_snake_case(sep_in = ":|\\(|\\)|(?<!\\d)\\.") %>% 
+        str_replace_all("-[^-]+$", "")
 encodings = read_json(paste0(phenoCol,'.json'))
 
 
