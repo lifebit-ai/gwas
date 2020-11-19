@@ -96,7 +96,7 @@ pheno_dictionary[[name_col]] = pheno_dictionary[[name_col]] %>%
 ##########################################################
 
 if (query_file != 'None'){
-    pheno_id = colnames(pheno_dictionary)[colnames(pheno_dictionary) == 'id')]
+    pheno_id = colnames(pheno_dictionary)[colnames(pheno_dictionary) == 'id']
     query_df = fromJSON(query_file, flatten=T)$search[, c('values','column.id')]
     query_df = left_join(query_df, pheno_dictionary, by = c('column.id' = pheno_id)) %>% select(values, name)
 }
