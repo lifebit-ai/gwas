@@ -124,7 +124,6 @@ if (-('i' %in% colnames(cb_data))){
 
 encode_pheno_values = function(column, data, pheno_dictionary, transformation, aggregation, query_df = 'None'){
     #Clean column name
-    print(column)
     pheno_cols = data[, str_detect(colnames(data), column)]
 
     name_col = colnames(pheno_dictionary)[str_detect(colnames(pheno_dictionary), '^name|^field.*name$')]
@@ -162,7 +161,9 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         }
         # Fill the gaps and get list of unique values
         pheno_cols[pheno_cols == ''] = "UNKNOWN"
-        pheno_cols[pheno_cols == NA] = "UNKNOWN"
+        pheno_cols[is.na(pheno_cols)] = "UNKNOWN"
+        pheno_cols[is.nan(pheno_cols)] = "UNKNOWN"
+        
         pheno_values = pheno_cols %>% unlist() %>% sort() %>% unique()
         # Decide aggregation behaviour for samples with paired measures
         condition = dim(pheno_cols)[2]
