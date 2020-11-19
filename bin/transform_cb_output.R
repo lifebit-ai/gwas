@@ -98,7 +98,7 @@ pheno_dictionary[[name_col]] = pheno_dictionary[[name_col]] %>%
 if (query_file != 'None'){
     pheno_id = colnames(pheno_dictionary)[colnames(pheno_dictionary) == 'id']
     query_df = fromJSON(query_file, flatten=T)$search[, c('values','column.id')]
-    query_df = left_join(query_df, pheno_dictionary, by = c('column.id' = pheno_id)) %>% select(values, name)
+    query_df = left_join(query_df, pheno_dictionary, by = c('column.id' = pheno_id),  suffix=c("_query", "_dict")) %>% select(values_query, name)
 }
 if (query_file == 'None'){
     query_df = 'None'
@@ -177,7 +177,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
             if (sum(str_detect(query_df$name, column)) > 0){
                 # identify rows with queried values
                 query_values = query_df[str_detect(query_df$name, column),]
-                query_mask = apply(pheno_cols, 2, function(x) x %in% query_values$values)
+                query_mask = apply(pheno_cols, 2, function(x) x %in% query_values$values_query)
                 # get the values that are in the query
                 values = sapply(1:dim(pheno_cols)[1], function(x) pheno_cols[x, query_mask[x,]])
                 # get the first entry for the list of values queried for each row with queried values 
