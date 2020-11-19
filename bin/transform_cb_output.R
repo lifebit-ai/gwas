@@ -124,6 +124,7 @@ if (-('i' %in% colnames(cb_data))){
 
 encode_pheno_values = function(column, data, pheno_dictionary, transformation, aggregation, query_df = 'None'){
     #Clean column name
+    print(column)
     pheno_cols = data[, str_detect(colnames(data), column)]
 
     name_col = colnames(pheno_dictionary)[str_detect(colnames(pheno_dictionary), '^name|^field.*name$')]
