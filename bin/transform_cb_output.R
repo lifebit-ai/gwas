@@ -160,9 +160,9 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
             return(pheno_cols)
         }
         # Fill the gaps and get list of unique values
-        pheno_cols = pheno_cols %>% dplyr::mutate_all(as.character)
+        pheno_cols = data.frame(lapply(pheno_cols, as.character), stringsAsFactors=FALSE)
         pheno_cols[pheno_cols == ''] = "UNKNOWN"
-        pheno_cols[is.na(pheno_cols)] = "UNKNOWN"
+        pheno_cols[pheno_cols == NA] = "UNKNOWN"
         pheno_cols[pheno_cols == NaN] = "UNKNOWN"
         
         pheno_values = pheno_cols %>% unlist() %>% sort() %>% unique()
