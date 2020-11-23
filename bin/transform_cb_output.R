@@ -48,7 +48,8 @@ args = parse_args(OptionParser(option_list=option_list))
 input_cb_data                 = args$input_cb_data
 input_meta_data               = args$input_meta_data
 query_file                    = args$query_file
-phenoCol                      = args$phenoCol
+phenoCol                      = args$phenoCol %>% to_snake_case(sep_in = ":|\\(|\\)|(?<!\\d)\\.") %>% 
+                                                  str_replace_all("-[^-]+$", "")
 aggregation                   = args$continuous_var_aggregation
 transformation                = args$continuous_var_transformation
 id_column                     = args$id_column
@@ -163,6 +164,7 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         pheno_cols = data.frame(lapply(pheno_cols, as.character), stringsAsFactors=FALSE)
         pheno_cols[pheno_cols == ''] = "UNKNOWN"
         pheno_cols[pheno_cols == NA] = "UNKNOWN"
+        pheno_cols = data.frame(lapply(pheno_cols, as.character), stringsAsFactors=FALSE)
         pheno_cols[pheno_cols == NaN] = "UNKNOWN"
         
         pheno_values = pheno_cols %>% unlist() %>% sort() %>% unique()
@@ -333,8 +335,7 @@ cb_data_transformed = sapply(columns_to_transform, function(x) encode_pheno_valu
 #####################
 
 #TODO: Add more covariates
-column_to_PHE = phenoCol %>% to_snake_case(sep_in = ":|\\(|\\)|(?<!\\d)\\.") %>% 
-        str_replace_all("-[^-]+$", "")
+column_to_PHE = phenoCol
 
 cb_data_transformed = as_tibble(cb_data_transformed)
 

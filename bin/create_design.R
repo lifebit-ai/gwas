@@ -58,10 +58,8 @@ mode                    = args$mode
 case_group              = args$case_group
 outprefix               = paste0(args$output_tag, "_")
 outdir                  = sub("/$","",args$outdir)
-phenoCol                = args$phenoCol %>% str_replace('\\(|\\)',"") %>% 
-                                            str_replace("-[^-]+$", "") %>% 
-                                            str_replace(' ','_') %>% 
-                                            str_to_lower
+phenoCol                = args$phenoCol %>% to_snake_case(sep_in = ":|\\(|\\)|(?<!\\d)\\.") %>% 
+                                            str_replace_all("-[^-]+$", "")
 
 system(paste0("mkdir -p ", outdir), intern=T)
 
@@ -73,8 +71,6 @@ out_path = paste0(outdir, "/", outprefix)
 
 data = data.table::fread(input_file)
 
-phenoCol = phenoCol %>%to_snake_case(sep_in = ":|\\(|\\)|(?<!\\d)\\.") %>% 
-        str_replace_all("-[^-]+$", "")
 encodings = read_json(paste0(phenoCol,'.json'))
 
 
@@ -95,6 +91,7 @@ if (case_group != 'None' & mode == 'case_vs_group_contrasts'){
   write.table(data, paste0(out_path,'design_matrix_control_all','_case_',case_group,'.phe'), sep='\t',  quote=FALSE, row.names=FALSE)
 }
 if (case_group != 'None' & mode == 'case_vs_control_contrast'){
+  case_group = as.character(case_group)
   case_group = encodings[[case_group]]
   data$PHE = case_when(data$PHE == case_group ~ 1,
                         TRUE ~ 0)
