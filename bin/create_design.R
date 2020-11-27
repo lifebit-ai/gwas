@@ -55,7 +55,7 @@ args = parse_args(OptionParser(option_list=option_list))
 # Args to variables
 input_file              = args$input_file
 mode                    = args$mode
-case_group              = args$case_group
+case_group              = args$case_group %>% tolower
 outprefix               = paste0(args$output_tag, "_")
 outdir                  = sub("/$","",args$outdir)
 phenoCol                = args$phenoCol %>% to_snake_case(sep_in = ":|\\(|\\)|(?<!\\d)\\.") %>% 

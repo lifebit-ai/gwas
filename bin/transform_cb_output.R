@@ -163,7 +163,8 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         }
         
         # Ensure all categorical are strings and lowercase
-        pheno_cols = data.frame(lapply(pheno_cols, as.character %>% tolower), stringsAsFactors=FALSE)
+        pheno_cols = data.frame(lapply(pheno_cols, as.character), stringsAsFactors=FALSE)
+        pheno_cols = data.frame(lapply(pheno_cols, tolower), stringsAsFactors=FALSE)
         # Fill the gaps and get list of unique values
         pheno_cols[is.na(pheno_cols)] = ""
         pheno_cols[pheno_cols == NaN] = ""
