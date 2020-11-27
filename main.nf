@@ -300,7 +300,8 @@ if (params.trait_type == 'binary'){
       --vcf-half-call m \
       --double-id \
       --set-hh-missing \
-      --new-id-max-allele-len 60 missing
+      --new-id-max-allele-len 60 missing \
+      --output-chr chrM
 
     #Filter missingness
     plink \
@@ -312,9 +313,10 @@ if (params.trait_type == 'binary'){
       --out ${name} \
       --1 \
       --keep-allele-order \
-      ${extra_plink_filter_missingness_options}
+      ${extra_plink_filter_missingness_options} \
+      --output-chr chrM
 
-    awk '\$5 < ${params.thres_m} {print}' ${name}.missing > ${name}.missing_FAIL
+    awk -v thresm=\${params.thres_m} '\$5 < thresm {print}'  ${name}.missing > ${name}.missing_FAIL 
 
     #Filter HWE
     plink \
@@ -328,7 +330,8 @@ if (params.trait_type == 'binary'){
       --exclude ${name}.missing_FAIL \
       --1 \
       --keep-allele-order \
-      ${extra_plink_filter_missingness_options}
+      ${extra_plink_filter_missingness_options} \
+      --output-chr chrM
 
     bcftools view ${name}_filtered.vcf.gz | awk -F '\\t' 'NR==FNR{c[\$1\$4\$6\$5]++;next}; c[\$1\$2\$4\$5] > 0' ${name}.misHWEfiltered.bim - | bgzip > ${name}.filtered_temp.vcf.gz
     bcftools view -h ${name}_filtered.vcf.gz -Oz -o ${name}_filtered.header.vcf.gz
