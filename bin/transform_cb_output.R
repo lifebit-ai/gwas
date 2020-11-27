@@ -163,10 +163,10 @@ encode_pheno_values = function(column, data, pheno_dictionary, transformation, a
         }
         # Fill the gaps and get list of unique values
         pheno_cols = data.frame(lapply(pheno_cols, as.character), stringsAsFactors=FALSE)
+        pheno_cols[is.na(pheno_cols)] = ""
+        pheno_cols[pheno_cols == NaN] = ""
+        pheno_cols[pheno_cols == '<NA>'] = ""
         pheno_cols[pheno_cols == ''] = "UNKNOWN"
-        pheno_cols[pheno_cols == NA] = "UNKNOWN"
-        pheno_cols = data.frame(lapply(pheno_cols, as.character), stringsAsFactors=FALSE)
-        pheno_cols[pheno_cols == NaN] = "UNKNOWN"
         
         pheno_values = pheno_cols %>% unlist() %>% sort() %>% unique()
         # Decide aggregation behaviour for samples with paired measures
