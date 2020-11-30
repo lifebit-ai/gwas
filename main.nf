@@ -342,7 +342,7 @@ if (params.trait_type == 'binary'){
 }
   ch_transform_cb.set{phenoCh_gwas_filtering}
 
-if (params.trait_type != 'binary') {
+if (params.trait_type == 'quantitative') {
   process gwas_filtering_qt {
   tag "$name"
   publishDir "${params.outdir}/gwas_filtering", mode: 'copy'
