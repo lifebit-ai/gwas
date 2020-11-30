@@ -300,7 +300,7 @@ if (params.trait_type == 'binary'){
       --vcf-half-call m \
       --double-id \
       --set-hh-missing \
-      --new-id-max-allele-len 60 missing \
+      --new-id-max-allele-len ${params.plink_new_id_max_allele_len} missing \
       --output-chr  ${params.plink_output_chr}
 
     #Filter missingness
@@ -374,7 +374,7 @@ if (params.trait_type != 'binary') {
     --vcf-half-call m \
     --double-id \
     --set-hh-missing \
-    --new-id-max-allele-len 60 missing
+    --new-id-max-allele-len ${params.plink_new_id_max_allele_len} missing
 
   #Filter HWE
   plink \
