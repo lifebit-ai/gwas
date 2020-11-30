@@ -53,7 +53,7 @@ Channel
 ---------------------------------------------------*/
 if (params.pheno_data && params.testing){
   if (params.pheno_data && params.testing){
-    ch_pheno_data.into{ch_pheno_data_test}
+    ch_pheno_data.set{ch_pheno_data_test}
   }
   
   process switch_platekeys {
@@ -340,9 +340,9 @@ if (params.trait_type == 'binary'){
     """
   }
 }
+  ch_transform_cb.set{phenoCh_gwas_filtering}
 
 if (params.trait_type != 'binary') {
-  ch_transform_cb.into{phenoCh_gwas_filtering}
   process gwas_filtering_qt {
   tag "$name"
   publishDir "${params.outdir}/gwas_filtering", mode: 'copy'
@@ -397,14 +397,13 @@ if (params.trait_type != 'binary') {
   }
 }
 
-
 /*--------------------------------------------------
   GWAS Analysis 1 with SAIGE - Fit the null mixed-model
 ---------------------------------------------------*/
 // Create channel for this process
-phenoCh_gwas_filtering.into{phenoCh}
 
 if (params.trait_type == 'binary'){
+  phenoCh_gwas_filtering.set{phenoCh}
   process gwas_1_fit_null_glmm_bin {
     tag "$plink_grm_snps"
     publishDir "${params.outdir}/gwas_1_fit_null_glmm", mode: 'copy'
