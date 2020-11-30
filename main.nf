@@ -52,7 +52,6 @@ Channel
   Change platekeys by testing data platekeys
 ---------------------------------------------------*/
 if (params.pheno_data && params.testing){
-  if (params.pheno_data && params.testing){
     ch_pheno_data.set{ch_pheno_data_test}
   }
   
@@ -136,7 +135,6 @@ if (params.pheno_data && params.testing){
                           --output_tag "${params.output_tag}"
     """
    }
-  }
 }
 
 
