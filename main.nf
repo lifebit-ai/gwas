@@ -316,7 +316,7 @@ if (params.trait_type == 'binary'){
       ${extra_plink_filter_missingness_options} \
       --output-chr ${params.plink_output_chr}
 
-    awk -v thresm=\${params.thres_m} '\$5 < thresm {print}'  ${name}.missing > ${name}.missing_FAIL 
+    awk -v thresm=${params.thres_m} '\$5 < thresm {print}'  ${name}.missing > ${name}.missing_FAIL 
 
     #Filter HWE
     plink \
