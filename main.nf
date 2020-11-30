@@ -294,7 +294,7 @@ if (params.trait_type == 'binary'){
     # Create PLINK binary from vcf.gz
     plink2 \
       --make-bed \
-      --set-missing-var-ids @:#,\\\$r,\\\$a \
+      --set-missing-var-ids ${params.plink_set_missing_var_ids} \
       --vcf ${name}_filtered.vcf.gz \
       --out ${name}_filtered \
       --vcf-half-call ${params.plink_vcf_half_call} \
@@ -368,7 +368,7 @@ if (params.trait_type != 'binary') {
   # Create PLINK binary from vcf.gz
   plink2 \
     --make-bed \
-    --set-missing-var-ids @:#,\\\$r,\\\$a \
+    --set-missing-var-ids ${params.plink_set_missing_var_ids} \
     --vcf ${name}_filtered.vcf.gz \
     --out ${name}_filtered \
     --vcf-half-call ${params.plink_vcf_half_call} \
