@@ -175,7 +175,7 @@ if (params.pheno_data && !params.testing && params.query){
 }
 if (params.pheno_data && !params.testing && !params.query){
   process transforms_cb_output_noquery {
-    tag "$name"
+    tag "$pheno_data"
     publishDir "${params.outdir}/design_matrix", mode: 'copy'
 
     input:
@@ -360,36 +360,7 @@ if (params.trait_type == 'quantitative') {
   extra_plink_filter_missingness_options = params.plink_keep_pheno != "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/nodata" ? "--keep ${plink_keep_file}" : ""
   """
   # Download, filter and convert (bcf or vcf.gz) -> vcf.gz
-  bcftools view -q ${params.q_filter} $vcf -Oz -o ${name}_filtered.vcf.gz
-  bcftools index ${name}_filtered.vcf.gz
-
-  # Create PLINK binary from vcf.gz
-  plink2 \
-    --make-bed \
-    --set-missing-var-ids '${params.plink_set_missing_var_ids}' \
-    --vcf ${name}_filtered.vcf.gz \
-    --out ${name}_filtered \
-    --vcf-half-call ${params.plink_vcf_half_call} \
-    --double-id \
-    --set-hh-missing \
-    --new-id-max-allele-len ${params.plink_new_id_max_allele_len} missing
-
-  #Filter HWE
-  plink \
-    --bfile ${name}_filtered \
-    --pheno $phe_file \
-    --pheno-name PHE \
-    --allow-no-sex \
-    --hwe ${params.thres_HWE} midp \
-    --out ${name}.misHWEfiltered \
-    --make-just-bim \
-    --1 \
-    --keep-allele-order \
-    ${extra_plink_filter_missingness_options}
-
-  bcftools view ${name}_filtered.vcf.gz | awk -F '\\t' 'NR==FNR{c[\$1\$4\$6\$5]++;next}; c[\$1\$2\$4\$5] > 0' ${name}.misHWEfiltered.bim - | bgzip > ${name}.filtered_temp.vcf.gz
-  bcftools view -h ${name}_filtered.vcf.gz -Oz -o ${name}_filtered.header.vcf.gz
-  cat ${name}_filtered.header.vcf.gz ${name}.filtered_temp.vcf.gz > ${name}.filtered_final.vcf.gz
+  bcftools view -q ${params.q_filter} $vcf -Oz -o ${name}.filtered_final.vcf.gz
   bcftools index ${name}.filtered_final.vcf.gz
   """
   }
