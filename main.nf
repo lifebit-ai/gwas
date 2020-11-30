@@ -112,13 +112,14 @@ if (params.trait_type == 'binary' && params.case_group && params.design_mode != 
   Pre-GWAS filtering - download, filter and convert VCFs
   ---------------------------------------------------*/
 if (params.trait_type == 'binary'){
+  (phenoCh_gwas_filtering_bin, phenoCh_gwas_filtering) = phenoCh_gwas_filtering.into(2)
   process gwas_filtering_bin {
     tag "$name"
     publishDir "${params.outdir}/gwas_filtering", mode: 'copy'
 
     input:
     set val(name), val(chr), file(vcf), file(index) from vcfsCh
-    each file(phe_file) from phenoCh_gwas_filtering
+    each file(phe_file) from phenoCh_gwas_filtering_bin
     each file(plink_keep_file) from plink_keep_pheno_ch
 
     output:
