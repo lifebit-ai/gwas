@@ -314,7 +314,7 @@ if (params.trait_type == 'binary'){
       --1 \
       --keep-allele-order \
       ${extra_plink_filter_missingness_options} \
-      --output-chr chrM
+      --output-chr ${params.plink_output_chr}
 
     awk -v thresm=\${params.thres_m} '\$5 < thresm {print}'  ${name}.missing > ${name}.missing_FAIL 
 
@@ -331,7 +331,7 @@ if (params.trait_type == 'binary'){
       --1 \
       --keep-allele-order \
       ${extra_plink_filter_missingness_options} \
-      --output-chr chrM
+      --output-chr ${params.plink_output_chr}
 
     bcftools view ${name}_filtered.vcf.gz | awk -F '\\t' 'NR==FNR{c[\$1\$4\$6\$5]++;next}; c[\$1\$2\$4\$5] > 0' ${name}.misHWEfiltered.bim - | bgzip > ${name}.filtered_temp.vcf.gz
     bcftools view -h ${name}_filtered.vcf.gz -Oz -o ${name}_filtered.header.vcf.gz
