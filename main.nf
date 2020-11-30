@@ -297,7 +297,7 @@ if (params.trait_type == 'binary'){
       --set-missing-var-ids @:#,\\\$r,\\\$a \
       --vcf ${name}_filtered.vcf.gz \
       --out ${name}_filtered \
-      --vcf-half-call m \
+      --vcf-half-call ${params.plink_vcf_half_call} \
       --double-id \
       --set-hh-missing \
       --new-id-max-allele-len ${params.plink_new_id_max_allele_len} missing \
@@ -371,7 +371,7 @@ if (params.trait_type != 'binary') {
     --set-missing-var-ids @:#,\\\$r,\\\$a \
     --vcf ${name}_filtered.vcf.gz \
     --out ${name}_filtered \
-    --vcf-half-call m \
+    --vcf-half-call ${params.plink_vcf_half_call} \
     --double-id \
     --set-hh-missing \
     --new-id-max-allele-len ${params.plink_new_id_max_allele_len} missing

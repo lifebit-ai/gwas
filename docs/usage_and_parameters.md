@@ -97,7 +97,7 @@ nextflow run main.nf \
 - **--programme** : Under development. It will allow the user to select between cohorts.
 - **--plink_output_chr** : Encoding for chromosome representation (chr or not prefix for example) for plink. Default value is set to `'chrM'`. Other supported options are '26' (plink default), 'M', 'MT', '0M', 'chr26', 'chrM', and 'chrMT'. See [plink docs](https://www.cog-genomics.org/plink/1.9/data#irreg_output) for more detailed explanation of each represantion
 - **--plink_new_id_max_allele_len** : Max length allowed for INDELS. Default value is set to `1000`. See [plink docs](https://www.cog-genomics.org/plink/2.0/data) for more detailed explanation of the parameter.
-
+- **--plink_vcf_half_call**: Mode of interpretation for half calls in the VCF file (eg '0/.'). Default mode has been set to 'm' which corresponds to missng. See [plink docs](https://www.cog-genomics.org/plink/2.0/input#vcf_half_call) for more detailed explanation of the parameter.
 
 ## **Binary**
 
