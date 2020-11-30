@@ -95,6 +95,7 @@ nextflow run main.nf \
 - **--pheno_metadata** : path/url to file that contains metadata from phenotypic information.
 - **--query** : Path to file that will allow the user to query through multiple instances & arrays of the same phenotype to avoid contamination of values not selected. When two or more values selected are present in a individual for a phenotype, it arbitrarily assigns the first of the list of queried values as the final value.
 - **--programme** : Under development. It will allow the user to select between cohorts.
+- **--plink_output_chr** : Encoding for chromosome representation (chr or not prefix for example) for plink. Default value is set to `'chrM'`. Other supported options are '26' (plink default), 'M', 'MT', '0M', 'chr26', 'chrM', and 'chrMT'. See [plink docs](https://www.cog-genomics.org/plink/1.9/data#irreg_output) for more detailed explanation of each represantion
 
 ## **Binary**
 

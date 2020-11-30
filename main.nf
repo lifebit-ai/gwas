@@ -301,7 +301,7 @@ if (params.trait_type == 'binary'){
       --double-id \
       --set-hh-missing \
       --new-id-max-allele-len 60 missing \
-      --output-chr chrM
+      --output-chr  ${params.plink_output_chr}
 
     #Filter missingness
     plink \
