@@ -46,6 +46,26 @@ Channel
   .ifEmpty { exit 1, "Cannot find GWAS catalogue CSV  file : ${params.gwas_cat}" }
   .set { ch_gwas_cat }
 
+/*--------------------------
+Get samplesID from vcfs
+----------------------------*/
+(vcfsCh, vcf_ids_ch) = vcfsCh.into(2)
+process get_vcf_ids {
+    publishDir "${params.outdir}/design_matrix", mode: 'copy'
+
+    input:
+    set val(name), val(chr), file(vcf), file(index) from vcf_ids_ch.first()
+
+    output:
+    file("*.txt") into sample_id_ch
+
+    script:
+    """
+    bcftools query --list-samples $vcf > samples_id.txt
+    """
+
+
+  }
 
 /*--------------------------------------------------
   Testing mode: 
@@ -83,6 +103,7 @@ if (params.pheno_data && params.testing){
     file(pheno_data) from ch_pheno_data_test2
     file(pheno_metadata) from ch_pheno_metadata
     file(query_file) from ch_query
+    file(sample_ids) from sample_id_ch
 
     output:
     file("${params.output_tag}_.phe") into ch_transform_cb
@@ -99,6 +120,7 @@ if (params.pheno_data && params.testing){
                           --input_meta_data "$pheno_metadata" \
                           --phenoCol "${params.pheno_col}" \
                           --query_file "${query_file}" \
+                          --sample_ids_file "${sample_ids}" \
                           --continuous_var_transformation "${params.continuous_var_transformation}" \
                           --continuous_var_aggregation "${params.continuous_var_aggregation}" \
                           --outdir "." \
@@ -114,6 +136,7 @@ if (params.pheno_data && params.testing){
     input:
     file(pheno_data) from ch_pheno_data_test2
     file(pheno_metadata) from ch_pheno_metadata
+    file(sample_ids) from sample_id_ch
 
     output:
     file("${params.output_tag}_.phe") into ch_transform_cb
@@ -130,6 +153,7 @@ if (params.pheno_data && params.testing){
                           --input_meta_data "$pheno_metadata" \
                           --phenoCol "${params.pheno_col}" \
                           --query_file "${ch_query}" \
+                          --sample_ids_file "${sample_ids}" \
                           --continuous_var_transformation "${params.continuous_var_transformation}" \
                           --continuous_var_aggregation "${params.continuous_var_aggregation}" \
                           --outdir "." \
@@ -152,6 +176,7 @@ if (params.pheno_data && !params.testing && params.query){
     file(pheno_data) from ch_pheno_data
     file(pheno_metadata) from ch_pheno_metadata
     file(query_file) from ch_query
+    file(sample_ids) from sample_id_ch
 
     output:
     file("${params.output_tag}_.phe") into ch_transform_cb
@@ -168,6 +193,7 @@ if (params.pheno_data && !params.testing && params.query){
                           --input_meta_data "$pheno_metadata" \
                           --phenoCol "${params.pheno_col}" \
                           --query_file "${query_file}" \
+                          --sample_ids_file "${sample_ids}" \
                           --continuous_var_transformation "${params.continuous_var_transformation}" \
                           --continuous_var_aggregation "${params.continuous_var_aggregation}" \
                           --outdir "." \
@@ -183,6 +209,7 @@ if (params.pheno_data && !params.testing && !params.query){
     input:
     file(pheno_data) from ch_pheno_data
     file(pheno_metadata) from ch_pheno_metadata
+    file(sample_ids) from sample_id_ch
 
     output:
     file("${params.output_tag}_.phe") into ch_transform_cb
@@ -199,6 +226,7 @@ if (params.pheno_data && !params.testing && !params.query){
                           --input_meta_data "$pheno_metadata" \
                           --phenoCol "${params.pheno_col}" \
                           --query_file "${ch_query}" \
+                          --sample_ids_file "${sample_ids}" \
                           --continuous_var_transformation "${params.continuous_var_transformation}" \
                           --continuous_var_aggregation "${params.continuous_var_aggregation}" \
                           --outdir "." \
@@ -218,7 +246,7 @@ if (params.trait_type == 'binary' && params.case_group && params.design_mode != 
     file(json) from ch_encoding_json
 
     output:
-    file("${params.output_tag}_design_matrix_control_*.phe") into phenoCh_gwas_filtering
+    file("${params.output_tag}_design_matrix_control_*.phe") into (phenoCh_gwas_filtering, phenoCh)
 
     script:
     """
@@ -247,7 +275,7 @@ if (params.trait_type == 'binary' && params.design_mode == 'all_contrasts') {
     file(json) from ch_encoding_json
 
     output:
-    file("${params.output_tag}_design_matrix_control_*.phe") into phenoCh_gwas_filtering
+    file("${params.output_tag}_design_matrix_control_*.phe") into (phenoCh_gwas_filtering, phenoCh)
 
     script:
     """
@@ -280,7 +308,7 @@ if (params.trait_type == 'binary'){
 
     output:
     set val(name), val(chr), file("${name}.filtered_final.vcf.gz"), file("${name}.filtered_final.vcf.gz.csi") into filteredVcfsCh
-
+    
     script:
     // TODO: (High priority) Only extract needed individuals from VCF files with `bcftools -S samples.txt` - get from samples file?
     // TODO: (Not required) `bcftools -T sites_to_extract.txt`
@@ -338,8 +366,9 @@ if (params.trait_type == 'binary'){
   }
 }
 
+
 if (params.trait_type != 'binary') {
-  ch_transform_cb.into{phenoCh_gwas_filtering}
+  (phenoCh_gwas_filtering, phenoCh) = ch_transform_cb.into(2)
   process gwas_filtering_qt {
   tag "$name"
   publishDir "${params.outdir}/gwas_filtering", mode: 'copy'
@@ -398,10 +427,9 @@ if (params.trait_type != 'binary') {
 /*--------------------------------------------------
   GWAS Analysis 1 with SAIGE - Fit the null mixed-model
 ---------------------------------------------------*/
-// Create channel for this process
-phenoCh_gwas_filtering.into{phenoCh}
 
 if (params.trait_type == 'binary'){
+
   process gwas_1_fit_null_glmm_bin {
     tag "$plink_grm_snps"
     publishDir "${params.outdir}/gwas_1_fit_null_glmm", mode: 'copy'

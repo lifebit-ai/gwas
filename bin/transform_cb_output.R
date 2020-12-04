@@ -26,6 +26,8 @@ option_list = list(
   make_option(c("--input_meta_data"), action="store", default='assets/Metadata phenotypes - Mapping file.csv', type='character',
               help="String containing input metadata for columns in Cohort Browser output."),
   make_option(c("--query_file"), action="store", default='None', type='character',
+              help="String containing path/URL to query file."),
+  make_option(c("--sample_ids_file"), action="store", default='None', type='character',
               help="String containing path/URL to query file."),  
   make_option(c("--phenoCol"), action="store", default='None', type='character',
               help="String representing phenotype that will be used for GWAS comparison(s)."),
@@ -48,11 +50,12 @@ args = parse_args(OptionParser(option_list=option_list))
 input_cb_data                 = args$input_cb_data
 input_meta_data               = args$input_meta_data
 query_file                    = args$query_file
+sample_ids_file               = args$sample_ids_file
 phenoCol                      = args$phenoCol %>% to_snake_case(sep_in = ":|\\(|\\)|(?<!\\d)\\.") %>% 
                                                   str_replace_all("-[^-]+$", "")
 aggregation                   = args$continuous_var_aggregation
 transformation                = args$continuous_var_transformation
-id_column                     = args$id_column
+id_column                     = args$id_column %>% to_snake_case(sep_in = ":|\\(|\\)|(?<!\\d)\\.")
 outprefix                     = paste0(args$output_tag, "_")
 outdir                        = sub("/$","",args$outdir)
 
@@ -70,9 +73,6 @@ if (!(aggregation %in% c('mean', 'max', 'min', 'median'))){
 
 cb_data = fread(input_cb_data) %>% as.tibble
 
-# Remove columns full of NAs (empty string in CSV)
-cb_data = cb_data %>% select_if(~!all(is.na(.)))
-
 
 ################################
 # Re-encode cb_data phenotypes #
@@ -82,6 +82,10 @@ cb_data = cb_data %>% select_if(~!all(is.na(.)))
 #colnames(cb_data) = colnames(cb_data) %>% str_replace("-[^-]+$", "")
 colnames(cb_data) = colnames(cb_data) %>% 
         to_snake_case(sep_in = ":|\\(|\\)|(?<!\\d)\\.")
+
+# Remove columns full of NAs (empty string in CSV) & individuals without platekeys on vcfs
+samples_list = readLines(sample_ids_file)
+cb_data = cb_data %>% select_if(~!all(is.na(.))) %>% filter(!!as.symbol(id_column) %in% samples_list)
 
 # Use phenotype metadata (data dictionary) to determine the type of each phenotype -> This will be given by CB
 pheno_dictionary = fread(input_meta_data) %>%
