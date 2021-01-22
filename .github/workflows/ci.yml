@@ -3,33 +3,11 @@ name: tests for lifebit-ai/gel-gwas
 on: [push, pull_request]
 
 jobs:
-  test_ingest:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        nxf_ver: ['20.01.0', '']
-        continuous_var_aggregation: [mean]
-        continuous_var_transformation: [log]
-        design_mode: ['case_vs_control_contrast']
-    steps:
-      - uses: actions/checkout@v1
-      - name: Install Nextflow
-        run: |
-          export NXF_VER=${{ matrix.nxf_ver }}
-          wget -qO- get.nextflow.io | bash
-          sudo mv nextflow /usr/local/bin/
-      - name: Ingest testing data
-        run: |
-          nextflow run ${GITHUB_WORKSPACE} --design_mode ${{ matrix.design_mode }} --continuous_var_transformation ${{ matrix.continuous_var_transformation }}  --continuous_var_aggregation ${{ matrix.continuous_var_aggregation }} -profile test_ingest
-
   test_binary:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         nxf_ver: ['20.01.0', '']
-        continuous_var_aggregation: [mean, min, max, median]
-        continuous_var_transformation: [log, log10, log2, zscores, None]
-        design_mode: ['case_vs_control_contrast']
     steps:
       - uses: actions/checkout@v1
       - name: Install Nextflow
@@ -37,70 +15,14 @@ jobs:
           export NXF_VER=${{ matrix.nxf_ver }}
           wget -qO- get.nextflow.io | bash
           sudo mv nextflow /usr/local/bin/
-      - name: Binary GWAS-only tests
+      - name: Binary GWAS tests
         run: |
-          nextflow run ${GITHUB_WORKSPACE} --design_mode ${{ matrix.design_mode }} --continuous_var_transformation ${{ matrix.continuous_var_transformation }}  --continuous_var_aggregation ${{ matrix.continuous_var_aggregation }} -profile test_binary
-  test_binary_h2:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        nxf_ver: ['20.01.0', '']
-        continuous_var_aggregation: [median, min, max, median]
-        continuous_var_transformation: [log, log10, log2, zscores, None]
-        design_mode: ['case_vs_control_contrast']
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install Nextflow
-        run: |
-          export NXF_VER=${{ matrix.nxf_ver }}
-          wget -qO- get.nextflow.io | bash
-          sudo mv nextflow /usr/local/bin/
-      - name: Binary trait and heritability
-        run: |
-          nextflow run ${GITHUB_WORKSPACE} --design_mode ${{ matrix.design_mode }} --continuous_var_transformation ${{ matrix.continuous_var_transformation }}  --continuous_var_aggregation ${{ matrix.continuous_var_aggregation }} -profile test_binary_h2
-  test_binary_gwas_catalogue:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        nxf_ver: ['20.01.0', '']
-        continuous_var_aggregation: [median]
-        continuous_var_transformation: [None]
-        design_mode: ['case_vs_control_contrast']
-    steps:
-      - uses: actions/checkout@v1
-      - name: Install Nextflow
-        run: |
-          export NXF_VER=${{ matrix.nxf_ver }}
-          wget -qO- get.nextflow.io | bash
-          sudo mv nextflow /usr/local/bin/
-      - name: Binary trait and genetic correlation against GWAS cat summary stats
-        run: |
-          nextflow run ${GITHUB_WORKSPACE} --design_mode ${{ matrix.design_mode }} --continuous_var_transformation ${{ matrix.continuous_var_transformation }}  --continuous_var_aggregation ${{ matrix.continuous_var_aggregation }} -profile test_binary_gwas_catalogue
-  test_binary_genetic_correlation_h2:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        nxf_ver: ['20.01.0', '']
-        continuous_var_aggregation: [median]
-        continuous_var_transformation: [None]
-        design_mode: ['case_vs_control_contrast']
-    steps:
-      - uses: actions/checkout@v1
-      - name: Install Nextflow
-        run: |
-          export NXF_VER=${{ matrix.nxf_ver }}
-          wget -qO- get.nextflow.io | bash
-          sudo mv nextflow /usr/local/bin/
-      - name: Binary trait with genetic correlation against quantitative trait
-        run: |
-          nextflow run ${GITHUB_WORKSPACE} --design_mode ${{ matrix.design_mode }} --continuous_var_transformation ${{ matrix.continuous_var_transformation }}  --continuous_var_aggregation ${{ matrix.continuous_var_aggregation }} -profile test_binary_genetic_correlation_h2
+          nextflow run ${GITHUB_WORKSPACE} -profile test_binary
   test_qt:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         nxf_ver: ['20.01.0', '']
-        continuous_var_aggregation: [median]
-        continuous_var_transformation: [None]
     steps:
       - uses: actions/checkout@v1
       - name: Install Nextflow
@@ -108,57 +30,6 @@ jobs:
           export NXF_VER=${{ matrix.nxf_ver }}
           wget -qO- get.nextflow.io | bash
           sudo mv nextflow /usr/local/bin/
-      - name: Quantitative trait GWAS-only
+      - name: Quantitative trait GWAS
         run: |
-          nextflow run ${GITHUB_WORKSPACE} --continuous_var_transformation ${{ matrix.continuous_var_transformation }}  --continuous_var_aggregation ${{ matrix.continuous_var_aggregation }} -profile test_qt
-  test_qt_h2:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        nxf_ver: ['20.01.0', '']
-        continuous_var_aggregation: [mean]
-        continuous_var_transformation: [None]
-    steps:
-      - uses: actions/checkout@v1
-      - name: Install Nextflow
-        run: |
-          export NXF_VER=${{ matrix.nxf_ver }}
-          wget -qO- get.nextflow.io | bash
-          sudo mv nextflow /usr/local/bin/
-      - name: Quantitative trait with H2
-        run: |
-          nextflow run ${GITHUB_WORKSPACE} --continuous_var_transformation ${{ matrix.continuous_var_transformation }}  --continuous_var_aggregation ${{ matrix.continuous_var_aggregation }} -profile test_qt_h2
-  test_qt_gwas_catalogue:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        nxf_ver: ['20.01.0', '']
-        continuous_var_aggregation: [mean]
-        continuous_var_transformation: [None]
-    steps:
-      - uses: actions/checkout@v1
-      - name: Install Nextflow
-        run: |
-          export NXF_VER=${{ matrix.nxf_ver }}
-          wget -qO- get.nextflow.io | bash
-          sudo mv nextflow /usr/local/bin/
-      - name: Test with quantitative trait and genetic correlation using GWAS catalogue summary stats
-        run: |
-          nextflow run ${GITHUB_WORKSPACE} --continuous_var_transformation ${{ matrix.continuous_var_transformation }}  --continuous_var_aggregation ${{ matrix.continuous_var_aggregation }} -profile test_qt_gwas_catalogue
-  test_qt_genetic_correlation_h2:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        nxf_ver: ['20.01.0', '']
-        continuous_var_aggregation: [mean]
-        continuous_var_transformation: [None]
-    steps:
-      - uses: actions/checkout@v1
-      - name: Install Nextflow
-        run: |
-          export NXF_VER=${{ matrix.nxf_ver }}
-          wget -qO- get.nextflow.io | bash
-          sudo mv nextflow /usr/local/bin/
-      - name: Test with quantitative trait and genetic correlation using qt trait
-        run: |
-          nextflow run ${GITHUB_WORKSPACE} --continuous_var_transformation ${{ matrix.continuous_var_transformation }}  --continuous_var_aggregation ${{ matrix.continuous_var_aggregation }} -profile test_qt_genetic_correlation_h2
+          nextflow run ${GITHUB_WORKSPACE} -profile test_qt
