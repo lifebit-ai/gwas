@@ -12,6 +12,14 @@
 /*--------------------------------------------------
   Channel setup
 ---------------------------------------------------*/
+if (params.trait_type == 'binary') {
+  inv_normalisation = 'FALSE'
+}
+else if (params.trait_type == 'quantitative') {
+  inv_normalisation = 'TRUE'
+}
+else exit 1, "Trait type is not recognised. Please check input for --trait_type parameter."
+
 
 ch_pheno = params.pheno_data ? Channel.value(file(params.pheno_data)) : Channel.empty()
 (phenoCh_gwas_filtering, phenoCh) = ch_pheno.into(2)
@@ -170,65 +178,33 @@ if (params.trait_type != 'binary') {
   GWAS Analysis 1 with SAIGE - Fit the null mixed-model
 ---------------------------------------------------*/
 
-if (params.trait_type == 'binary'){
 
-  process gwas_1_fit_null_glmm_bin {
-    tag "$plink_grm_snps"
-    publishDir "${params.outdir}/gwas_1_fit_null_glmm", mode: 'copy'
+process gwas_1_fit_null_glmm_bin {
+  tag "$plink_grm_snps"
+  publishDir "${params.outdir}/gwas_1_fit_null_glmm", mode: 'copy'
 
-    input:
-    set val(plink_grm_snps), file(bed), file(bim), file(fam) from plinkCh
-    each file(phenoFile) from phenoCh
+  input:
+  set val(plink_grm_snps), file(bed), file(bim), file(fam) from plinkCh
+  each file(phenoFile) from phenoCh
 
-    output:
-    file "*" into fit_null_glmm_results
-    file ("step1_${phenoFile.baseName}_out.rda") into rdaCh
-    file ("step1_${phenoFile.baseName}.varianceRatio.txt") into varianceRatioCh
+  output:
+  file "*" into fit_null_glmm_results
+  file ("step1_${phenoFile.baseName}_out.rda") into rdaCh
+  file ("step1_${phenoFile.baseName}.varianceRatio.txt") into varianceRatioCh
 
-    script:
-    """
-    step1_fitNULLGLMM.R \
-      --plinkFile=${plink_grm_snps} \
-      --phenoFile="${phenoFile}" \
-      --phenoCol="PHE" \
-      --traitType=binary       \
-      --sampleIDColinphenoFile=IID \
-      --outputPrefix="step1_${phenoFile.baseName}_out" \
-      --outputPrefix_varRatio="step1_${phenoFile.baseName}" \
-      --nThreads=${task.cpus} ${params.saige_step1_extra_flags}
-    """
-  }
-
-}
-
-if (params.trait_type == 'quantitative'){
-  process gwas_1_fit_null_glmm_qt {
-    tag "$plink_grm_snps"
-    publishDir "${params.outdir}/gwas_1_fit_null_glmm", mode: 'copy'
-
-    input:
-    set val(grm_plink_input), file(bed), file(bim), file(fam) from plinkCh
-    each file(phenoFile) from phenoCh
-
-    output:
-    file "*" into fit_null_glmm_results
-    file ("step1_${phenoFile.baseName}_out.rda") into rdaCh
-    file ("step1_${phenoFile.baseName}.varianceRatio.txt") into varianceRatioCh
-
-    script:
-    """
-    step1_fitNULLGLMM.R \
-      --plinkFile=${grm_plink_input} \
-      --phenoFile="${phenoFile}" \
-      --phenoCol="PHE" \
-      --traitType=quantitative       \
-	    --invNormalize=TRUE	\
-      --sampleIDColinphenoFile=IID \
-      --outputPrefix="step1_${phenoFile.baseName}_out" \
-      --outputPrefix_varRatio="step1_${phenoFile.baseName}" \
-      --nThreads=${task.cpus} ${params.saige_step1_extra_flags}
-    """
-  }
+  script:
+  """
+  step1_fitNULLGLMM.R \
+    --plinkFile=${plink_grm_snps} \
+    --phenoFile="${phenoFile}" \
+    --phenoCol="PHE" \
+    --invNormalize=${inv_normalisation} \
+    --traitType=binary       \
+    --sampleIDColinphenoFile=IID \
+    --outputPrefix="step1_${phenoFile.baseName}_out" \
+    --outputPrefix_varRatio="step1_${phenoFile.baseName}" \
+    --nThreads=${task.cpus} ${params.saige_step1_extra_flags}
+  """
 
 }
 
