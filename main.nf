@@ -25,8 +25,8 @@ ch_pheno = params.pheno_data ? Channel.value(file(params.pheno_data)) : Channel.
 (phenoCh_gwas_filtering, ch_pheno_for_saige, phenoCh, ch_pheno_vcf2plink) = ch_pheno.into(4)
 
 Channel
-  .fromFilePairs("${params.plink_input}",size:3, flat : true)
-  .ifEmpty { exit 1, "PLINK files not found: ${params.plink_input}.\nPlease specify a valid --plink_input value. eg. testdata/*.{bed,bim,fam}" }
+  .fromFilePairs("${params.grm_plink_input}",size:3, flat : true)
+  .ifEmpty { exit 1, "PLINK files not found: ${params.grm_plink_input}.\nPlease specify a valid --grm_plink_input value. eg. testdata/*.{bed,bim,fam}" }
   .set { plinkCh }
 Channel
   .fromPath(params.plink_keep_pheno)
