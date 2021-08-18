@@ -23,6 +23,8 @@ else exit 1, "Trait type is not recognised. Please check input for --trait_type 
 
 ch_pheno = params.pheno_data ? Channel.value(file(params.pheno_data)) : Channel.empty()
 (phenoCh_gwas_filtering, ch_pheno_for_saige, phenoCh, ch_pheno_vcf2plink) = ch_pheno.into(4)
+ch_step_2_sample_file = params.step2_sample_file ? Channel.value(file(params.step2_sample_file)) : Channel.empty()
+ch_covariate_cols = params.covariate_cols ? Channel.value(params.covariate_cols) : "null"
 
 Channel
   .fromFilePairs("${params.grm_plink_input}",size:3, flat : true)
@@ -194,17 +196,20 @@ process gwas_1_fit_null_glmm {
   input:
   set val(plink_grm_snps), file(bed), file(bim), file(fam) from plinkCh
   each file(phenoFile) from ch_pheno_for_saige
-
+  val(cov_columns) from ch_covariate_cols
+    
   output:
   file "*" into fit_null_glmm_results
   file ("step1_${phenoFile.baseName}_out.rda") into rdaCh
   file ("step1_${phenoFile.baseName}.varianceRatio.txt") into varianceRatioCh
 
   script:
+  cov_columns_arg = params.covariate_cols ? "--covarColList=${cov_columns}" : ""
   """
   step1_fitNULLGLMM.R \
     --plinkFile=${plink_grm_snps} \
     --phenoFile="${phenoFile}" \
+    ${cov_columns_arg} \
     --phenoCol="PHE" \
     --invNormalize=${inv_normalisation} \
     --traitType=${params.trait_type}       \
@@ -230,6 +235,7 @@ process gwas_2_spa_tests {
   set val(name), val(chr), file(vcf), file(index) from filteredVcfsCh
   each file(rda) from rdaCh
   each file(varianceRatio) from varianceRatioCh
+  each file(step2_sample_file) from ch_step_2_sample_file
 
   output:
   file "*" into results
@@ -243,7 +249,7 @@ process gwas_2_spa_tests {
     --vcfField=GT \
     --chrom=${chr} \
     --minMAC=20 \
-    --sampleFile=day0_covid.samples \
+    --sampleFile=${step2_sample_file} \
     --GMMATmodelFile=${rda} \
     --varianceRatioFile=${varianceRatio} \
     --SAIGEOutputFile="step2_SPAtests.${name}.SAIGE.gwas.txt" \
