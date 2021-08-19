@@ -9,6 +9,49 @@
 ----------------------------------------------------------------------------------------
 */
 
+
+/*---------------------------------------------------
+  Define and show header with all params information 
+-----------------------------------------------------*/
+
+// Header log info
+
+def summary = [:]
+
+if (workflow.revision) summary['Pipeline Release'] = workflow.revision
+
+summary['Max Resources']                  = "$params.max_memory memory, $params.max_cpus cpus, $params.max_time time per job"
+summary['Output dir']                     = params.outdir
+summary['Launch dir']                     = workflow.launchDir
+summary['Working dir']                    = workflow.workDir
+summary['Script dir']                     = workflow.projectDir
+summary['User']                           = workflow.userName
+
+summary['vcfs_list']                  = params.vcfs_list
+summary['grm_plink_input']                     = params.grm_plink_input
+summary['pheno_data']                   = params.pheno_data
+summary['step2_sample_file']              = params.step2_sample_file
+summary['covariate_cols']            = params.covariate_cols
+
+summary['q_filter']             = params.q_filter
+summary['miss_test_p_threshold']                = params.miss_test_p_threshold
+summary['variant_missingness']             = params.variant_missingness
+summary['thres_HWE']                = params.thres_HWE
+summary['plink_keep_pheno']              = params.plink_keep_pheno
+summary['trait_type']             = params.trait_type
+summary['saige_step1_extra_flags']                = params.saige_step1_extra_flags
+summary['gwas_cat']             = params.gwas_cat
+summary['output_tag']                = params.output_tag
+summary['top_n_sites']              = params.top_n_sites
+summary['max_top_n_sites']          = params.max_top_n_sites
+summary['saige_filename_pattern']   = params.saige_filename_pattern
+
+summary['outdir']                    = params.outdir
+
+log.info summary.collect { k,v -> "${k.padRight(18)}: $v" }.join("\n")
+log.info "-\033[2m--------------------------------------------------\033[0m-"
+
+
 /*--------------------------------------------------
   Channel setup
 ---------------------------------------------------*/
