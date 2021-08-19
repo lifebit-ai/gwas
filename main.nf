@@ -106,9 +106,6 @@ process vcf2plink {
 
   
     script:
-  // TODO: (High priority) Only extract needed individuals from VCF files with `bcftools -S samples.txt` - get from samples file?
-  // TODO: (Not required) `bcftools -T sites_to_extract.txt`
-  // Optional parameters
 
   """
   # Download, filter and convert (bcf or vcf.gz) -> vcf.gz
