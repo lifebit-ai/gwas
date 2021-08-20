@@ -17,7 +17,7 @@ jobs:
           sudo mv nextflow /usr/local/bin/
       - name: Binary GWAS tests
         run: |
-          nextflow run ${GITHUB_WORKSPACE} -profile test_binary
+          nextflow run ${GITHUB_WORKSPACE} --config conf/test_binary.config
   test_qt:
     runs-on: ubuntu-latest
     strategy:
@@ -32,4 +32,4 @@ jobs:
           sudo mv nextflow /usr/local/bin/
       - name: Quantitative trait GWAS
         run: |
-          nextflow run ${GITHUB_WORKSPACE} -profile test_qt
+          nextflow run ${GITHUB_WORKSPACE} --config conf/test_qt.config
