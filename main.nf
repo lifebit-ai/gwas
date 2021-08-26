@@ -30,7 +30,6 @@ summary['User']                           = workflow.userName
 summary['vcfs_list']                  = params.vcfs_list
 summary['grm_plink_input']                     = params.grm_plink_input
 summary['pheno_data']                   = params.pheno_data
-summary['step2_sample_file']              = params.step2_sample_file
 summary['covariate_cols']            = params.covariate_cols
 
 summary['q_filter']             = params.q_filter
@@ -66,7 +65,6 @@ else exit 1, "Trait type is not recognised. Please check input for --trait_type 
 
 ch_pheno = params.pheno_data ? Channel.value(file(params.pheno_data)) : Channel.empty()
 (phenoCh_gwas_filtering, ch_pheno_for_saige, phenoCh, ch_pheno_vcf2plink) = ch_pheno.into(4)
-ch_step_2_sample_file = params.step2_sample_file ? Channel.value(file(params.step2_sample_file)) : Channel.empty()
 ch_covariate_cols = params.covariate_cols ? Channel.value(params.covariate_cols) : "null"
 
 Channel
@@ -275,7 +273,6 @@ process gwas_2_spa_tests {
   set val(name), val(chr), file(vcf), file(index) from filteredVcfsCh
   each file(rda) from rdaCh
   each file(varianceRatio) from varianceRatioCh
-  each file(step2_sample_file) from ch_step_2_sample_file
 
   output:
   file "*" into results
@@ -289,7 +286,7 @@ process gwas_2_spa_tests {
     --vcfField=GT \
     --chrom=${chr} \
     --minMAC=20 \
-    --sampleFile=${step2_sample_file} \
+    --sampleFile=day0_covid.samples \
     --GMMATmodelFile=${rda} \
     --varianceRatioFile=${varianceRatio} \
     --SAIGEOutputFile="step2_SPAtests.${name}.SAIGE.gwas.txt" \
