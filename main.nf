@@ -31,7 +31,8 @@ summary['vcfs_list']                  = params.vcfs_list
 summary['grm_plink_input']                     = params.grm_plink_input
 summary['pheno_data']                   = params.pheno_data
 summary['step2_sample_file']              = params.step2_sample_file
-summary['covariate_cols']            = params.covariate_cols
+summary['covariate_cols']              = params.covariate_cols
+summary['pheno_col']                   = params.pheno_col
 
 summary['q_filter']             = params.q_filter
 summary['miss_test_p_threshold']                = params.miss_test_p_threshold
@@ -68,6 +69,7 @@ ch_pheno = params.pheno_data ? Channel.value(file(params.pheno_data)) : Channel.
 (phenoCh_gwas_filtering, ch_pheno_for_saige, phenoCh, ch_pheno_vcf2plink) = ch_pheno.into(4)
 ch_step_2_sample_file = params.step2_sample_file ? Channel.value(file(params.step2_sample_file)) : Channel.empty()
 ch_covariate_cols = params.covariate_cols ? Channel.value(params.covariate_cols) : "null"
+ch_pheno_col = params.pheno_col ? Channel.value(params.pheno_col) : "null"
 
 Channel
   .fromFilePairs("${params.grm_plink_input}",size:3, flat : true)
@@ -237,6 +239,7 @@ process gwas_1_fit_null_glmm {
   set val(plink_grm_snps), file(bed), file(bim), file(fam) from plinkCh
   each file(phenoFile) from ch_pheno_for_saige
   val(cov_columns) from ch_covariate_cols
+  val(pheno_column) from ch_pheno_col
     
   output:
   file "*" into fit_null_glmm_results
@@ -250,7 +253,7 @@ process gwas_1_fit_null_glmm {
     --plinkFile=${plink_grm_snps} \
     --phenoFile="${phenoFile}" \
     ${cov_columns_arg} \
-    --phenoCol="PHE" \
+    --phenoCol="${pheno_column}" \
     --invNormalize=${inv_normalisation} \
     --traitType=${params.trait_type}       \
     --sampleIDColinphenoFile=IID \
