@@ -101,7 +101,7 @@ suppressWarnings(suppressMessages(library(snakecase)))
 
 # required
 saige_output       <- args$saige_output
-output_tag         <- snakecase::to_snake_case(args$output_tag)
+output_tag         <- as.character(args$output_tag)
 
 # optional
 title              <- args$title

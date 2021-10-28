@@ -27,10 +27,10 @@ if("--help" %in% args | "help" %in% args | (length(args) == 0) | (length(args) =
                                      The name will be converted to snakecase (eg. snake_case)
                                      The final file name will be created by combining the output_tag value and this optional argument.
                                      eg.
-                                     output_tag = 'covid1'
+                                     output_tag = 'breast_cancer_EAS_cohort'
                                      saige_output_name = 'saige_results',
                                      then the final file name will be:
-                                     'saige_results_covid1.csv'
+                                     'saige_results_breast_cancer_EAS_cohort.csv'
 
         --top_n_sites=int          - The top N sites from the SAIGE results to be displayed in the report.
                                      The ranking is by ascending p-value.
@@ -47,7 +47,7 @@ if("--help" %in% args | "help" %in% args | (length(args) == 0) | (length(args) =
 
           The typical command for running the script is as follows:
 
-          ./concat_chroms.R --output_tag='covid_1'
+          ./concat_chroms.R --output_tag='summary_statistics'
 
      Output:
 
@@ -86,8 +86,7 @@ suppressWarnings(suppressMessages(library(snakecase)))
 # Facilitates testing and protects from wh-spaces, irregular chars
 
 # required
-output_tag         <- snakecase::to_snake_case(as.character(args$output_tag))
-
+output_tag         <- as.character(args$output_tag)
 # optional
 filename_pattern   <- as.character(args$filename_pattern)
 saige_output_name  <- snakecase::to_snake_case(as.character(args$saige_output_name))
