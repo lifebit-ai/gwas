@@ -1,10 +1,10 @@
-name: tests for lifebit-ai/gel-gwas
+name: tests for lifebit-ai/gwas
 # This workflow is triggered on pushes and PRs to the repository.
 on: [push, pull_request]
 
 jobs:
   test_binary:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     strategy:
       matrix:
         nxf_ver: ['20.01.0', '']
