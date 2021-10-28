@@ -62,6 +62,9 @@ else if (params.trait_type == 'quantitative') {
 else exit 1, "Trait type is not recognised. Please check input for --trait_type parameter."
 
 
+params.output_tag ? Channel.value(params.output_tag).into {ch_output_tag_report; ch_output_tag } : Channel.value(params.phenotype_colname).into {ch_output_tag_report; ch_output_tag }
+
+
 ch_pheno = params.pheno_data ? Channel.value(file(params.pheno_data)) : Channel.empty()
 (phenoCh_gwas_filtering, ch_pheno_for_saige, phenoCh, ch_pheno_vcf2plink) = ch_pheno.into(4)
 ch_covariate_cols = params.covariate_cols ? Channel.value(params.covariate_cols) : "null"
@@ -196,7 +199,7 @@ process calculate_hwe {
   plink \
     --bfile ${name}_miss_filtered \
     --pheno $phe_file \
-    --pheno-name PHE \
+    --pheno-name ${params.phenotype_colname} \
     --allow-no-sex \
     --hwe ${params.hwe_threshold} ${params.hwe_test} \
     --out ${name}.misHWEfiltered \
@@ -311,7 +314,7 @@ process gwas_1_fit_null_glmm {
     --plinkFile=${plink_grm_prefix} \
     --phenoFile="${phenoFile}" \
     ${cov_columns_arg} \
-    --phenoCol="PHE" \
+    --phenoCol=${params.phenotype_colname} \
     --invNormalize=${inv_normalisation} \
     --traitType=${params.trait_type}       \
     --sampleIDColinphenoFile=IID \
@@ -349,7 +352,6 @@ process gwas_2_spa_tests {
     --vcfField=GT \
     --chrom=${chr} \
     --minMAC=20 \
-    --sampleFile=day0_covid.samples \
     --GMMATmodelFile=${rda} \
     --varianceRatioFile=${varianceRatio} \
     --SAIGEOutputFile="step2_SPAtests.${name}.SAIGE.gwas.txt" \
@@ -371,19 +373,20 @@ process prepare_files {
 
   input:
   file(saige_output) from ch_saige_output.collect()
+  val(output_tag) from ch_output_tag
 
   output:
-  set file("*top_n.csv"), file("*${params.output_tag}.csv") into ch_report_input
+  set file("*top_n.csv"), file("*${output_tag}.csv") into ch_report_input
 
   script:
 
   """
 
-  # creates 2 .csv files, saige_results_<params.output_tag>.csv, saige_results_top_n.csv
+  # creates 2 .csv files, saige_results_<output_tag>.csv, saige_results_top_n.csv
   concat_chroms.R \
     --saige_output_name='saige_results' \
     --filename_pattern='${params.saige_filename_pattern}' \
-    --output_tag='${params.output_tag}' \
+    --output_tag='${output_tag}' \
     --top_n_sites=${params.top_n_sites} \
     --max_top_n_sites=${params.max_top_n_sites}
   """
@@ -396,6 +399,7 @@ publishDir "${params.outdir}/MultiQC/", mode: 'copy'
 input:
 file(saige_output) from ch_report_input.collect()
 file(gwas_cat) from ch_gwas_cat
+val(output_tag) from ch_output_tag_report
 
 output:
 file "multiqc_report.html" into ch_report_outputs
@@ -408,21 +412,21 @@ cp /opt/bin/* .
 
 # creates gwascat_subset.csv
 subset_gwascat.R \
-  --saige_output='saige_results_${params.output_tag}.csv' \
+  --saige_output='saige_results_${output_tag}.csv' \
   --gwas_cat='${gwas_cat}'
 
 # creates <params.output_tag>_manhattan.png with analysis.csv as input
 manhattan.R \
-  --saige_output='saige_results_${params.output_tag}.csv' \
-  --output_tag='${params.output_tag}'
+  --saige_output='saige_results_${output_tag}.csv' \
+  --output_tag='${output_tag}'
 
 # creates <params.output_tag>_qqplot_ci.png with analysis.csv as input
 qqplot.R \
-  --saige_output='saige_results_${params.output_tag}.csv' \
-  --output_tag='${params.output_tag}'
+  --saige_output='saige_results_${output_tag}.csv' \
+  --output_tag='${output_tag}'
 
 # Generates the report
-Rscript -e "rmarkdown::render('gwas_report.Rmd', params = list(manhattan='${params.output_tag}_manhattan.png',qqplot='${params.output_tag}_qqplot_ci.png', gwascat='gwascat_subset.csv', saige_results='saige_results_top_n.csv', trait_type='${params.trait_type}'))"
+Rscript -e "rmarkdown::render('gwas_report.Rmd', params = list(manhattan='${output_tag}_manhattan.png',qqplot='${output_tag}_qqplot_ci.png', gwascat='gwascat_subset.csv', saige_results='saige_results_top_n.csv', trait_type='${params.trait_type}'))"
 mv gwas_report.html multiqc_report.html
 
 # Generates the ipynb
