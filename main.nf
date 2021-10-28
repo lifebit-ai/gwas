@@ -27,25 +27,25 @@ summary['Working dir']                    = workflow.workDir
 summary['Script dir']                     = workflow.projectDir
 summary['User']                           = workflow.userName
 
-summary['vcfs_list']                  = params.vcfs_list
-summary['grm_plink_input']                     = params.grm_plink_input
-summary['pheno_data']                   = params.pheno_data
-summary['covariate_cols']            = params.covariate_cols
+summary['vcfs_list']                      = params.vcfs_list
+summary['grm_plink_input']                = params.grm_plink_input
+summary['pheno_data']                     = params.pheno_data
+summary['covariate_cols']                 = params.covariate_cols
 
-summary['q_filter']             = params.q_filter
-summary['miss_test_p_threshold']                = params.miss_test_p_threshold
-summary['variant_missingness']             = params.variant_missingness
-summary['hwe_threshold']                = params.hwe_threshold
-summary['plink_keep_pheno']              = params.plink_keep_pheno
-summary['trait_type']             = params.trait_type
-summary['saige_step1_extra_flags']                = params.saige_step1_extra_flags
-summary['gwas_cat']             = params.gwas_cat
-summary['output_tag']                = params.output_tag
-summary['top_n_sites']              = params.top_n_sites
-summary['max_top_n_sites']          = params.max_top_n_sites
-summary['saige_filename_pattern']   = params.saige_filename_pattern
+summary['q_filter']                       = params.q_filter
+summary['miss_test_p_threshold']          = params.miss_test_p_threshold
+summary['variant_missingness']            = params.variant_missingness
+summary['hwe_threshold']                  = params.hwe_threshold
+summary['plink_keep_pheno']               = params.plink_keep_pheno
+summary['trait_type']                     = params.trait_type
+summary['saige_step1_extra_flags']        = params.saige_step1_extra_flags
+summary['gwas_cat']                       = params.gwas_cat
+summary['output_tag']                     = params.output_tag
+summary['top_n_sites']                    = params.top_n_sites
+summary['max_top_n_sites']                = params.max_top_n_sites
+summary['saige_filename_pattern']         = params.saige_filename_pattern
 
-summary['outdir']                    = params.outdir
+summary['outdir']                         = params.outdir
 
 log.info summary.collect { k,v -> "${k.padRight(18)}: $v" }.join("\n")
 log.info "-\033[2m--------------------------------------------------\033[0m-"
@@ -67,10 +67,12 @@ ch_pheno = params.pheno_data ? Channel.value(file(params.pheno_data)) : Channel.
 (phenoCh_gwas_filtering, ch_pheno_for_saige, phenoCh, ch_pheno_vcf2plink) = ch_pheno.into(4)
 ch_covariate_cols = params.covariate_cols ? Channel.value(params.covariate_cols) : "null"
 
-Channel
+if (params.grm_plink_input) {
+  Channel
   .fromFilePairs("${params.grm_plink_input}",size:3, flat : true)
   .ifEmpty { exit 1, "PLINK files not found: ${params.grm_plink_input}.\nPlease specify a valid --grm_plink_input value. eg. testdata/*.{bed,bim,fam}" }
-  .set { plinkCh }
+  .set { external_ch_plink_pruned }
+}
 Channel
   .fromPath(params.plink_keep_pheno)
   .into {plink_keep_pheno_ch; ch_keep_pheno_vcf2plink}
@@ -237,6 +239,8 @@ process merge_plink {
     output:
     set file('merged.bed'), file('merged.bim'), file('merged.fam') into ch_plink_merged
 
+    when: !params.grm_plink_input
+
     script:
     """
     ls *.bed > bed.txt
@@ -266,7 +270,10 @@ process ld_prune {
     file(long_range_ld_regions) from ch_high_ld_regions
 
     output:
-    set file('merged_pruned.bed'), file('merged_pruned.bim'), file('merged_pruned.fam') into ch_plink_pruned
+    set val('merged_pruned'), file('merged_pruned.bed'), file('merged_pruned.bim'), file('merged_pruned.fam') into ch_plink_pruned
+
+    when: !params.grm_plink_input
+
     script:
     """
     plink \
@@ -289,7 +296,7 @@ process ld_prune {
 /*--------------------------------------------------
   GWAS Analysis 1 with SAIGE - Fit the null mixed-model
 ---------------------------------------------------*/
-
+ch_plink_input_for_grm = params.grm_plink_input ? external_ch_plink_pruned : ch_plink_pruned
 
 process gwas_1_fit_null_glmm {
   tag "$plink_grm_snps"
@@ -297,7 +304,7 @@ process gwas_1_fit_null_glmm {
   publishDir "${params.outdir}/gwas_1_fit_null_glmm", mode: 'copy'
 
   input:
-  set val(plink_grm_snps), file(bed), file(bim), file(fam) from plinkCh
+  set val(plink_grm_prefix), file(pruned_bed), file(pruned_bim), file(pruned_fam) from ch_plink_input_for_grm
   each file(phenoFile) from ch_pheno_for_saige
   val(cov_columns) from ch_covariate_cols
     
@@ -308,9 +315,10 @@ process gwas_1_fit_null_glmm {
 
   script:
   cov_columns_arg = params.covariate_cols ? "--covarColList=${cov_columns}" : ""
+
   """
   step1_fitNULLGLMM.R \
-    --plinkFile=${plink_grm_snps} \
+    --plinkFile=${plink_grm_prefix} \
     --phenoFile="${phenoFile}" \
     ${cov_columns_arg} \
     --phenoCol="PHE" \
