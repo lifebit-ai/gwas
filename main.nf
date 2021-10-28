@@ -81,6 +81,11 @@ Channel
   .map { chr, vcf, index -> [file(vcf).simpleName, chr, file(vcf), file(index)] }
   .into { vcfsCh; inputVcfCh}
 Channel
+  .fromPath(params.high_LD_long_range_regions)
+  .ifEmpty { exit 1, "Cannot find file containing long-range LD regions for exclusion : ${params.high_LD_long_range_regions}" }
+  .set { ch_high_ld_regions }
+  
+Channel
   .fromPath(params.gwas_cat)
   .ifEmpty { exit 1, "Cannot find GWAS catalogue CSV  file : ${params.gwas_cat}" }
   .set { ch_gwas_cat }
@@ -200,7 +205,7 @@ process calculate_hwe {
     --pheno $phe_file \
     --pheno-name PHE \
     --allow-no-sex \
-    --hwe ${params.hwe_threshold} midp \
+    --hwe ${params.hwe_threshold} ${params.hwe_test} \
     --out ${name}.misHWEfiltered \
     --make-bed \
     --1 \
@@ -217,7 +222,7 @@ process calculate_hwe {
   bcftools view -h ${name}_filtered_vcf.vcf.gz -Oz -o ${name}_filtered.header.vcf.gz
   cat ${name}_filtered.header.vcf.gz ${name}.filtered_temp.vcf.gz > ${name}.filtered_final.vcf.gz
   bcftools index ${name}.filtered_final.vcf.gz
-    """
+  """
 }
 
 
@@ -252,34 +257,34 @@ process merge_plink {
 }
 
 
-// process variant_pruning {
-//     tag "chr$chromosome"
-//     label 'pca'
-//     label params.lab_mem_pruning
-//     publishDir "${params.outdir}", mode: 'copy'
+process ld_prune {
+    tag "LD-prune plink set"
+    publishDir "${params.outdir}", mode: 'copy'
 
-//     input:
-//     tuple val(chromosome), file(bed), file(bim), file(fam) from ch_plink
-//     file(ld_file) from ch_ld_range
+    input:
+    set file(bed), file(bim), file(fam) from ch_plink_merged
+    file(long_range_ld_regions) from ch_high_ld_regions
 
-//     output:
-//     tuple file('pruned_temp/*.bed'), file('pruned_temp/*.bim'), file('pruned_temp/*.fam') into ch_plink_pruned
-//     script:
-//     """
-//     echo "### Filtering variants ###"
-//     mkdir pruned_temp ;
-//     plink2 \
-//     --bfile ${bed.baseName} \
-//     --maf ${params.maf_threshold} --indep-pairwise ${params.ld_window_size} ${params.ld_step_size} ${params.ld_r2_threshold} --exclude range ${ld_file} \
-//     --geno ${params.missingness_threshold} --hwe ${params.hwe_threshold} keep-fewhet \
-//     --out pruned_temp/${bed.baseName} ;
-//     plink \
-//     --bfile ${bed.baseName} \
-//     --extract pruned_temp/"${bed.baseName}.prune.in" \
-//     --make-bed \
-//     --out pruned_temp/${bed.baseName} ;
-//     """
-// }
+    output:
+    set file('merged_pruned.bed'), file('merged_pruned.bim'), file('merged_pruned.fam') into ch_plink_pruned
+    script:
+    """
+    plink \
+    --bfile merged \
+    --keep-allele-order \
+    --indep-pairwise ${params.ld_window_size} ${params.ld_step_size} ${params.ld_r2_threshold} \
+    --exclude range ${long_range_ld_regions} \
+    --allow-no-sex \
+    --out merged
+    plink \
+    --bfile merged \
+    --keep-allele-order \
+    --extract merged.prune.in \
+    --make-bed \
+    --allow-no-sex \
+    --out merged_pruned 
+    """
+}
 
 /*--------------------------------------------------
   GWAS Analysis 1 with SAIGE - Fit the null mixed-model
