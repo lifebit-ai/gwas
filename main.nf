@@ -36,7 +36,6 @@ summary['q_filter']                       = params.q_filter
 summary['miss_test_p_threshold']          = params.miss_test_p_threshold
 summary['variant_missingness']            = params.variant_missingness
 summary['hwe_threshold']                  = params.hwe_threshold
-summary['plink_keep_pheno']               = params.plink_keep_pheno
 summary['trait_type']                     = params.trait_type
 summary['saige_step1_extra_flags']        = params.saige_step1_extra_flags
 summary['gwas_cat']                       = params.gwas_cat
