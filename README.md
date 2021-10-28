@@ -1,9 +1,9 @@
-# GEL GWAS
+# GWAS
 
 ![](bin/covid_1_manhattan.png)
 
 ## Example usage
-Read more about parameters [here](https://github.com/lifebit-ai/gel-gwas/docs/usage_and_parameters.md)
+Read more about parameters [here](https://github.com/lifebit-ai/gwas/docs/usage_and_parameters.md)
 
 ```bash
 nextflow run main.nf \

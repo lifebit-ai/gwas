@@ -1,11 +1,11 @@
 #!/usr/bin/env nextflow
 /*
 ========================================================================================
-                         lifebit-ai/gel-gwas
+                         lifebit-ai/gwas
 ========================================================================================
- lifebit-ai/gel-gwas GWAS pipeline built for Genomics England using SAIGE
+ lifebit-ai/gwas GWAS pipeline using SAIGE linear mixed model approach for association testing
  #### Homepage / Documentation
- https://github.com/lifebit-ai/gel-gwas
+ https://github.com/lifebit-ai/gwas
 ----------------------------------------------------------------------------------------
 */
 
@@ -74,9 +74,6 @@ if (params.grm_plink_input) {
   .set { external_ch_plink_pruned }
 }
 Channel
-  .fromPath(params.plink_keep_pheno)
-  .into {plink_keep_pheno_ch; ch_keep_pheno_vcf2plink}
-Channel
   .fromPath(params.vcfs_list)
   .ifEmpty { exit 1, "Cannot find CSV VCFs file : ${params.vcfs_list}" }
   .splitCsv(skip:1)
@@ -104,14 +101,11 @@ process vcf2plink {
   input:
   set val(name), val(chr), file(vcf), file(index) from inputVcfCh
   each file(phe_file) from ch_pheno_vcf2plink
-  each file(plink_keep_file) from ch_keep_pheno_vcf2plink
 
   output:
   set val(name), val(chr), file('*.bed'), file('*.bim'), file('*.fam') into filteredPlinkCh
 
-  
-    script:
-
+  script:
   """
   # Download, filter and convert (bcf or vcf.gz) -> vcf.gz
   tail -n +2 ${phe_file}| cut -f2 > samples.txt
@@ -193,14 +187,12 @@ process calculate_hwe {
   input:
   set val(name), val(chr), file(bed), file(bim), file(fam) from ch_plink_for_hwe
   each file(phe_file) from phenoCh_gwas_filtering
-  each file(plink_keep_file) from plink_keep_pheno_ch
 
   output:
   set val(name), val(chr), file("${name}.filtered_final.vcf.gz"), file("${name}.filtered_final.vcf.gz.csi") into filteredVcfsCh, ch_filtered_vcfs_for_pruning
   file("${name}.misHWEfiltered*") into ch_filtered_plink
   
   script:
-  extra_plink_filter_missingness_options = params.plink_keep_pheno != "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/nodata" ? "--keep ${plink_keep_file}" : ""
   """
   plink \
     --bfile ${name}_miss_filtered \
@@ -211,8 +203,7 @@ process calculate_hwe {
     --out ${name}.misHWEfiltered \
     --make-bed \
     --1 \
-    --keep-allele-order \
-    ${extra_plink_filter_missingness_options}
+    --keep-allele-order
 
   plink \
     --bfile ${name}.misHWEfiltered  \
