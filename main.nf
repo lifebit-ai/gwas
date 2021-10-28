@@ -35,7 +35,7 @@ summary['covariate_cols']            = params.covariate_cols
 summary['q_filter']             = params.q_filter
 summary['miss_test_p_threshold']                = params.miss_test_p_threshold
 summary['variant_missingness']             = params.variant_missingness
-summary['thres_HWE']                = params.thres_HWE
+summary['hwe_threshold']                = params.hwe_threshold
 summary['plink_keep_pheno']              = params.plink_keep_pheno
 summary['trait_type']             = params.trait_type
 summary['saige_step1_extra_flags']                = params.saige_step1_extra_flags
@@ -189,8 +189,8 @@ process calculate_hwe {
   each file(plink_keep_file) from plink_keep_pheno_ch
 
   output:
-  set val(name), val(chr), file("${name}.filtered_final.vcf.gz"), file("${name}.filtered_final.vcf.gz.csi") into filteredVcfsCh
-
+  set val(name), val(chr), file("${name}.filtered_final.vcf.gz"), file("${name}.filtered_final.vcf.gz.csi") into filteredVcfsCh, ch_filtered_vcfs_for_pruning
+  file("${name}.misHWEfiltered*") into ch_filtered_plink
   
   script:
   extra_plink_filter_missingness_options = params.plink_keep_pheno != "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/nodata" ? "--keep ${plink_keep_file}" : ""
@@ -200,15 +200,15 @@ process calculate_hwe {
     --pheno $phe_file \
     --pheno-name PHE \
     --allow-no-sex \
-    --hwe ${params.thres_HWE} midp \
+    --hwe ${params.hwe_threshold} midp \
     --out ${name}.misHWEfiltered \
-    --make-just-bim \
+    --make-bed \
     --1 \
     --keep-allele-order \
     ${extra_plink_filter_missingness_options}
 
   plink \
-    --bfile ${name}_miss_filtered \
+    --bfile ${name}.misHWEfiltered  \
     --keep-allele-order \
     --recode vcf-iid bgz \
     --out ${name}_filtered_vcf
@@ -220,6 +220,66 @@ process calculate_hwe {
     """
 }
 
+
+process merge_plink {
+    tag "merge_plink"
+
+    publishDir "${params.outdir}", mode: 'copy'
+
+    input:
+    file("*") from ch_filtered_plink.collect()
+
+    output:
+    set file('merged.bed'), file('merged.bim'), file('merged.fam') into ch_plink_merged
+
+    script:
+    """
+    ls *.bed > bed.txt
+    ls *.bim > bim.txt
+    ls *.fam > fam.txt
+    paste bed.txt bim.txt fam.txt > merge.temp.list
+    tail -n +2 merge.temp.list > merge.list
+    bed_file=\$(head -n1 merge.temp.list | cut -f1)
+    bed_prefix=`echo "\${bed_file%.*}"`
+    plink --keep-allele-order \
+    --bfile \${bed_prefix} \
+    --merge-list merge.list \
+    --allow-no-sex \
+    --make-bed \
+    --out merged
+
+    """
+}
+
+
+// process variant_pruning {
+//     tag "chr$chromosome"
+//     label 'pca'
+//     label params.lab_mem_pruning
+//     publishDir "${params.outdir}", mode: 'copy'
+
+//     input:
+//     tuple val(chromosome), file(bed), file(bim), file(fam) from ch_plink
+//     file(ld_file) from ch_ld_range
+
+//     output:
+//     tuple file('pruned_temp/*.bed'), file('pruned_temp/*.bim'), file('pruned_temp/*.fam') into ch_plink_pruned
+//     script:
+//     """
+//     echo "### Filtering variants ###"
+//     mkdir pruned_temp ;
+//     plink2 \
+//     --bfile ${bed.baseName} \
+//     --maf ${params.maf_threshold} --indep-pairwise ${params.ld_window_size} ${params.ld_step_size} ${params.ld_r2_threshold} --exclude range ${ld_file} \
+//     --geno ${params.missingness_threshold} --hwe ${params.hwe_threshold} keep-fewhet \
+//     --out pruned_temp/${bed.baseName} ;
+//     plink \
+//     --bfile ${bed.baseName} \
+//     --extract pruned_temp/"${bed.baseName}.prune.in" \
+//     --make-bed \
+//     --out pruned_temp/${bed.baseName} ;
+//     """
+// }
 
 /*--------------------------------------------------
   GWAS Analysis 1 with SAIGE - Fit the null mixed-model
