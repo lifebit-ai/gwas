@@ -144,7 +144,7 @@ process filter_missingness {
    plink \
      --bfile ${name}_filtered \
      --pheno $phe_file \
-     --pheno-name PHE \
+     --pheno-name ${params.phenotype_colname} \
      --allow-no-sex \
      --test-missing midp \
      --out ${name} \
