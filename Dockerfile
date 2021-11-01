@@ -67,9 +67,12 @@ RUN wget http://s3.amazonaws.com/plink2-assets/alpha2/plink2_linux_x86_64.zip &&
 
 ENV PATH="$PATH:/plink2"
 
-# Install the conda environment
+# Install mamba for faster installation in the subsequent step
+RUN conda install -c conda-forge mamba -y
+
+# Install the conda environment (~4 min)
 COPY environment.yml /
-RUN conda env create --quiet -f /environment.yml && conda clean -a
+RUN mamba env create --quiet --file /environment.yml && conda clean  -a
 
 # Add conda installation dir to PATH (instead of doing 'conda activate')
 ENV PATH /opt/conda/envs/gel-gwas-1.0dev/bin:$PATH
