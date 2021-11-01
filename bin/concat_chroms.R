@@ -86,7 +86,7 @@ suppressWarnings(suppressMessages(library(snakecase)))
 # Facilitates testing and protects from wh-spaces, irregular chars
 
 # required
-output_tag         <- as.character(args$output_tag)
+output_tag         <- snakecase::to_snake_case(as.character(args$output_tag))
 # optional
 filename_pattern   <- as.character(args$filename_pattern)
 saige_output_name  <- snakecase::to_snake_case(as.character(args$saige_output_name))
