@@ -376,9 +376,10 @@ process prepare_files {
   val(output_tag) from ch_output_tag
 
   output:
-  set file("*top_n.csv"), file("*${output_tag}.csv") into ch_report_input
+  set file("*top_n.csv"), file("*${final_output_tag}.csv") into ch_report_input
 
   script:
+  final_output_tag = output_tag.toString().toLowerCase().replaceAll(" ", "_")
 
   """
 
@@ -386,7 +387,7 @@ process prepare_files {
   concat_chroms.R \
     --saige_output_name='saige_results' \
     --filename_pattern='${params.saige_filename_pattern}' \
-    --output_tag='${output_tag}' \
+    --output_tag='${final_output_tag}' \
     --top_n_sites=${params.top_n_sites} \
     --max_top_n_sites=${params.max_top_n_sites}
   """
@@ -406,27 +407,27 @@ file "multiqc_report.html" into ch_report_outputs
 set file("*png"), file("*ipynb"), file("*csv") into ch_report_outputs_all
 
 script:
-
+final_output_tag = output_tag.toString().toLowerCase().replaceAll(" ", "_")
 """
 cp /opt/bin/* .
 
 # creates gwascat_subset.csv
 subset_gwascat.R \
-  --saige_output='saige_results_${output_tag}.csv' \
+  --saige_output='saige_results_${final_output_tag}.csv' \
   --gwas_cat='${gwas_cat}'
 
 # creates <params.output_tag>_manhattan.png with analysis.csv as input
 manhattan.R \
-  --saige_output='saige_results_${output_tag}.csv' \
-  --output_tag='${output_tag}'
+  --saige_output='saige_results_${final_output_tag}.csv' \
+  --output_tag='${final_output_tag}'
 
 # creates <params.output_tag>_qqplot_ci.png with analysis.csv as input
 qqplot.R \
-  --saige_output='saige_results_${output_tag}.csv' \
-  --output_tag='${output_tag}'
+  --saige_output='saige_results_${final_output_tag}.csv' \
+  --output_tag='${final_output_tag}'
 
 # Generates the report
-Rscript -e "rmarkdown::render('gwas_report.Rmd', params = list(manhattan='${output_tag}_manhattan.png',qqplot='${output_tag}_qqplot_ci.png', gwascat='gwascat_subset.csv', saige_results='saige_results_top_n.csv', trait_type='${params.trait_type}'))"
+Rscript -e "rmarkdown::render('gwas_report.Rmd', params = list(manhattan='${final_output_tag}_manhattan.png',qqplot='${final_output_tag}_qqplot_ci.png', gwascat='gwascat_subset.csv', saige_results='saige_results_top_n.csv', trait_type='${params.trait_type}'))"
 mv gwas_report.html multiqc_report.html
 
 # Generates the ipynb
