@@ -43,8 +43,13 @@ nextflow run main.nf \
 
 - **--q_filter** : Minimum allele frequency filter for selecting sites.
 - **--thres_m** : Minimum threshold for missingess.
-- **--thres_HWE** : Minimum threshold for Hardy-Weinberg Equilibrium
-- **--plink_keep_pheno** : Space/tab-delimited text file with family IDs in the first column and within-family IDs in the second column, and removes all unlisted samples from the current analysis.
+- **--hwe_threshold** : Significance threshold for Hardy-Weinberg Equilibrium. Default = 1e-5
+- **--hwe_test** : Type of test done for Hardy-Weinberge Equilibrium. Default = 'midp' which stands for the mid-p adjustmenttends (plink's recommended option). Favours filter of variants with more missing data.
+
+- **--ld_window_size** Default = 50. Window size for LD-pruning.
+- **--ld_step_size** Default = 10. Step size for LD-pruning.
+- **--ld_r2_threshold** Default = 0.1. R2 correlation threshold for LD-pruning.
+
 - **--saige_step1_extra_flags** : Additional flags for SAIGE, they should be formatted as "--LOCO=FALSE".
 - **--outdir** : Output directory for results.
 - **--gwas_cat** : Path to GWAS catalog CSV file. Defaults to 's3://lifebit-featured-datasets/projects/gel/gel-gwas/gwascat.csv'.
