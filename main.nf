@@ -91,17 +91,16 @@ Channel
   .ifEmpty { exit 1, "Cannot find GWAS catalogue CSV  file : ${params.gwas_cat}" }
   .set { ch_gwas_cat }
 
-Channel
+if (params.run_pca) {
+  Channel
       .from( 1..params.number_pcs )
       .flatMap { it -> "PC$it" }
       .toList()
       .set { ch_pca_cols }
-
-
-//ch_pca_cols.mix(ch_covariate_cols).view()
-      
-
-
+} else {
+  ch_pca_cols = Channel.fromList(['null'])
+}
+    
   /*--------------------------------------------------
   Pre-GWAS filtering - download, filter and convert VCFs
   ---------------------------------------------------*/
@@ -339,27 +338,27 @@ process run_pca {
   GWAS Analysis 1 with SAIGE - Fit the null mixed-model
 ---------------------------------------------------*/
 ch_plink_input_for_grm = params.grm_plink_input ? external_ch_plink_pruned : ch_plink_pruned
+ch_covariate_file_for_gwas = params.run_pca ? ch_full_covariate_file : ch_pheno_for_saige
 
-process gwas_1_fit_null_glmm {
+process gwas_1_fit_null_glmm_with_pcs {
   tag "$plink_grm_snps"
   label 'saige'
   publishDir "${params.outdir}/gwas_1_fit_null_glmm", mode: 'copy'
 
   input:
   set val(plink_grm_prefix), file(pruned_bed), file(pruned_bim), file(pruned_fam) from ch_plink_input_for_grm
-  each file(phenoFile) from ch_pheno_for_saige
-  file(full_covariate_file) from ch_full_covariate_file
+  each file(full_covariate_file) from ch_covariate_file_for_gwas
   val(cov_columns) from ch_covariate_cols
   val(pc_columns) from ch_pca_cols.collect()
     
   output:
   file "*" into fit_null_glmm_results
-  file ("step1_${phenoFile.baseName}_out.rda") into rdaCh
-  file ("step1_${phenoFile.baseName}.varianceRatio.txt") into varianceRatioCh
+  file ("step1_${params.phenotype_colname}_out.rda") into rdaCh
+  file ("step1_${params.phenotype_colname}.varianceRatio.txt") into varianceRatioCh
 
   script:
   pc_cols = pc_columns.join(',')
-  covariate_columns = cov_columns + ',' + pc_cols
+  covariate_columns = params.run_pca ? cov_columns + ',' + pc_cols: cov_columns
   cov_columns_arg = params.covariate_cols ? "--covarColList=${covariate_columns}" : ""
 
   """
@@ -371,8 +370,8 @@ process gwas_1_fit_null_glmm {
     --invNormalize=${inv_normalisation} \
     --traitType=${params.trait_type}       \
     --sampleIDColinphenoFile=IID \
-    --outputPrefix="step1_${phenoFile.baseName}_out" \
-    --outputPrefix_varRatio="step1_${phenoFile.baseName}" \
+    --outputPrefix="step1_${params.phenotype_colname}_out" \
+    --outputPrefix_varRatio="step1_${params.phenotype_colname}" \
     --nThreads=${task.cpus} ${params.saige_step1_extra_flags}
    """
 
