@@ -66,7 +66,7 @@ params.output_tag ? Channel.value(params.output_tag).into {ch_output_tag_report;
 
 
 ch_pheno = params.pheno_data ? Channel.value(file(params.pheno_data)) : Channel.empty()
-(phenoCh_gwas_filtering, ch_pheno_for_saige, phenoCh, ch_pheno_vcf2plink) = ch_pheno.into(4)
+(phenoCh_gwas_filtering, ch_pheno_pca, ch_pheno_for_saige, phenoCh, ch_pheno_vcf2plink) = ch_pheno.into(5)
 ch_covariate_cols = params.covariate_cols ? Channel.value(params.covariate_cols) : "null"
 
 if (params.grm_plink_input) {
@@ -302,9 +302,11 @@ process run_pca {
 
     input:
     set val(plink_prefix), file(bed), file(bim), file(fam) from ch_plink_pruned_pca
+    each file(phenotype_file) from ch_pheno_pca
 
     output:
     set file('pca_results.eigenvec'), file('pca_results.eigenval') into ch_pca_files
+    file('covariates_with_PCs.tsv') into ch_full_covariate_file
 
     when: params.run_pca
 
@@ -325,6 +327,11 @@ process run_pca {
     plink2 --bfile ${plink_prefix} --pca ${params.number_pcs} --out pca_results
     fi
 
+    concat_covariates.R \
+    --pcs_file=pca_results.eigenvec \
+    --phenotype_file=${phenotype_file} \
+    --output_file=covariates_with_PCs.tsv
+
     """
 }
 
@@ -341,6 +348,7 @@ process gwas_1_fit_null_glmm {
   input:
   set val(plink_grm_prefix), file(pruned_bed), file(pruned_bim), file(pruned_fam) from ch_plink_input_for_grm
   each file(phenoFile) from ch_pheno_for_saige
+  file(full_covariate_file) from ch_full_covariate_file
   val(cov_columns) from ch_covariate_cols
   val(pc_columns) from ch_pca_cols.collect()
     
@@ -357,7 +365,7 @@ process gwas_1_fit_null_glmm {
   """
   step1_fitNULLGLMM.R \
     --plinkFile=${plink_grm_prefix} \
-    --phenoFile="${phenoFile}" \
+    --phenoFile="${full_covariate_file}" \
     ${cov_columns_arg} \
     --phenoCol=${params.phenotype_colname} \
     --invNormalize=${inv_normalisation} \
