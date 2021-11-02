@@ -91,6 +91,15 @@ Channel
   .ifEmpty { exit 1, "Cannot find GWAS catalogue CSV  file : ${params.gwas_cat}" }
   .set { ch_gwas_cat }
 
+Channel
+      .from( 1..params.number_pcs )
+      .flatMap { it -> "PC$it" }
+      .toList()
+      .set { ch_pca_cols }
+
+
+//ch_pca_cols.mix(ch_covariate_cols).view()
+      
 
 
   /*--------------------------------------------------
@@ -263,7 +272,7 @@ process ld_prune {
     file(long_range_ld_regions) from ch_high_ld_regions
 
     output:
-    set val('merged_pruned'), file('merged_pruned.bed'), file('merged_pruned.bim'), file('merged_pruned.fam') into ch_plink_pruned
+    set val('merged_pruned'), file('merged_pruned.bed'), file('merged_pruned.bim'), file('merged_pruned.fam') into ( ch_plink_pruned, ch_plink_pruned_pca)
 
     when: !params.grm_plink_input
 
@@ -286,6 +295,39 @@ process ld_prune {
     """
 }
 
+
+process run_pca {
+    tag "Run PCA"
+    publishDir "${params.outdir}", mode: 'copy'
+
+    input:
+    set val(plink_prefix), file(bed), file(bim), file(fam) from ch_plink_pruned_pca
+
+    output:
+    set file('pca_results.eigenvec'), file('pca_results.eigenval') into ch_pca_files
+
+    when: params.run_pca
+
+    script:
+    """
+    if [ \$(wc -l ${bim} | cut -d " " -f1) -lt 220 ]; then
+        echo "Error: PCA requires data to contain at least 220 variants."
+        exit 1
+    fi
+    if [ \$(wc -l ${fam} | cut -d " " -f1) -gt 5000 ]; then
+    echo "### It seems that you are using a large sample size. \
+    The randomised algorithm originally implemented for <Galinsky KJ et al. 2016> \
+    will be used to perform the PC calculations." 
+
+    plink2 --bfile ${plink_prefix} --pca ${params.number_pcs} approx --out pca_results
+    fi
+    if [ \$(wc -l ${fam} | cut -d " " -f1) -lt 5001 ]; then
+    plink2 --bfile ${plink_prefix} --pca ${params.number_pcs} --out pca_results
+    fi
+
+    """
+}
+
 /*--------------------------------------------------
   GWAS Analysis 1 with SAIGE - Fit the null mixed-model
 ---------------------------------------------------*/
@@ -300,6 +342,7 @@ process gwas_1_fit_null_glmm {
   set val(plink_grm_prefix), file(pruned_bed), file(pruned_bim), file(pruned_fam) from ch_plink_input_for_grm
   each file(phenoFile) from ch_pheno_for_saige
   val(cov_columns) from ch_covariate_cols
+  val(pc_columns) from ch_pca_cols.collect()
     
   output:
   file "*" into fit_null_glmm_results
@@ -307,7 +350,9 @@ process gwas_1_fit_null_glmm {
   file ("step1_${phenoFile.baseName}.varianceRatio.txt") into varianceRatioCh
 
   script:
-  cov_columns_arg = params.covariate_cols ? "--covarColList=${cov_columns}" : ""
+  pc_cols = pc_columns.join(',')
+  covariate_columns = cov_columns + ',' + pc_cols
+  cov_columns_arg = params.covariate_cols ? "--covarColList=${covariate_columns}" : ""
 
   """
   step1_fitNULLGLMM.R \
