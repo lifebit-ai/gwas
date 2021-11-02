@@ -228,70 +228,68 @@ process calculate_hwe {
   """
 }
 
+if (!params.grm_plink_input) {
+  process merge_plink {
+      tag "merge_plink"
 
-process merge_plink {
-    tag "merge_plink"
+      publishDir "${params.outdir}", mode: 'copy'
 
-    publishDir "${params.outdir}", mode: 'copy'
+      input:
+      file("*") from ch_filtered_plink.collect()
 
-    input:
-    file("*") from ch_filtered_plink.collect()
-
-    output:
-    set file('merged.bed'), file('merged.bim'), file('merged.fam') into ch_plink_merged
-
-    when: !params.grm_plink_input
-
-    script:
-    """
-    ls *.bed > bed.txt
-    ls *.bim > bim.txt
-    ls *.fam > fam.txt
-    paste bed.txt bim.txt fam.txt > merge.temp.list
-    tail -n +2 merge.temp.list > merge.list
-    bed_file=\$(head -n1 merge.temp.list | cut -f1)
-    bed_prefix=`echo "\${bed_file%.*}"`
-    plink --keep-allele-order \
-    --bfile \${bed_prefix} \
-    --merge-list merge.list \
-    --allow-no-sex \
-    --make-bed \
-    --out merged
-
-    """
-}
+      output:
+      set file('merged.bed'), file('merged.bim'), file('merged.fam') into ch_plink_merged
 
 
-process ld_prune {
-    tag "LD-prune plink set"
-    publishDir "${params.outdir}", mode: 'copy'
+      script:
+      """
+      ls *.bed > bed.txt
+      ls *.bim > bim.txt
+      ls *.fam > fam.txt
+      paste bed.txt bim.txt fam.txt > merge.temp.list
+      tail -n +2 merge.temp.list > merge.list
+      bed_file=\$(head -n1 merge.temp.list | cut -f1)
+      bed_prefix=`echo "\${bed_file%.*}"`
+      plink --keep-allele-order \
+      --bfile \${bed_prefix} \
+      --merge-list merge.list \
+      --allow-no-sex \
+      --make-bed \
+      --out merged
 
-    input:
-    set file(bed), file(bim), file(fam) from ch_plink_merged
-    file(long_range_ld_regions) from ch_high_ld_regions
+      """
+  }
 
-    output:
-    set val('merged_pruned'), file('merged_pruned.bed'), file('merged_pruned.bim'), file('merged_pruned.fam') into ( ch_plink_pruned, ch_plink_pruned_pca)
 
-    when: !params.grm_plink_input
+  process ld_prune {
+      tag "LD-prune plink set"
+      publishDir "${params.outdir}", mode: 'copy'
 
-    script:
-    """
-    plink \
-    --bfile merged \
-    --keep-allele-order \
-    --indep-pairwise ${params.ld_window_size} ${params.ld_step_size} ${params.ld_r2_threshold} \
-    --exclude range ${long_range_ld_regions} \
-    --allow-no-sex \
-    --out merged
-    plink \
-    --bfile merged \
-    --keep-allele-order \
-    --extract merged.prune.in \
-    --make-bed \
-    --allow-no-sex \
-    --out merged_pruned 
-    """
+      input:
+      set file(bed), file(bim), file(fam) from ch_plink_merged
+      file(long_range_ld_regions) from ch_high_ld_regions
+
+      output:
+      set val('merged_pruned'), file('merged_pruned.bed'), file('merged_pruned.bim'), file('merged_pruned.fam') into ( ch_plink_pruned, ch_plink_pruned_pca)
+
+      script:
+      """
+      plink \
+      --bfile merged \
+      --keep-allele-order \
+      --indep-pairwise ${params.ld_window_size} ${params.ld_step_size} ${params.ld_r2_threshold} \
+      --exclude range ${long_range_ld_regions} \
+      --allow-no-sex \
+      --out merged
+      plink \
+      --bfile merged \
+      --keep-allele-order \
+      --extract merged.prune.in \
+      --make-bed \
+      --allow-no-sex \
+      --out merged_pruned 
+      """
+  }
 }
 ch_plink_pruned_for_pca = params.grm_plink_input ? external_ch_plink_pruned_pca: ch_plink_pruned_pca
 
