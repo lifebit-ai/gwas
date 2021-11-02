@@ -73,7 +73,7 @@ if (params.grm_plink_input) {
   Channel
   .fromFilePairs("${params.grm_plink_input}",size:3, flat : true)
   .ifEmpty { exit 1, "PLINK files not found: ${params.grm_plink_input}.\nPlease specify a valid --grm_plink_input value. eg. testdata/*.{bed,bim,fam}" }
-  .set { external_ch_plink_pruned }
+  .into { external_ch_plink_pruned;  external_ch_plink_pruned_pca}
 }
 Channel
   .fromPath(params.vcfs_list)
@@ -293,14 +293,14 @@ process ld_prune {
     --out merged_pruned 
     """
 }
-
+ch_plink_pruned_for_pca = params.grm_plink_input ? external_ch_plink_pruned_pca: ch_plink_pruned_pca
 
 process run_pca {
     tag "Run PCA"
     publishDir "${params.outdir}", mode: 'copy'
 
     input:
-    set val(plink_prefix), file(bed), file(bim), file(fam) from ch_plink_pruned_pca
+    set val(plink_prefix), file(bed), file(bim), file(fam) from ch_plink_pruned_for_pca
     each file(phenotype_file) from ch_pheno_pca
 
     output:
