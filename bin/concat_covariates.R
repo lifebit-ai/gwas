@@ -7,54 +7,29 @@ args <- commandArgs(TRUE)
 ## Default setting when no all arguments passed or help needed
 if("--help" %in% args | "help" %in% args | (length(args) == 0) | (length(args) == 1) ) {
   cat("
-      The helper R Script concat_chroms.R
+      The helper R Script concat_covariates.R
 
       Mandatory arguments:
-        --output_tag=value         - A string in single quotes used as the identifier of the analysis
-                                     in the output files name. Don't use whitespaces or irregular characters.
-                                     The name will be converted to snakecase (eg. snake_case)
+        --pcs_file         - Path to file containing eigenvectors from PCA step (output of plink --pca command).
 
-         --help                    - you are reading it
+        --phenotype_file        - Path to file containing phenotype of interest and covariates. Supplied via --pheno_data to the pipeline.
 
-      Optional arguments:
-        --filename_pattern=value  - The pattern of the SAIGE generated individual results files,
-                                    used in list.files() for finding the files to concatenate.
-                                    Default: '.SAIGE.gwas.txt'
+        --output_file           - Path to resultant file with phenotype, covariates and PCs combined.
 
-        --saige_output_name=path   - The desired output identifier of the concatenated SAIGE output file with all the individual regions.
-                                     Default: 'saige_results'
-                                     NOTE:
-                                     The name will be converted to snakecase (eg. snake_case)
-                                     The final file name will be created by combining the output_tag value and this optional argument.
-                                     eg.
-                                     output_tag = 'breast_cancer_EAS_cohort'
-                                     saige_output_name = 'saige_results',
-                                     then the final file name will be:
-                                     'saige_results_breast_cancer_EAS_cohort.csv'
+         --help                    - helpful documentation.
 
-        --top_n_sites=int          - The top N sites from the SAIGE results to be displayed in the report.
-                                     The ranking is by ascending p-value.
-                                     Default: 200
-                                     NOTE:
-                                     The maximum limit for this option is set by the parameter max_top_n_sites
-
-        --max_top_n_sites=int      - The maximum allowed top N sites from the SAIGE results to be displayed in the report.
-                                     Default: 1000
-                                     NOTE:
-                                     This is the upper bound for the values that top_n_sites can take.
 
      Usage:
 
           The typical command for running the script is as follows:
 
-          ./concat_chroms.R --output_tag='summary_statistics'
+          ./concat_covariates.R --pcs_file='pca_results.eigenvec' --phenotype_file='pheno_and_covariates.tsv' --output_file='full_covariates_pheno_files.tsv'
 
      Output:
 
-      Returns one .csv file {saige_output_name}_{output_tag}.csv, with the concatenated results
-      across all tested genomic regions in the GWAS.
+      Returns a single .tsv file {saige_output_name}_{output_tag}.csv with covariates, phenotype of interest and PCs combined into one file.
 
-      See ./concat_chroms.R --help for more details.
+      See ./concat_covariates.R --help for more details.
 
       \n")
 
@@ -90,13 +65,7 @@ suppressWarnings(suppressMessages(library(dplyr)))
 pcs_file <- as.character(args$pcs_file)
 phenotype_file <- as.character(args$phenotype_file)
 output_file <- as.character(args$output_file)
-# required
-# output_tag         <- snakecase::to_snake_case(as.character(args$output_tag))
-# # optional
-# filename_pattern   <- as.character(args$filename_pattern)
-# saige_output_name  <- snakecase::to_snake_case(as.character(args$saige_output_name))
-# max_top_n_sites    <- as.numeric(args$max_top_n_sites)
-# top_n_sites        <- ifelse(as.numeric(args$top_n_sites) > max_top_n_sites, max_top_n_sites, as.numeric(args$top_n_sites))
+
 
 cat("\n")
 cat("ARGUMENTS SUMMARY")
@@ -110,14 +79,9 @@ cat("output_file  : ", output_file  ,"\n",sep="")
 
 principal_components = fread(pcs_file)
 covariates_file = fread(phenotype_file)
-print(head(principal_components))
-print(head(covariates_file))
-#saige_results['p.value'][is.na(saige_results['p.value'])] = 0.999999
-#saige_results_sorted_topN <- saige_results[order(saige_results[['p.value']]),][1:top_n_sites,]
-#data.table::fwrite(saige_results, paste0(saige_output_name, "_", output_tag, ".csv"), sep = ",")
-#data.table::fwrite(saige_results_sorted_topN, "saige_results_top_n.csv", sep = ",")
+
 output_df <- dplyr::left_join(principal_components, covariates_file, by='IID')
 data.table::fwrite(output_df, "covariates_with_PCs.tsv", sep = "\t")
 
-###
+
 
