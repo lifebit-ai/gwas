@@ -53,7 +53,8 @@ log.info "-\033[2m--------------------------------------------------\033[0m-"
 def get_chromosome( file ) {
     // using RegEx to extract chromosome number from file name
     regexpPE = /(?:chr)\d+/
-    (file =~ regexpPE)[-1].replaceAll('chr','')
+    (file =~ regexpPE)[0].replaceAll('chr','')
+    
 }
 
 /*--------------------------------------------------
@@ -61,12 +62,13 @@ def get_chromosome( file ) {
 ---------------------------------------------------*/
 if (params.input_folder_location) {
 Channel.fromPath("${params.input_folder_location}/**${params.file_pattern}*.{${params.file_suffix},${params.index_suffix}}")
-       .map { it -> [ get_chromosome(file(it).simpleName.minus(".${params.index_suffix}").minus(".${params.file_suffix}")), "s3:/"+it] }
+       .map { it -> [ file(it).simpleName.minus(".${params.index_suffix}").minus(".${params.file_suffix}"), "s3:/"+it] }
        .groupTuple(by:0)
-       .map { chr, files_pair -> [ chr, files_pair[0], files_pair[1] ] }
-       .map { chr, vcf, index -> [ file(vcf).simpleName, chr, file(vcf), file(index) ] }
-       .take( params.number_of_files_to_process )
-       .set { inputVcfCh }
+       .view()
+ //      .map { chr, files_pair -> [ chr, files_pair[0], files_pair[1] ] }
+  //     .map { chr, vcf, index -> [ file(vcf).simpleName, chr, file(vcf), file(index) ] }
+ //      .take( params.number_of_files_to_process )
+  //     .set { inputVcfCh }
 }
 
 
