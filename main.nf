@@ -50,9 +50,26 @@ log.info summary.collect { k,v -> "${k.padRight(18)}: $v" }.join("\n")
 log.info "-\033[2m--------------------------------------------------\033[0m-"
 
 
+def get_chromosome( file ) {
+    // using RegEx to extract chromosome number from file name
+    regexpPE = /(?:chr)\d+/
+    (file =~ regexpPE)[0].replaceAll('chr','')
+}
+
 /*--------------------------------------------------
   Channel setup
 ---------------------------------------------------*/
+if (params.input_folder_location) {
+Channel.fromPath("${params.input_folder_location}/**${params.file_pattern}*.{${params.file_suffix},${params.index_suffix}}")
+       .map { it -> [ get_chromosome(file(it).simpleName.minus(".${params.index_suffix}").minus(".${params.file_suffix}")), "s3:/"+it] }
+       .groupTuple(by:0)
+       .map { chr, files_pair -> [ chr, files_pair[0], files_pair[1] ] }
+       .map { chr, vcf, index -> [ file(vcf).simpleName, chr, file(vcf), file(index) ] }
+       .take( params.number_of_files_to_process )
+       .set { inputVcfCh }
+}
+
+
 if (params.trait_type == 'binary') {
   inv_normalisation = 'FALSE'
 }
@@ -75,12 +92,14 @@ if (params.grm_plink_input) {
   .ifEmpty { exit 1, "PLINK files not found: ${params.grm_plink_input}.\nPlease specify a valid --grm_plink_input value. eg. testdata/*.{bed,bim,fam}" }
   .into { external_ch_plink_pruned;  external_ch_plink_pruned_pca}
 }
+if (params.vcfs_list) {
 Channel
   .fromPath(params.vcfs_list)
   .ifEmpty { exit 1, "Cannot find CSV VCFs file : ${params.vcfs_list}" }
   .splitCsv(skip:1)
   .map { chr, vcf, index -> [file(vcf).simpleName, chr, file(vcf), file(index)] }
-  .into { vcfsCh; inputVcfCh}
+  .set { inputVcfCh }
+}
 Channel
   .fromPath(params.high_LD_long_range_regions)
   .ifEmpty { exit 1, "Cannot find file containing long-range LD regions for exclusion : ${params.high_LD_long_range_regions}" }
