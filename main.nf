@@ -32,6 +32,12 @@ summary['grm_plink_input']                = params.grm_plink_input
 summary['pheno_data']                     = params.pheno_data
 summary['covariate_cols']                 = params.covariate_cols
 
+summary['input_folder_location']          = params.input_folder_location
+summary['file_pattern']                   = params.file_pattern
+summary['file_suffix']                    = params.file_suffix
+summary['index_suffix']                   = params.index_suffix
+summary['number_of_files_to_process']     = params.number_of_files_to_process
+
 summary['q_filter']                       = params.q_filter
 summary['miss_test_p_threshold']          = params.miss_test_p_threshold
 summary['variant_missingness']            = params.variant_missingness
@@ -56,19 +62,17 @@ def get_chromosome( file ) {
     (file =~ regexpPE)[0].replaceAll('chr','')
     
 }
-
 /*--------------------------------------------------
   Channel setup
 ---------------------------------------------------*/
 if (params.input_folder_location) {
 Channel.fromPath("${params.input_folder_location}/**${params.file_pattern}*.{${params.file_suffix},${params.index_suffix}}")
-       .map { it -> [ file(it).simpleName.minus(".${params.index_suffix}").minus(".${params.file_suffix}"), "s3:/"+it] }
+       .map { it -> [ get_chromosome(file(it).simpleName.minus(".${params.index_suffix}").minus(".${params.file_suffix}")), "s3:/"+it] }
        .groupTuple(by:0)
-       .view()
- //      .map { chr, files_pair -> [ chr, files_pair[0], files_pair[1] ] }
-  //     .map { chr, vcf, index -> [ file(vcf).simpleName, chr, file(vcf), file(index) ] }
- //      .take( params.number_of_files_to_process )
-  //     .set { inputVcfCh }
+       .map { chr, files_pair -> [ chr, files_pair[0], files_pair[1] ] }
+       .map { chr, vcf, index -> [ file(vcf).simpleName, chr, file(vcf), file(index) ] }
+       .take( params.number_of_files_to_process )
+       .set { inputVcfCh }
 }
 
 
