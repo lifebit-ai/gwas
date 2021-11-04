@@ -58,7 +58,7 @@ log.info "-\033[2m--------------------------------------------------\033[0m-"
 
 def get_chromosome( file ) {
     // using RegEx to extract chromosome number from file name
-    regexpPE = /(?:chr)\d+/
+    regexpPE = /(?:chr)[a-zA-Z0-9]+/
     (file =~ regexpPE)[0].replaceAll('chr','')
     
 }
