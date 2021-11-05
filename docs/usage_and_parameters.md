@@ -31,7 +31,7 @@ nextflow run main.nf \
 OR vcf files can be supplied using:
 
 - **--input_folder_location** : s3 path to location of VCF files.
-- **--number_of_files_to_process** : Number of VCF files and corresponding indices to use from the s3 path.
+- **--number_of_files_to_process** : Number of VCF files and corresponding indices to use from the s3 path. (_Default: -1, which corresponds to all files_ )
 - **--file_pattern** : Filename pattern of VCF files and corresponding indices within the s3 path supplied via `--input_folder_location`.
 
 
