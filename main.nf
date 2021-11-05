@@ -494,7 +494,8 @@ subset_gwascat.R \
 # creates <params.output_tag>_manhattan.png with analysis.csv as input
 manhattan.R \
   --saige_output='saige_results_${final_output_tag}.csv' \
-  --output_tag='${final_output_tag}'
+  --output_tag='${final_output_tag}' \
+  --p_value_cutoff=${params.p_significance_threshold}
 
 # creates <params.output_tag>_qqplot_ci.png with analysis.csv as input
 qqplot.R \
