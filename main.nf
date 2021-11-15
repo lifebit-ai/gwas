@@ -27,7 +27,8 @@ summary['Working dir']                    = workflow.workDir
 summary['Script dir']                     = workflow.projectDir
 summary['User']                           = workflow.userName
 
-summary['vcfs_list']                      = params.vcfs_list
+summary['genotype_files_list']            = params.genotype_files_list
+summary['genotype_format']                = params.genotype_format
 summary['grm_plink_input']                = params.grm_plink_input
 summary['pheno_data']                     = params.pheno_data
 summary['covariate_cols']                 = params.covariate_cols
@@ -61,6 +62,17 @@ def get_chromosome( file ) {
     regexpPE = /(?:chr)[a-zA-Z0-9]+/
     (file =~ regexpPE)[0].replaceAll('chr','')
     
+}
+
+def checkParameterList(list, realList) {
+    return list.every{ checkParameterExistence(it, realList) }
+}
+
+def defineFormatList() {
+    return [
+      'bgen',
+      'vcf'
+    ]
 }
 /*--------------------------------------------------
   Channel setup
@@ -98,14 +110,31 @@ if (params.grm_plink_input) {
   .ifEmpty { exit 1, "PLINK files not found: ${params.grm_plink_input}.\nPlease specify a valid --grm_plink_input value. eg. testdata/*.{bed,bim,fam}" }
   .into { external_ch_plink_pruned;  external_ch_plink_pruned_pca}
 }
-if (params.vcfs_list) {
+if (params.genotype_files_list && params.genotype_format == 'vcf') {
 Channel
-  .fromPath(params.vcfs_list)
-  .ifEmpty { exit 1, "Cannot find CSV VCFs file : ${params.vcfs_list}" }
+  .fromPath(params.genotype_files_list)
+  .ifEmpty { exit 1, "Cannot find CSV VCFs file : ${params.genotype_files_list}" }
   .splitCsv(skip:1)
   .map { chr, vcf, index -> [file(vcf).simpleName, chr, file(vcf), file(index)] }
   .set { inputVcfCh }
 }
+else if (params.genotype_files_list && params.genotype_format == 'bgen') {
+  Channel
+  .fromPath(params.genotype_files_list)
+  .ifEmpty { exit 1, "Cannot find CSV file containing paths to .bgen/.sample files: ${params.genotype_files_list}" }
+  .splitCsv(skip:1)
+  .map { chr, bgen, sample -> [file(vcf).simpleName, chr, file(bgen), file(sample)] }
+  .set { ch_input_bgen }
+
+}
+else if (!params.genotype_files_list) {
+  exit 1, "File containing paths to genotype files not specified. Please specify using --genotype_files_list parameter."
+}
+else if (params.genotype_format != 'vcf' && params.genotype_format != 'bgen') {
+  exit 1, "Genotype format not supported. Please choose out of valid formats."
+
+}
+
 Channel
   .fromPath(params.high_LD_long_range_regions)
   .ifEmpty { exit 1, "Cannot find file containing long-range LD regions for exclusion : ${params.high_LD_long_range_regions}" }
