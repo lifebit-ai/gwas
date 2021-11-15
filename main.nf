@@ -32,6 +32,12 @@ summary['grm_plink_input']                = params.grm_plink_input
 summary['pheno_data']                     = params.pheno_data
 summary['covariate_cols']                 = params.covariate_cols
 
+summary['input_folder_location']          = params.input_folder_location
+summary['file_pattern']                   = params.file_pattern
+summary['file_suffix']                    = params.file_suffix
+summary['index_suffix']                   = params.index_suffix
+summary['number_of_files_to_process']     = params.number_of_files_to_process
+
 summary['q_filter']                       = params.q_filter
 summary['miss_test_p_threshold']          = params.miss_test_p_threshold
 summary['variant_missingness']            = params.variant_missingness
@@ -50,9 +56,26 @@ log.info summary.collect { k,v -> "${k.padRight(18)}: $v" }.join("\n")
 log.info "-\033[2m--------------------------------------------------\033[0m-"
 
 
+def get_chromosome( file ) {
+    // using RegEx to extract chromosome number from file name
+    regexpPE = /(?:chr)[a-zA-Z0-9]+/
+    (file =~ regexpPE)[0].replaceAll('chr','')
+    
+}
 /*--------------------------------------------------
   Channel setup
 ---------------------------------------------------*/
+if (params.input_folder_location) {
+Channel.fromPath("${params.input_folder_location}/**${params.file_pattern}*.{${params.file_suffix},${params.index_suffix}}")
+       .map { it -> [ get_chromosome(file(it).simpleName.minus(".${params.index_suffix}").minus(".${params.file_suffix}")), "s3:/"+it] }
+       .groupTuple(by:0)
+       .map { chr, files_pair -> [ chr, files_pair[0], files_pair[1] ] }
+       .map { chr, vcf, index -> [ file(vcf).simpleName, chr, file(vcf), file(index) ] }
+       .take( params.number_of_files_to_process )
+       .set { inputVcfCh }
+}
+
+
 if (params.trait_type == 'binary') {
   inv_normalisation = 'FALSE'
 }
@@ -66,21 +89,23 @@ params.output_tag ? Channel.value(params.output_tag).into {ch_output_tag_report;
 
 
 ch_pheno = params.pheno_data ? Channel.value(file(params.pheno_data)) : Channel.empty()
-(phenoCh_gwas_filtering, ch_pheno_for_saige, phenoCh, ch_pheno_vcf2plink) = ch_pheno.into(4)
+(phenoCh_gwas_filtering, ch_pheno_pca, ch_pheno_for_saige, phenoCh, ch_pheno_vcf2plink) = ch_pheno.into(5)
 ch_covariate_cols = params.covariate_cols ? Channel.value(params.covariate_cols) : "null"
 
 if (params.grm_plink_input) {
   Channel
   .fromFilePairs("${params.grm_plink_input}",size:3, flat : true)
   .ifEmpty { exit 1, "PLINK files not found: ${params.grm_plink_input}.\nPlease specify a valid --grm_plink_input value. eg. testdata/*.{bed,bim,fam}" }
-  .set { external_ch_plink_pruned }
+  .into { external_ch_plink_pruned;  external_ch_plink_pruned_pca}
 }
+if (params.vcfs_list) {
 Channel
   .fromPath(params.vcfs_list)
   .ifEmpty { exit 1, "Cannot find CSV VCFs file : ${params.vcfs_list}" }
   .splitCsv(skip:1)
   .map { chr, vcf, index -> [file(vcf).simpleName, chr, file(vcf), file(index)] }
-  .into { vcfsCh; inputVcfCh}
+  .set { inputVcfCh }
+}
 Channel
   .fromPath(params.high_LD_long_range_regions)
   .ifEmpty { exit 1, "Cannot find file containing long-range LD regions for exclusion : ${params.high_LD_long_range_regions}" }
@@ -91,8 +116,16 @@ Channel
   .ifEmpty { exit 1, "Cannot find GWAS catalogue CSV  file : ${params.gwas_cat}" }
   .set { ch_gwas_cat }
 
-
-
+if (params.run_pca) {
+  Channel
+      .from( 1..params.number_pcs )
+      .flatMap { it -> "PC$it" }
+      .toList()
+      .set { ch_pca_cols }
+} else {
+  ch_pca_cols = Channel.fromList(['null'])
+}
+    
   /*--------------------------------------------------
   Pre-GWAS filtering - download, filter and convert VCFs
   ---------------------------------------------------*/
@@ -220,69 +253,107 @@ process calculate_hwe {
   """
 }
 
+if (!params.grm_plink_input) {
+  process merge_plink {
+      tag "merge_plink"
 
-process merge_plink {
-    tag "merge_plink"
+      publishDir "${params.outdir}", mode: 'copy'
 
-    publishDir "${params.outdir}", mode: 'copy'
+      input:
+      file("*") from ch_filtered_plink.collect()
 
-    input:
-    file("*") from ch_filtered_plink.collect()
+      output:
+      set file('merged.bed'), file('merged.bim'), file('merged.fam') into ch_plink_merged
 
-    output:
-    set file('merged.bed'), file('merged.bim'), file('merged.fam') into ch_plink_merged
 
-    when: !params.grm_plink_input
+      script:
+      """
+      ls *.bed > bed.txt
+      ls *.bim > bim.txt
+      ls *.fam > fam.txt
+      paste bed.txt bim.txt fam.txt > merge.temp.list
+      tail -n +2 merge.temp.list > merge.list
+      bed_file=\$(head -n1 merge.temp.list | cut -f1)
+      bed_prefix=`echo "\${bed_file%.*}"`
+      plink --keep-allele-order \
+      --bfile \${bed_prefix} \
+      --merge-list merge.list \
+      --allow-no-sex \
+      --make-bed \
+      --out merged
 
-    script:
-    """
-    ls *.bed > bed.txt
-    ls *.bim > bim.txt
-    ls *.fam > fam.txt
-    paste bed.txt bim.txt fam.txt > merge.temp.list
-    tail -n +2 merge.temp.list > merge.list
-    bed_file=\$(head -n1 merge.temp.list | cut -f1)
-    bed_prefix=`echo "\${bed_file%.*}"`
-    plink --keep-allele-order \
-    --bfile \${bed_prefix} \
-    --merge-list merge.list \
-    --allow-no-sex \
-    --make-bed \
-    --out merged
+      """
+  }
 
-    """
+
+  process ld_prune {
+      tag "LD-prune plink set"
+      publishDir "${params.outdir}", mode: 'copy'
+
+      input:
+      set file(bed), file(bim), file(fam) from ch_plink_merged
+      file(long_range_ld_regions) from ch_high_ld_regions
+
+      output:
+      set val('merged_pruned'), file('merged_pruned.bed'), file('merged_pruned.bim'), file('merged_pruned.fam') into ( ch_plink_pruned, ch_plink_pruned_pca)
+
+      script:
+      """
+      plink \
+      --bfile merged \
+      --keep-allele-order \
+      --indep-pairwise ${params.ld_window_size} ${params.ld_step_size} ${params.ld_r2_threshold} \
+      --exclude range ${long_range_ld_regions} \
+      --allow-no-sex \
+      --out merged
+      plink \
+      --bfile merged \
+      --keep-allele-order \
+      --extract merged.prune.in \
+      --make-bed \
+      --allow-no-sex \
+      --out merged_pruned 
+      """
+  }
 }
+ch_plink_pruned_for_pca = params.grm_plink_input ? external_ch_plink_pruned_pca: ch_plink_pruned_pca
 
-
-process ld_prune {
-    tag "LD-prune plink set"
+process run_pca {
+    tag "Run PCA"
     publishDir "${params.outdir}", mode: 'copy'
 
     input:
-    set file(bed), file(bim), file(fam) from ch_plink_merged
-    file(long_range_ld_regions) from ch_high_ld_regions
+    set val(plink_prefix), file(bed), file(bim), file(fam) from ch_plink_pruned_for_pca
+    each file(phenotype_file) from ch_pheno_pca
 
     output:
-    set val('merged_pruned'), file('merged_pruned.bed'), file('merged_pruned.bim'), file('merged_pruned.fam') into ch_plink_pruned
+    set file('pca_results.eigenvec'), file('pca_results.eigenval') into ch_pca_files
+    file('covariates_with_PCs.tsv') into ch_full_covariate_file
 
-    when: !params.grm_plink_input
+    when: params.run_pca
 
     script:
     """
-    plink \
-    --bfile merged \
-    --keep-allele-order \
-    --indep-pairwise ${params.ld_window_size} ${params.ld_step_size} ${params.ld_r2_threshold} \
-    --exclude range ${long_range_ld_regions} \
-    --allow-no-sex \
-    --out merged
-    plink \
-    --bfile merged \
-    --keep-allele-order \
-    --extract merged.prune.in \
-    --make-bed \
-    --allow-no-sex \
-    --out merged_pruned 
+    if [ \$(wc -l ${bim} | cut -d " " -f1) -lt 220 ]; then
+        echo "Error: PCA requires data to contain at least 220 variants."
+        exit 1
+    fi
+    if [ \$(wc -l ${fam} | cut -d " " -f1) -gt 5000 ]; then
+    echo "### It seems that you are using a large sample size. \
+    The randomised algorithm originally implemented for <Galinsky KJ et al. 2016> \
+    will be used to perform the PC calculations." 
+
+    plink2 --bfile ${plink_prefix} --pca ${params.number_pcs} approx --out pca_results
+    fi
+    if [ \$(wc -l ${fam} | cut -d " " -f1) -lt 5001 ]; then
+    plink2 --bfile ${plink_prefix} --pca ${params.number_pcs} --out pca_results
+    fi
+
+    concat_covariates.R \
+    --pcs_file=pca_results.eigenvec \
+    --phenotype_file=${phenotype_file} \
+    --output_file=covariates_with_PCs.tsv
+
     """
 }
 
@@ -290,36 +361,40 @@ process ld_prune {
   GWAS Analysis 1 with SAIGE - Fit the null mixed-model
 ---------------------------------------------------*/
 ch_plink_input_for_grm = params.grm_plink_input ? external_ch_plink_pruned : ch_plink_pruned
+ch_covariate_file_for_gwas = params.run_pca ? ch_full_covariate_file : ch_pheno_for_saige
 
-process gwas_1_fit_null_glmm {
+process gwas_1_fit_null_glmm_with_pcs {
   tag "$plink_grm_snps"
   label 'saige'
   publishDir "${params.outdir}/gwas_1_fit_null_glmm", mode: 'copy'
 
   input:
   set val(plink_grm_prefix), file(pruned_bed), file(pruned_bim), file(pruned_fam) from ch_plink_input_for_grm
-  each file(phenoFile) from ch_pheno_for_saige
+  each file(full_covariate_file) from ch_covariate_file_for_gwas
   val(cov_columns) from ch_covariate_cols
+  val(pc_columns) from ch_pca_cols.collect()
     
   output:
   file "*" into fit_null_glmm_results
-  file ("step1_${phenoFile.baseName}_out.rda") into rdaCh
-  file ("step1_${phenoFile.baseName}.varianceRatio.txt") into varianceRatioCh
+  file ("step1_${params.phenotype_colname}_out.rda") into rdaCh
+  file ("step1_${params.phenotype_colname}.varianceRatio.txt") into varianceRatioCh
 
   script:
-  cov_columns_arg = params.covariate_cols ? "--covarColList=${cov_columns}" : ""
+  pc_cols = pc_columns.join(',')
+  covariate_columns = params.run_pca ? cov_columns + ',' + pc_cols: cov_columns
+  cov_columns_arg = params.covariate_cols ? "--covarColList=${covariate_columns}" : ""
 
   """
   step1_fitNULLGLMM.R \
     --plinkFile=${plink_grm_prefix} \
-    --phenoFile="${phenoFile}" \
+    --phenoFile="${full_covariate_file}" \
     ${cov_columns_arg} \
     --phenoCol=${params.phenotype_colname} \
     --invNormalize=${inv_normalisation} \
     --traitType=${params.trait_type}       \
     --sampleIDColinphenoFile=IID \
-    --outputPrefix="step1_${phenoFile.baseName}_out" \
-    --outputPrefix_varRatio="step1_${phenoFile.baseName}" \
+    --outputPrefix="step1_${params.phenotype_colname}_out" \
+    --outputPrefix_varRatio="step1_${params.phenotype_colname}" \
     --nThreads=${task.cpus} ${params.saige_step1_extra_flags}
    """
 
@@ -419,7 +494,8 @@ subset_gwascat.R \
 # creates <params.output_tag>_manhattan.png with analysis.csv as input
 manhattan.R \
   --saige_output='saige_results_${final_output_tag}.csv' \
-  --output_tag='${final_output_tag}'
+  --output_tag='${final_output_tag}' \
+  --p_value_cutoff=${params.p_significance_threshold}
 
 # creates <params.output_tag>_qqplot_ci.png with analysis.csv as input
 qqplot.R \
