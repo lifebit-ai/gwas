@@ -97,5 +97,9 @@ toDisplayNames <- c( "chr_id", "start", "end", "snps","disease_trait", "mapped_g
 toDisplayIndices <- na.omit(match(toDisplayNames, colnames(table)))
 reordered_columns <- c( "chr_id",  "start", "end", "snps", "strand",  "mapped_gene", "reported_gene_s", "mapped_trait", "mapped_trait_uri", "snp_id_current", "risk_allele_frequency",  "pubmedid", "first_author", "date", "journal", "link", "study", "disease_trait", "initial_sample_size", "replication_sample_size", "region",  "upstream_gene_id", "downstream_gene_id", "snp_gene_ids", "upstream_gene_distance", "downstream_gene_distance", "strongest_snp_risk_allele",  "merged", "context", "intergenic", "risk_allele_frequency",  "p_value", "pvalue_mlog", "p_value_text", "or_or_beta", "x_95_ci_text",  "platform_snps_passing_qc", "width","chr_pos", "cnv", "study_accession", "genotyping_technology", "seqnames", "date_added_to_catalog")
 table <- table[, reordered_columns]
-DTable(table)
+if (nrow(table) == 0) {
+  print("No significant variants found with current analysis have been found in GWAS catalogue.")
+} else {
+  DTable(table)
+}
 ```
