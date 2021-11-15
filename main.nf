@@ -123,8 +123,12 @@ else if (params.genotype_files_list && params.genotype_format == 'bgen') {
   .fromPath(params.genotype_files_list)
   .ifEmpty { exit 1, "Cannot find CSV file containing paths to .bgen/.sample files: ${params.genotype_files_list}" }
   .splitCsv(skip:1)
-  .map { chr, bgen, sample -> [file(vcf).simpleName, chr, file(bgen), file(sample)] }
+  .map { chr, bgen, bgi_index -> [file(bgen).simpleName, chr, file(bgen), file(bgi_index)] }
   .set { ch_input_bgen }
+
+  Channel
+  .fromPath(params.bgen_sample_file)
+  .set { ch_bgen_sample_file }
 
 }
 else if (!params.genotype_files_list) {
@@ -158,7 +162,8 @@ if (params.run_pca) {
   /*--------------------------------------------------
   Pre-GWAS filtering - download, filter and convert VCFs
   ---------------------------------------------------*/
-process vcf2plink {
+if (params.genotype_format == 'vcf') {
+  process vcf2plink {
   tag "$name"
   publishDir "${params.outdir}/gwas_filtering", mode: 'copy'
 
@@ -188,6 +193,33 @@ process vcf2plink {
     --set-hh-missing \
     --new-id-max-allele-len 60 missing
 """   
+}
+}
+else if (params.genotype_format == 'bgen') {
+  process bgen2plink {
+      tag "$name"
+    publishDir "${params.outdir}/gwas_filtering", mode: 'copy'
+
+  input:
+  set val(name), val(chr), file(bgen), file(index) from ch_input_bgen
+  each file(phe_file) from ch_pheno_vcf2plink
+  each file(sample_file) from ch_bgen_sample_file
+
+  output:
+  set val(name), val(chr), file('*.bed'), file('*.bim'), file('*.fam') into filteredPlinkCh
+
+  script:
+  """
+    # Create PLINK binary from vcf.gz
+  plink2 \
+    --make-bed \
+    --bgen ${bgen}\
+    --out ${name}_filtered \
+    --double-id \
+    --sample ${sample_file}
+  """ 
+
+  }
 }
 
 process filter_missingness {
