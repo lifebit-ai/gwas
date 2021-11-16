@@ -131,8 +131,8 @@ else if (params.genotype_files_list && params.genotype_format == 'bgen') {
   .set { ch_bgen_sample_file }
 
 }
-else if (!params.genotype_files_list) {
-  exit 1, "File containing paths to genotype files not specified. Please specify using --genotype_files_list parameter."
+else if (!params.genotype_files_list || !params.input_folder_location) {
+  exit 1, "File containing paths to genotype files not specified. Please specify a .csv file with paths using --genotype_files_list parameter, or a input s3 path using --input_folder_location parameter."
 }
 else if (params.genotype_format != 'vcf' && params.genotype_format != 'bgen') {
   exit 1, "Genotype format not supported. Please choose out of valid formats."
