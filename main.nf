@@ -101,7 +101,7 @@ params.output_tag ? Channel.value(params.output_tag).into {ch_output_tag_report;
 
 
 ch_pheno = params.pheno_data ? Channel.value(file(params.pheno_data)) : Channel.empty()
-(phenoCh_gwas_filtering, ch_pheno_pca, ch_pheno_for_saige, phenoCh, ch_pheno_vcf2plink) = ch_pheno.into(5)
+(phenoCh_gwas_filtering, ch_pheno_pca, ch_pheno_for_saige, phenoCh, ch_pheno_vcf2plink, ch_pheno_bgen) = ch_pheno.into(6)
 ch_covariate_cols = params.covariate_cols ? Channel.value(params.covariate_cols) : "null"
 
 if (params.grm_plink_input) {
@@ -197,25 +197,29 @@ if (params.genotype_format == 'vcf') {
 }
 else if (params.genotype_format == 'bgen') {
   process bgen2plink {
-      tag "$name"
+    tag "$name"
     publishDir "${params.outdir}/gwas_filtering", mode: 'copy'
 
-  input:
-  set val(name), val(chr), file(bgen), file(index) from ch_input_bgen
-  each file(phe_file) from ch_pheno_vcf2plink
-  each file(sample_file) from ch_bgen_sample_file
+    input:
+    set val(name), val(chr), file(bgen), file(index) from ch_input_bgen
+    each file(phe_file) from ch_pheno_bgen
+    each file(sample_file) from ch_bgen_sample_file
 
   output:
   set val(name), val(chr), file('*.bed'), file('*.bim'), file('*.fam') into filteredPlinkCh
 
   script:
   """
-    # Create PLINK binary from vcf.gz
+  # Create a sample ID file for --keep
+  tail -n +2 ${phe_file}| cut -f1,2 > samples.txt
+
+  # Create PLINK binary from vcf.gz
   plink2 \
     --make-bed \
     --bgen ${bgen}\
     --out ${name}_filtered \
     --double-id \
+    --keep samples.txt \
     --sample ${sample_file}
   """ 
 
