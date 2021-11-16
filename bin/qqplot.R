@@ -113,7 +113,7 @@ png(filename =  paste0(output_tag,"_", "qqplot_ci" , ".png") ,
     type   = type)
 
 
-GWASTools::qqPlot(analysis$P, main=paste0(output_tag,",","lambda=",round(lambda(analysis$P),2)))
+GWASTools::qqPlot(analysis$P, main=paste0(output_tag,",","\u03BB = ",round(lambda(analysis$P),2)))
 dev.off()
 
 #check whether we can just save the R objects and also give the option for exporting through a future airlock
