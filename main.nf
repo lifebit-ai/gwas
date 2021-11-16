@@ -227,6 +227,7 @@ else if (params.genotype_format == 'bgen') {
 
 process filter_missingness {
   tag "$name"
+  label 'plink'
   publishDir "${params.outdir}/filter_miss", mode: 'copy'
   input:
   set val(name), val(chr), file(bed), file(bim), file(fam) from filteredPlinkCh
