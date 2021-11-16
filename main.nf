@@ -220,6 +220,7 @@ else if (params.genotype_format == 'bgen') {
     --out ${name}_filtered \
     --double-id \
     --keep samples.txt \
+    --sample ${sample_file}
   """ 
 
   }
