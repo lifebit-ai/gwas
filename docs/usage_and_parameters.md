@@ -26,7 +26,7 @@ nextflow run main.nf \
 
 ## **ESSENTIAL**
 
-- **--vcfs_list** : path/url to CSV file containing chr chunk information, path to aggregated VCFs, VCFs index.
+- **--genotype_files_list** : path/url to CSV file containing chr, path to file and corresponding index, e.g. for VCF - chr,vcf,index(.csi) and for .bgen files - chr,bgen,index(.bgi).
 
 OR vcf files can be supplied using:
 
@@ -37,18 +37,14 @@ OR vcf files can be supplied using:
 
 - **--pheno_data** : path/url to file that contains phenotypic information about cohort to be analysed in plink phenotypic format (.phe).
 
-## **Binary**
-
-- **--trait_type** : Should be set as 'binary'.
-
-## **Quantitative**
-
-- **--trait_type** : Should be set to 'quantitative'.
+- **--trait_type** : Should be set to 'quantitative' or 'binary', depending on the trait of interest.
 
 
 ## **Optional**
 
 - **--phenotype_colname** :  Column name of phenotype as shown in file supplied via `--pheno_data`. Default=`"PHE"`
+- **--genotype_format** : Format of genotype files in input. Default=`"vcf`. Currently supported options are `"vcf"` and `"bgen"`.
+- **--bgen_sample_file**: Sample file accompanying bgen files. Only required if genotype files are in .bgen format. Used in bgen->plink conversion.
 
 - **--q_filter** : Minimum allele frequency filter for selecting sites.
 - **--thres_m** : Minimum threshold for missingess.
