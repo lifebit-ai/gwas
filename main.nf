@@ -218,6 +218,7 @@ else if (params.genotype_format == 'bgen') {
     --make-bed \
     --bgen ${bgen}\
     --out ${name}_filtered \
+    --maf ${params.maf_filter} \
     --double-id \
     --keep samples.txt \
     --sample ${sample_file}
