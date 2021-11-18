@@ -165,7 +165,7 @@ if (params.run_pca) {
 if (params.genotype_format == 'vcf') {
   process vcf2plink {
   tag "$name"
-  label 'mega_memory'
+  label 'high_memory'
   publishDir "${params.outdir}/gwas_filtering", mode: 'copy'
 
   input:
@@ -190,6 +190,7 @@ if (params.genotype_format == 'vcf') {
     --vcf ${name}_filtered.vcf.gz \
     --out ${name}_filtered \
     --vcf-half-call m \
+    --memory ${params.plink_memory} \
     --double-id \
     --set-hh-missing \
     --new-id-max-allele-len 60 missing
@@ -222,6 +223,7 @@ else if (params.genotype_format == 'bgen') {
     --out ${name}_filtered \
     --maf ${params.maf_filter} \
     --double-id \
+    --memory ${params.plink_memory} \
     --keep samples.txt \
     --sample ${sample_file}
   """ 
