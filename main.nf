@@ -165,6 +165,7 @@ if (params.run_pca) {
 if (params.genotype_format == 'vcf') {
   process vcf2plink {
   tag "$name"
+  label 'mega_memory'
   publishDir "${params.outdir}/gwas_filtering", mode: 'copy'
 
   input:
@@ -198,6 +199,7 @@ if (params.genotype_format == 'vcf') {
 else if (params.genotype_format == 'bgen') {
   process bgen2plink {
     tag "$name"
+    label 'mega_memory'
     publishDir "${params.outdir}/gwas_filtering", mode: 'copy'
 
     input:
