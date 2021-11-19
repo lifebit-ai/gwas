@@ -49,7 +49,7 @@ OR vcf files can be supplied using:
 ## **Optional**
 
 - **--phenotype_colname** :  Column name of phenotype as shown in file supplied via `--pheno_data`. Default=`"PHE"`
-
+- **--covariate_cols** :  Column names of covariates to be included in GWAS, supplied in comma-separated fashion e.g. `sex,age,smoking_status`. Column names should reflect those in in file supplied via `--pheno_data`.
 - **--q_filter** : Minimum allele frequency filter for selecting sites.
 - **--thres_m** : Minimum threshold for missingess.
 - **--hwe_threshold** : Significance threshold for Hardy-Weinberg Equilibrium. Default = 1e-5
