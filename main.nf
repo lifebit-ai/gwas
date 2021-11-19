@@ -249,6 +249,7 @@ process filter_missingness {
      --pheno-name ${params.phenotype_colname} \
      --allow-no-sex \
      --test-missing midp \
+     --memory ${params.plink_memory} \
      --out ${name} \
      --1 \
      --keep-allele-order \
@@ -259,6 +260,7 @@ process filter_missingness {
      --keep-allele-order \
      --allow-no-sex \
      --exclude ${name}.missing_FAIL \
+     --memory ${params.plink_memory} \
      --make-bed \
      --out ${name}_miss_filtered
    """
@@ -268,6 +270,7 @@ else if ( params.trait_type == "quantitative" )
      --bfile ${name}_filtered \
      --allow-no-sex \
      --missing \
+     --memory ${params.plink_memory} \
      --out ${name} \
      --1 \
      --keep-allele-order
@@ -278,6 +281,7 @@ else if ( params.trait_type == "quantitative" )
      --keep-allele-order \
      --allow-no-sex \
      --exclude ${name}.missing_FAIL \
+     --memory ${params.plink_memory} \
      --make-bed \
      --out ${name}_miss_filtered
   """
@@ -302,6 +306,7 @@ process calculate_hwe {
     --bfile ${name}_miss_filtered \
     --pheno $phe_file \
     --pheno-name ${params.phenotype_colname} \
+    --memory ${params.plink_memory} \
     --allow-no-sex \
     --hwe ${params.hwe_threshold} ${params.hwe_test} \
     --out ${name}.misHWEfiltered \
@@ -313,6 +318,7 @@ process calculate_hwe {
     --bfile ${name}.misHWEfiltered  \
     --keep-allele-order \
     --recode vcf-iid bgz \
+    --memory ${params.plink_memory} \
     --out ${name}_filtered_vcf
 
   bcftools view ${name}_filtered_vcf.vcf.gz | awk -F '\\t' 'NR==FNR{c[\$1\$4\$6\$5]++;next}; c[\$1\$2\$4\$5] > 0' ${name}.misHWEfiltered.bim - | bgzip > ${name}.filtered_temp.vcf.gz
@@ -348,6 +354,7 @@ if (!params.grm_plink_input) {
       --bfile \${bed_prefix} \
       --merge-list merge.list \
       --allow-no-sex \
+      --memory ${params.plink_memory} \
       --make-bed \
       --out merged
 
@@ -374,12 +381,14 @@ if (!params.grm_plink_input) {
       --indep-pairwise ${params.ld_window_size} ${params.ld_step_size} ${params.ld_r2_threshold} \
       --exclude range ${long_range_ld_regions} \
       --allow-no-sex \
+      --memory ${params.plink_memory} \
       --out merged
       plink \
       --bfile merged \
       --keep-allele-order \
       --extract merged.prune.in \
       --make-bed \
+      --memory ${params.plink_memory} \
       --allow-no-sex \
       --out merged_pruned 
       """
