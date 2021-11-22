@@ -76,3 +76,4 @@ OR vcf files can be supplied using:
 - **--file_suffix** : File extension of main files supplied via --input_folder_location if used. Default=`"vcf.gz"`
 - **--index_suffix** : File extension of index files supplied via --input_folder_location if used. Default=`"vcf.gz.csi"`
 
+- **--plink_memory** : By default, plink tries to reserve half of available RAM for its main workspace. If this amount is insufficient for your current job, you can use this parameter to adjust this behavior.
