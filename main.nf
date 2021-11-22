@@ -164,38 +164,38 @@ if (params.run_pca) {
   ---------------------------------------------------*/
 if (params.genotype_format == 'vcf') {
   process vcf2plink {
-  tag "$name"
-  label 'high_memory'
-  publishDir "${params.outdir}/gwas_filtering", mode: 'copy'
+    tag "$name"
+    label 'high_memory'
+    publishDir "${params.outdir}/gwas_filtering", mode: 'copy'
 
-  input:
-  set val(name), val(chr), file(vcf), file(index) from inputVcfCh
-  each file(phe_file) from ch_pheno_vcf2plink
+    input:
+    set val(name), val(chr), file(vcf), file(index) from inputVcfCh
+    each file(phe_file) from ch_pheno_vcf2plink
 
-  output:
-  set val(name), val(chr), file('*.bed'), file('*.bim'), file('*.fam') into filteredPlinkCh
+    output:
+    set val(name), val(chr), file('*.bed'), file('*.bim'), file('*.fam') into filteredPlinkCh
 
-  script:
-  """
-  # Download, filter and convert (bcf or vcf.gz) -> vcf.gz
-  tail -n +2 ${phe_file}| cut -f2 > samples.txt
-  bcftools view -S samples.txt $vcf -Oz -o ${name}_downsampled.vcf.gz
-  bcftools view -q ${params.q_filter} ${name}_downsampled.vcf.gz -Oz -o ${name}_filtered.vcf.gz
-  bcftools index ${name}_filtered.vcf.gz
+    script:
+    """
+    # Download, filter and convert (bcf or vcf.gz) -> vcf.gz
+    tail -n +2 ${phe_file}| cut -f2 > samples.txt
+    bcftools view -S samples.txt $vcf -Oz -o ${name}_downsampled.vcf.gz
+    bcftools view -q ${params.q_filter} ${name}_downsampled.vcf.gz -Oz -o ${name}_filtered.vcf.gz
+    bcftools index ${name}_filtered.vcf.gz
 
-  # Create PLINK binary from vcf.gz
-  plink2 \
-    --make-bed \
-    --set-missing-var-ids @:#,\\\$r,\\\$a \
-    --vcf ${name}_filtered.vcf.gz \
-    --out ${name}_filtered \
-    --vcf-half-call m \
-    --memory ${params.plink_memory} \
-    --double-id \
-    --set-hh-missing \
-    --new-id-max-allele-len 60 missing
-"""   
-}
+    # Create PLINK binary from vcf.gz
+    plink2 \
+      --make-bed \
+      --set-missing-var-ids @:#,\\\$r,\\\$a \
+      --vcf ${name}_filtered.vcf.gz \
+      --out ${name}_filtered \
+      --vcf-half-call m \
+      --memory ${params.plink_memory} \
+      --double-id \
+      --set-hh-missing \
+      --new-id-max-allele-len 60 missing
+  """   
+  }
 }
 else if (params.genotype_format == 'bgen') {
   process bgen2plink {
@@ -207,26 +207,25 @@ else if (params.genotype_format == 'bgen') {
     each file(phe_file) from ch_pheno_bgen
     each file(sample_file) from ch_bgen_sample_file
 
-  output:
-  set val(name), val(chr), file('*.bed'), file('*.bim'), file('*.fam') into filteredPlinkCh
+    output:
+    set val(name), val(chr), file('*.bed'), file('*.bim'), file('*.fam') into filteredPlinkCh
 
-  script:
-  """
-  # Create a sample ID file for --keep
-  tail -n +2 ${phe_file}| cut -f1,2 > samples.txt
+    script:
+    """
+    # Create a sample ID file for --keep
+    tail -n +2 ${phe_file}| cut -f1,2 > samples.txt
 
-  # Create PLINK binary from vcf.gz
-  plink2 \
-    --make-bed \
-    --bgen ${bgen}\
-    --out ${name}_filtered \
-    --maf ${params.maf_filter} \
-    --double-id \
-    --memory ${params.plink_memory} \
-    --keep samples.txt \
-    --sample ${sample_file}
-  """ 
-
+    # Create PLINK binary from vcf.gz
+    plink2 \
+      --make-bed \
+      --bgen ${bgen}\
+      --out ${name}_filtered \
+      --maf ${params.maf_filter} \
+      --double-id \
+      --memory ${params.plink_memory} \
+      --keep samples.txt \
+      --sample ${sample_file}
+    """ 
   }
 }
 
