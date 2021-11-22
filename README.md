@@ -15,4 +15,4 @@ nextflow run main.nf \
   --genotype_files_list "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/vcfs.csv" \
 ```
 
-P.S. The maximum memory used by plink is `16Gb`. If more memory needs to be assigned to plink commands, please use `--plink_memory` parameter to adjust accordingly.
+P.S. maximum RAM assigned to plink operations is set to  `16Gb` by default. If more memory needs to be assigned to plink commands, please use `--plink_memory` parameter to adjust accordingly.
