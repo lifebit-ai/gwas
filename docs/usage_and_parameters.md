@@ -9,7 +9,7 @@ nextflow run main.nf \
   --grm_plink_input "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/sampleA.{bed,bim,fam}" \
   --pheno_data "<pheno_file>" \
   --trait_type "binary" \
-  --vcfs_list "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/vcfs.csv"
+  --genotype_files_list "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/vcfs.csv"
 ```
 
 **Quantitative**
@@ -19,7 +19,7 @@ nextflow run main.nf \
   --grm_plink_input "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/sampleA.{bed,bim,fam}" \
   --pheno_data "<pheno_file>" \
   --trait_type "quantitative" \
-  --vcfs_list "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/vcfs.csv"
+  --genotype_files_list "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/vcfs.csv"
 ```
 
 # Parameters
@@ -42,8 +42,8 @@ OR vcf files can be supplied using:
 
 ## **Optional**
 
-- **--phenotype_colname** :  Column name of phenotype as shown in file supplied via `--pheno_data`. Default=`"PHE"`
-- **--genotype_format** : Format of genotype files in input. Default=`"vcf`. Currently supported options are `"vcf"` and `"bgen"`.
+- **--phenotype_colname** :  Column name of phenotype as shown in file supplied via `--pheno_data`. Default=`PHE`
+- **--genotype_format** : Format of genotype files in input. Default=`"vcf`. Currently supported options are `vcf` and `bgen`. Default=`vcf`.
 - **--bgen_sample_file**: Sample file accompanying bgen files. Only required if genotype files are in .bgen format. Used in bgen->plink conversion.
 
 - **--q_filter** : Minimum allele frequency filter for selecting sites.
