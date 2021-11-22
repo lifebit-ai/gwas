@@ -26,7 +26,7 @@ nextflow run main.nf \
 
 ## **ESSENTIAL**
 
-- **--genotype_files_list** : path/url to CSV file containing chr, path to file and corresponding index, e.g. for VCF - chr,vcf,index(.csi) and for .bgen files - chr,bgen,index(.bgi).
+- **--genotype_files_list** : path/url to CSV file containing chr, path to file and corresponding index, e.g. for VCF - chr,vcf,index(.csi) and for .bgen files - chr,bgen,index(.bgi). NOTE: chr must be in numeric format. Not `chr1`,`chr2`,`chr3`, but `1`,`2`,`3`.
 
 OR vcf files can be supplied using:
 
