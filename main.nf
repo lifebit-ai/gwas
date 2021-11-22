@@ -228,7 +228,7 @@ else if (params.genotype_format == 'bgen') {
       --out ${name}_filtered \
       --maf ${params.maf_filter} \
       --double-id \
-      --memory $plink_memory \
+      --memory ${plink_memory} \
       --keep samples.txt \
       --sample ${sample_file}
     """ 
@@ -287,7 +287,7 @@ else if ( params.trait_type == "quantitative" )
      --keep-allele-order \
      --allow-no-sex \
      --exclude ${name}.missing_FAIL \
-     --memory ${task.memory} \
+     --memory ${plink_memory} \
      --make-bed \
      --out ${name}_miss_filtered
   """
