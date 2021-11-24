@@ -27,7 +27,8 @@ summary['Working dir']                    = workflow.workDir
 summary['Script dir']                     = workflow.projectDir
 summary['User']                           = workflow.userName
 
-summary['vcfs_list']                      = params.vcfs_list
+summary['genotype_files_list']            = params.genotype_files_list
+summary['genotype_format']                = params.genotype_format
 summary['grm_plink_input']                = params.grm_plink_input
 summary['pheno_data']                     = params.pheno_data
 summary['covariate_cols']                 = params.covariate_cols
@@ -56,11 +57,26 @@ log.info summary.collect { k,v -> "${k.padRight(18)}: $v" }.join("\n")
 log.info "-\033[2m--------------------------------------------------\033[0m-"
 
 
+def extractInt( String input ) {
+  return input.replaceAll("[^0-9]", "").toInteger()
+}
+
 def get_chromosome( file ) {
     // using RegEx to extract chromosome number from file name
     regexpPE = /(?:chr)[a-zA-Z0-9]+/
     (file =~ regexpPE)[0].replaceAll('chr','')
     
+}
+
+def checkParameterList(list, realList) {
+    return list.every{ checkParameterExistence(it, realList) }
+}
+
+def defineFormatList() {
+    return [
+      'bgen',
+      'vcf'
+    ]
 }
 /*--------------------------------------------------
   Channel setup
@@ -89,7 +105,7 @@ params.output_tag ? Channel.value(params.output_tag).into {ch_output_tag_report;
 
 
 ch_pheno = params.pheno_data ? Channel.value(file(params.pheno_data)) : Channel.empty()
-(phenoCh_gwas_filtering, ch_pheno_pca, ch_pheno_for_saige, phenoCh, ch_pheno_vcf2plink) = ch_pheno.into(5)
+(phenoCh_gwas_filtering, ch_pheno_pca, ch_pheno_for_saige, phenoCh, ch_pheno_vcf2plink, ch_pheno_bgen) = ch_pheno.into(6)
 ch_covariate_cols = params.covariate_cols ? Channel.value(params.covariate_cols) : "null"
 
 if (params.grm_plink_input) {
@@ -98,14 +114,35 @@ if (params.grm_plink_input) {
   .ifEmpty { exit 1, "PLINK files not found: ${params.grm_plink_input}.\nPlease specify a valid --grm_plink_input value. eg. testdata/*.{bed,bim,fam}" }
   .into { external_ch_plink_pruned;  external_ch_plink_pruned_pca}
 }
-if (params.vcfs_list) {
+if (params.genotype_files_list && params.genotype_format == 'vcf') {
 Channel
-  .fromPath(params.vcfs_list)
-  .ifEmpty { exit 1, "Cannot find CSV VCFs file : ${params.vcfs_list}" }
+  .fromPath(params.genotype_files_list)
+  .ifEmpty { exit 1, "Cannot find CSV VCFs file : ${params.genotype_files_list}" }
   .splitCsv(skip:1)
   .map { chr, vcf, index -> [file(vcf).simpleName, chr, file(vcf), file(index)] }
   .set { inputVcfCh }
 }
+else if (params.genotype_files_list && params.genotype_format == 'bgen') {
+  Channel
+  .fromPath(params.genotype_files_list)
+  .ifEmpty { exit 1, "Cannot find CSV file containing paths to .bgen/.sample files: ${params.genotype_files_list}" }
+  .splitCsv(skip:1)
+  .map { chr, bgen, bgi_index -> [file(bgen).simpleName, chr, file(bgen), file(bgi_index)] }
+  .set { ch_input_bgen }
+
+  Channel
+  .fromPath(params.bgen_sample_file)
+  .set { ch_bgen_sample_file }
+
+}
+else if (!params.genotype_files_list && !params.input_folder_location) {
+  exit 1, "File containing paths to genotype files not specified. Please specify a .csv file with paths using --genotype_files_list parameter, or a input s3 path using --input_folder_location parameter."
+}
+else if (params.genotype_format != 'vcf' && params.genotype_format != 'bgen') {
+  exit 1, "Genotype format not supported. Please choose out of valid formats."
+
+}
+
 Channel
   .fromPath(params.high_LD_long_range_regions)
   .ifEmpty { exit 1, "Cannot find file containing long-range LD regions for exclusion : ${params.high_LD_long_range_regions}" }
@@ -129,36 +166,74 @@ if (params.run_pca) {
   /*--------------------------------------------------
   Pre-GWAS filtering - download, filter and convert VCFs
   ---------------------------------------------------*/
-process vcf2plink {
-  tag "$name"
-  publishDir "${params.outdir}/gwas_filtering", mode: 'copy'
+if (params.genotype_format == 'vcf') {
+  process vcf2plink {
+    tag "$name"
+    label 'high_memory'
+    publishDir "${params.outdir}/gwas_filtering", mode: 'copy'
 
-  input:
-  set val(name), val(chr), file(vcf), file(index) from inputVcfCh
-  each file(phe_file) from ch_pheno_vcf2plink
+    input:
+    set val(name), val(chr), file(vcf), file(index) from inputVcfCh
+    each file(phe_file) from ch_pheno_vcf2plink
 
-  output:
-  set val(name), val(chr), file('*.bed'), file('*.bim'), file('*.fam') into filteredPlinkCh
+    output:
+    set val(name), val(chr), file('*.bed'), file('*.bim'), file('*.fam') into filteredPlinkCh
 
-  script:
-  """
-  # Download, filter and convert (bcf or vcf.gz) -> vcf.gz
-  tail -n +2 ${phe_file}| cut -f2 > samples.txt
-  bcftools view -S samples.txt $vcf -Oz -o ${name}_downsampled.vcf.gz
-  bcftools view -q ${params.q_filter} ${name}_downsampled.vcf.gz -Oz -o ${name}_filtered.vcf.gz
-  bcftools index ${name}_filtered.vcf.gz
+    script:
+    plink_memory = extractInt(task.memory.toString()) * 1000
+    """
+    # Download, filter and convert (bcf or vcf.gz) -> vcf.gz
+    tail -n +2 ${phe_file}| cut -f2 > samples.txt
+    bcftools view -S samples.txt $vcf -Oz -o ${name}_downsampled.vcf.gz
+    bcftools view -q ${params.q_filter} ${name}_downsampled.vcf.gz -Oz -o ${name}_filtered.vcf.gz
+    bcftools index ${name}_filtered.vcf.gz
 
-  # Create PLINK binary from vcf.gz
-  plink2 \
-    --make-bed \
-    --set-missing-var-ids @:#,\\\$r,\\\$a \
-    --vcf ${name}_filtered.vcf.gz \
-    --out ${name}_filtered \
-    --vcf-half-call m \
-    --double-id \
-    --set-hh-missing \
-    --new-id-max-allele-len 60 missing
-"""   
+    # Create PLINK binary from vcf.gz
+    plink2 \
+      --make-bed \
+      --set-missing-var-ids @:#,\\\$r,\\\$a \
+      --vcf ${name}_filtered.vcf.gz \
+      --out ${name}_filtered \
+      --vcf-half-call m \
+      --memory ${plink_memory} \
+      --double-id \
+      --set-hh-missing \
+      --new-id-max-allele-len 60 missing
+  """   
+  }
+}
+else if (params.genotype_format == 'bgen') {
+  process bgen2plink {
+    tag "$name"
+    label "mid_memory"
+    publishDir "${params.outdir}/gwas_filtering", mode: 'copy'
+
+    input:
+    set val(name), val(chr), file(bgen), file(index) from ch_input_bgen
+    each file(phe_file) from ch_pheno_bgen
+    each file(sample_file) from ch_bgen_sample_file
+
+    output:
+    set val(name), val(chr), file('*.bed'), file('*.bim'), file('*.fam') into filteredPlinkCh
+
+    script:
+    plink_memory = extractInt(task.memory.toString()) * 1000
+    """
+    # Create a sample ID file for --keep
+    tail -n +2 ${phe_file}| cut -f1,2 > samples.txt
+
+    # Create PLINK binary from vcf.gz
+    plink2 \
+      --make-bed \
+      --bgen ${bgen}\
+      --out ${name}_filtered \
+      --maf ${params.maf_filter} \
+      --double-id \
+      --memory ${plink_memory} \
+      --keep samples.txt \
+      --sample ${sample_file}
+    """ 
+  }
 }
 
 process filter_missingness {
@@ -172,6 +247,7 @@ process filter_missingness {
   set val(name), val(chr), file('*_miss_filtered.bed'), file('*_miss_filtered.bim'), file('*_miss_filtered.fam') into ch_plink_for_hwe
   
   script:
+  plink_memory = extractInt(task.memory.toString()) * 1000
   if ( params.trait_type == "binary" )
     """
    plink \
@@ -180,6 +256,7 @@ process filter_missingness {
      --pheno-name ${params.phenotype_colname} \
      --allow-no-sex \
      --test-missing midp \
+     --memory ${plink_memory} \
      --out ${name} \
      --1 \
      --keep-allele-order \
@@ -190,6 +267,7 @@ process filter_missingness {
      --keep-allele-order \
      --allow-no-sex \
      --exclude ${name}.missing_FAIL \
+     --memory ${plink_memory} \
      --make-bed \
      --out ${name}_miss_filtered
    """
@@ -199,6 +277,7 @@ else if ( params.trait_type == "quantitative" )
      --bfile ${name}_filtered \
      --allow-no-sex \
      --missing \
+     --memory ${plink_memory} \
      --out ${name} \
      --1 \
      --keep-allele-order
@@ -209,6 +288,7 @@ else if ( params.trait_type == "quantitative" )
      --keep-allele-order \
      --allow-no-sex \
      --exclude ${name}.missing_FAIL \
+     --memory ${plink_memory} \
      --make-bed \
      --out ${name}_miss_filtered
   """
@@ -228,11 +308,13 @@ process calculate_hwe {
   file("${name}.misHWEfiltered*") into ch_filtered_plink
   
   script:
+  plink_memory = extractInt(task.memory.toString()) * 1000
   """
   plink \
     --bfile ${name}_miss_filtered \
     --pheno $phe_file \
     --pheno-name ${params.phenotype_colname} \
+    --memory ${plink_memory} \
     --allow-no-sex \
     --hwe ${params.hwe_threshold} ${params.hwe_test} \
     --out ${name}.misHWEfiltered \
@@ -244,6 +326,7 @@ process calculate_hwe {
     --bfile ${name}.misHWEfiltered  \
     --keep-allele-order \
     --recode vcf-iid bgz \
+    --memory ${plink_memory} \
     --out ${name}_filtered_vcf
 
   bcftools view ${name}_filtered_vcf.vcf.gz | awk -F '\\t' 'NR==FNR{c[\$1\$4\$6\$5]++;next}; c[\$1\$2\$4\$5] > 0' ${name}.misHWEfiltered.bim - | bgzip > ${name}.filtered_temp.vcf.gz
@@ -267,6 +350,7 @@ if (!params.grm_plink_input) {
 
 
       script:
+      plink_memory = extractInt(task.memory.toString()) * 1000
       """
       ls *.bed > bed.txt
       ls *.bim > bim.txt
@@ -279,6 +363,7 @@ if (!params.grm_plink_input) {
       --bfile \${bed_prefix} \
       --merge-list merge.list \
       --allow-no-sex \
+      --memory ${plink_memory} \
       --make-bed \
       --out merged
 
@@ -298,6 +383,7 @@ if (!params.grm_plink_input) {
       set val('merged_pruned'), file('merged_pruned.bed'), file('merged_pruned.bim'), file('merged_pruned.fam') into ( ch_plink_pruned, ch_plink_pruned_pca)
 
       script:
+      plink_memory = extractInt(task.memory.toString()) * 1000
       """
       plink \
       --bfile merged \
@@ -305,12 +391,14 @@ if (!params.grm_plink_input) {
       --indep-pairwise ${params.ld_window_size} ${params.ld_step_size} ${params.ld_r2_threshold} \
       --exclude range ${long_range_ld_regions} \
       --allow-no-sex \
+      --memory ${plink_memory} \
       --out merged
       plink \
       --bfile merged \
       --keep-allele-order \
       --extract merged.prune.in \
       --make-bed \
+      --memory ${plink_memory} \
       --allow-no-sex \
       --out merged_pruned 
       """

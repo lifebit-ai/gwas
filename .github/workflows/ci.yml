@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        nxf_ver: ['20.01.0', '21.04.3']
+        nxf_ver: ['20.01.0', '']
     steps:
       - uses: actions/checkout@v1
       - name: Install Nextflow
@@ -78,3 +78,18 @@ jobs:
       - name: Binary trait GWAS with retrieving vcf and indices via --input_folder_location
         run: |
           nextflow run ${GITHUB_WORKSPACE} --config conf/test_binary_with_input_folder.config
+  test_binary_bgen:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        nxf_ver: ['20.01.0', '']
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install Nextflow
+        run: |
+          export NXF_VER=${{ matrix.nxf_ver }}
+          wget -qO- get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+      - name: Binary trait GWAS with retrieving bgen files and their indices
+        run: |
+          nextflow run ${GITHUB_WORKSPACE} --config conf/test_binary_bgen.config

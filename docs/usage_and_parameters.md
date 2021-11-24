@@ -9,7 +9,7 @@ nextflow run main.nf \
   --grm_plink_input "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/sampleA.{bed,bim,fam}" \
   --pheno_data "<pheno_file>" \
   --trait_type "binary" \
-  --vcfs_list "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/vcfs.csv"
+  --genotype_files_list "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/vcfs.csv"
 ```
 
 **Quantitative**
@@ -19,14 +19,14 @@ nextflow run main.nf \
   --grm_plink_input "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/sampleA.{bed,bim,fam}" \
   --pheno_data "<pheno_file>" \
   --trait_type "quantitative" \
-  --vcfs_list "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/vcfs.csv"
+  --genotype_files_list "s3://lifebit-featured-datasets/projects/gel/gel-gwas/testdata/vcfs.csv"
 ```
 
 # Parameters
 
 ## **ESSENTIAL**
 
-- **--vcfs_list** : path/url to CSV file containing chr chunk information, path to aggregated VCFs, VCFs index.
+- **--genotype_files_list** : path/url to CSV file containing chr, path to file and corresponding index, e.g. for VCF - chr,vcf,index(.csi) and for .bgen files - chr,bgen,index(.bgi). NOTE: chr must be in numeric format. Not `chr1`,`chr2`,`chr3`, but `1`,`2`,`3`.
 
 OR vcf files can be supplied using:
 
@@ -37,19 +37,18 @@ OR vcf files can be supplied using:
 
 - **--pheno_data** : path/url to file that contains phenotypic information about cohort to be analysed in plink phenotypic format (.phe).
 
-## **Binary**
-
-- **--trait_type** : Should be set as 'binary'.
-
-## **Quantitative**
-
-- **--trait_type** : Should be set to 'quantitative'.
+- **--trait_type** : Should be set to 'quantitative' or 'binary', depending on the trait of interest.
 
 
 ## **Optional**
 
+- **--genotype_format** : Format of genotype files in input. Default=`"vcf`. Currently supported options are `vcf` and `bgen`. Default=`vcf`.
+- **--bgen_sample_file**: Sample file accompanying bgen files. Only required if genotype files are in .bgen format. Used in bgen->plink conversion.
+
+
 - **--phenotype_colname** :  Column name of phenotype as shown in file supplied via `--pheno_data`. Default=`"PHE"`
 - **--covariate_cols** :  Column names of covariates to be included in GWAS, supplied in comma-separated fashion e.g. `sex,age,smoking_status`. Column names should reflect those in in file supplied via `--pheno_data`.
+
 - **--q_filter** : Minimum allele frequency filter for selecting sites.
 - **--thres_m** : Minimum threshold for missingess.
 - **--hwe_threshold** : Significance threshold for Hardy-Weinberg Equilibrium. Default = 1e-5
