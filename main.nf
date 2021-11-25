@@ -195,7 +195,6 @@ if (params.genotype_format == 'vcf') {
       --vcf ${name}_filtered.vcf.gz \
       --out ${name}_filtered \
       --vcf-half-call m \
-      --memory ${plink_memory} \
       --double-id \
       --set-hh-missing \
       --new-id-max-allele-len 60 missing
