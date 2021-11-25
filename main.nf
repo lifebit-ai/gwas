@@ -229,7 +229,6 @@ else if (params.genotype_format == 'bgen') {
       --out ${name}_filtered \
       --maf ${params.maf_filter} \
       --double-id \
-      --memory ${plink_memory} \
       --keep samples.txt \
       --sample ${sample_file}
     """ 
