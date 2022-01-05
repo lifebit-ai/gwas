@@ -112,7 +112,7 @@ if (params.grm_plink_input) {
   Channel
   .fromFilePairs("${params.grm_plink_input}",size:3, flat : true)
   .ifEmpty { exit 1, "PLINK files not found: ${params.grm_plink_input}.\nPlease specify a valid --grm_plink_input value. eg. testdata/*.{bed,bim,fam}" }
-  .into { external_ch_plink_pruned;  external_ch_plink_pruned_pca}
+  .into { external_ch_plink_pruned_saige; external_ch_plink_pruned_bolt_lmm;   external_ch_plink_pruned_pca }
 }
 if (params.genotype_files_list && params.genotype_format == 'vcf') {
 Channel
@@ -161,6 +161,14 @@ if (params.run_pca) {
       .set { ch_pca_cols }
 } else {
   ch_pca_cols = Channel.fromList(['null'])
+}
+
+if (params.ld_scores) {
+  Channel
+      .fromPath(params.ld_scores)
+      .ifEmpty { exit 1, "Cannot find file containing LD scores : ${params.ld_scores}" }
+      .set { ch_ld_scores }
+
 }
     
   /*--------------------------------------------------
@@ -304,7 +312,7 @@ process calculate_hwe {
   each file(phe_file) from phenoCh_gwas_filtering
 
   output:
-  set val(name), val(chr), file("${name}.filtered_final.vcf.gz"), file("${name}.filtered_final.vcf.gz.csi") into filteredVcfsCh, ch_filtered_vcfs_for_pruning
+  set val(name), val(chr), file("${name}.filtered_final.vcf.gz"), file("${name}.filtered_final.vcf.gz.csi") into filteredVcfsCh_saige, filteredVcfsCh_bolt_lmm, ch_filtered_vcfs_for_pruning
   file("${name}.misHWEfiltered*") into ch_filtered_plink
   
   script:
@@ -409,6 +417,7 @@ ch_plink_pruned_for_pca = params.grm_plink_input ? external_ch_plink_pruned_pca:
 process run_pca {
     tag "Run PCA"
     publishDir "${params.outdir}", mode: 'copy'
+    container 'gwas:test'
 
     input:
     set val(plink_prefix), file(bed), file(bim), file(fam) from ch_plink_pruned_for_pca
@@ -416,7 +425,7 @@ process run_pca {
 
     output:
     set file('pca_results.eigenvec'), file('pca_results.eigenval') into ch_pca_files
-    file('covariates_with_PCs.tsv') into ch_full_covariate_file
+    file('covariates_with_PCs.tsv') into ch_full_covariate_file_saige, ch_full_covariate_file_bolt_lmm
 
     when: params.run_pca
 
@@ -448,8 +457,10 @@ process run_pca {
 /*--------------------------------------------------
   GWAS Analysis 1 with SAIGE - Fit the null mixed-model
 ---------------------------------------------------*/
-ch_plink_input_for_grm = params.grm_plink_input ? external_ch_plink_pruned : ch_plink_pruned
-ch_covariate_file_for_gwas = params.run_pca ? ch_full_covariate_file : ch_pheno_for_saige
+ch_plink_input_for_grm_saige = params.grm_plink_input ? external_ch_plink_pruned_saige : ch_plink_pruned
+ch_plink_input_for_grm_bolt_lmm = params.grm_plink_input ? external_ch_plink_pruned_bolt_lmm : ch_plink_pruned
+ch_covariate_file_for_saige = params.run_pca ? ch_full_covariate_file_saige : ch_pheno_for_saige
+ch_covariate_file_for_bolt_lmm = params.run_pca ? ch_full_covariate_file_bolt_lmm : ch_pheno_for_saige
 
 process gwas_1_fit_null_glmm_with_pcs {
   tag "$plink_grm_snps"
@@ -457,8 +468,8 @@ process gwas_1_fit_null_glmm_with_pcs {
   publishDir "${params.outdir}/gwas_1_fit_null_glmm", mode: 'copy'
 
   input:
-  set val(plink_grm_prefix), file(pruned_bed), file(pruned_bim), file(pruned_fam) from ch_plink_input_for_grm
-  each file(full_covariate_file) from ch_covariate_file_for_gwas
+  set val(plink_grm_prefix), file(pruned_bed), file(pruned_bim), file(pruned_fam) from ch_plink_input_for_grm_saige
+  each file(full_covariate_file) from ch_covariate_file_for_saige
   val(cov_columns) from ch_covariate_cols
   val(pc_columns) from ch_pca_cols.collect()
     
@@ -499,7 +510,7 @@ process gwas_2_spa_tests {
   publishDir "${params.outdir}/gwas_2_spa_tests", mode: 'copy'
 
   input:
-  set val(name), val(chr), file(vcf), file(index) from filteredVcfsCh
+  set val(name), val(chr), file(vcf), file(index) from filteredVcfsCh_saige
   each file(rda) from rdaCh
   each file(varianceRatio) from varianceRatioCh
 
@@ -525,6 +536,53 @@ process gwas_2_spa_tests {
     --IsOutputHetHomCountsinCaseCtrl=TRUE
   """
 }
+
+if (params.bolt_lmm) {
+  process run_bolt_lmm {
+  tag "$name"
+  label 'bolt_lmm'
+  container 'bolt_lmm:test'
+  publishDir "${params.outdir}/bolt_lmm", mode: 'copy'
+
+  input:
+  set val(plink_grm_prefix), file(pruned_bed), file(pruned_bim), file(pruned_fam) from ch_plink_input_for_grm_bolt_lmm
+  each file(full_covariate_file) from ch_covariate_file_for_bolt_lmm
+  set val(name), val(chr), file(vcf), file(index) from filteredVcfsCh_bolt_lmm
+  file(ld_scores) from ch_ld_scores
+
+
+  output:
+  file "*" into ch_bolt_lmm_results
+
+  script:
+  """
+  sed -e '1s/^.//' ${full_covariate_file} | cut -f 1-12,14- | sed 's/\t/ /g' | grep -vwE "56_56"> pheno_covariates.txt
+
+
+  bolt --bfile ${plink_grm_prefix} \
+       --phenoFile pheno_covariates.txt \
+       --phenoCol ${params.phenotype_colname} \
+       --lmm \
+       --LDscoresFile=${ld_scores} \
+       --statsFile=stats.tab 
+
+  """
+
+}
+}
+  //      #--geneticMapFile \
+  //      #--LDscoresFile \
+  //      #--numThreads \
+  //      #--lmm \
+  //    # --statsFileImpute2Snps ./stroke.all.consensus.AFR.EUR.QC2.chr$chr.imputed.boltlmm.afib.$pheno.nonGRM.$grm.results.pcs.txt \
+  //  # --statsFile  ./stroke.all.consensus.AFR.EUR.QC2.chr$chr.imputed.boltlmm.afib.$pheno.GRM.$grm.results.pcs.txt\
+  //   #--impute2FileList /home/stroke/SiGNimpute2/dosage.lists/stroke.all.consensus.AFR.EUR.QC2.chr$chr.imputed.dosage.list \
+  //   #--impute2FidIidFile /home/stroke/SiGNimpute2/stroke.all.consensus.AFR.EUR.QC2.imputed.samples \
+  //   #--impute2MinMAF 0.01 \
+  //   #--maxMissingPerSnp 0.05 \
+  //   #--qCovarCol PC{1:10} \
+  //   #--covarFile /home/stroke/afib/stroke.all.consensus.AFR.EUR.QC2.covariates.txt \
+  //  # --covarCol SEX \
 
 /*--------------------------------------------------
   GWAS Analysis 2 with SAIGE - Combine SAIGE outputs
