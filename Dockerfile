@@ -1,6 +1,6 @@
 FROM nfcore/base:1.10.2
 LABEL authors="Phil Palmer, Christina Chatzipantsiou" \
-      description="Docker image containing all software requirements for the gel-gwas pipeline"
+      description="Docker image containing all software requirements for GWAS pipeline"
 
 RUN apt-get update && \
     apt-get install -y \
