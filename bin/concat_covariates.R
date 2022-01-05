@@ -80,7 +80,8 @@ cat("output_file  : ", output_file  ,"\n",sep="")
 principal_components = fread(pcs_file)
 covariates_file = fread(phenotype_file)
 
-output_df <- dplyr::left_join(principal_components, covariates_file, by='IID')
+output_df <- dplyr::left_join(principal_components, covariates_file, by='IID') %>% mutate(across(where(is.numeric), coalesce, -9))
+output_df <- output_df[output_df$PHE != -9]
 data.table::fwrite(output_df, "covariates_with_PCs.tsv", sep = "\t")
 
 
