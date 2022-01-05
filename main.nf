@@ -355,6 +355,7 @@ if (!params.grm_plink_input) {
 
       output:
       set file('merged.bed'), file('merged.bim'), file('merged.fam') into ch_plink_merged
+      set file('merged_bgen.bgen'), file('merged_bgen.sample') into ch_merged_bgen
 
 
       script:
@@ -375,6 +376,8 @@ if (!params.grm_plink_input) {
       --make-bed \
       --out merged
 
+      plink2 --bfile merged --export bgen-1.2 bits=8 --out merged_bgen
+
       """
   }
 
@@ -388,7 +391,7 @@ if (!params.grm_plink_input) {
       file(long_range_ld_regions) from ch_high_ld_regions
 
       output:
-      set val('merged_pruned'), file('merged_pruned.bed'), file('merged_pruned.bim'), file('merged_pruned.fam') into ( ch_plink_pruned, ch_plink_pruned_pca)
+      set val('merged_pruned'), file('merged_pruned.bed'), file('merged_pruned.bim'), file('merged_pruned.fam') into ( ch_plink_pruned_saige, ch_plink_pruned_bolt_lmm, ch_plink_pruned_pca)
 
       script:
       plink_memory = extractInt(task.memory.toString()) * 1000
@@ -425,7 +428,7 @@ process run_pca {
 
     output:
     set file('pca_results.eigenvec'), file('pca_results.eigenval') into ch_pca_files
-    file('covariates_with_PCs.tsv') into ch_full_covariate_file_saige, ch_full_covariate_file_bolt_lmm
+    file('covariates_with_PCs.tsv') into (ch_full_covariate_file_saige, ch_full_covariate_file_bolt_lmm)
 
     when: params.run_pca
 
@@ -457,8 +460,8 @@ process run_pca {
 /*--------------------------------------------------
   GWAS Analysis 1 with SAIGE - Fit the null mixed-model
 ---------------------------------------------------*/
-ch_plink_input_for_grm_saige = params.grm_plink_input ? external_ch_plink_pruned_saige : ch_plink_pruned
-ch_plink_input_for_grm_bolt_lmm = params.grm_plink_input ? external_ch_plink_pruned_bolt_lmm : ch_plink_pruned
+ch_plink_input_for_grm_saige = params.grm_plink_input ? external_ch_plink_pruned_saige : ch_plink_pruned_saige
+ch_plink_input_for_grm_bolt_lmm = params.grm_plink_input ? external_ch_plink_pruned_bolt_lmm : ch_plink_pruned_bolt_lmm
 ch_covariate_file_for_saige = params.run_pca ? ch_full_covariate_file_saige : ch_pheno_for_saige
 ch_covariate_file_for_bolt_lmm = params.run_pca ? ch_full_covariate_file_bolt_lmm : ch_pheno_for_saige
 
@@ -549,6 +552,7 @@ if (params.bolt_lmm) {
   each file(full_covariate_file) from ch_covariate_file_for_bolt_lmm
   set val(name), val(chr), file(vcf), file(index) from filteredVcfsCh_bolt_lmm
   file(ld_scores) from ch_ld_scores
+  set file(bgen), file(sample_file) from ch_merged_bgen
 
 
   output:
@@ -559,11 +563,17 @@ if (params.bolt_lmm) {
   sed -e '1s/^.//' ${full_covariate_file} | cut -f 1-12,14- | sed 's/\t/ /g' | grep -vwE "56_56"> pheno_covariates.txt
 
 
-  bolt --bfile ${plink_grm_prefix} \
-       --phenoFile pheno_covariates.txt \
-       --phenoCol ${params.phenotype_colname} \
-       --lmm \
+  bolt --bfile=${plink_grm_prefix} \
+       --phenoFile=pheno_covariates.txt \
+       --phenoCol=${params.phenotype_colname} \
        --LDscoresFile=${ld_scores} \
+       --qCovarCol=PC{1:10} \
+       --verboseStats \
+       --bgenFile=${bgen} \
+       --sampleFile=${sample_file} \
+       --covarFile=pheno_covariates.txt \
+      --covarCol=sex \
+      --statsFileBgenSnps=bgen_snps_stats.gz \
        --statsFile=stats.tab 
 
   """
