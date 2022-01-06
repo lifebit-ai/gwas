@@ -450,6 +450,7 @@ process run_pca {
     fi
 
     concat_covariates.R \
+    --phenotype_colname=${params.phenotype_colname} \
     --pcs_file=pca_results.eigenvec \
     --phenotype_file=${phenotype_file} \
     --output_file=covariates_with_PCs.tsv
@@ -539,6 +540,10 @@ process gwas_2_spa_tests {
     --IsOutputHetHomCountsinCaseCtrl=TRUE
   """
 }
+
+/*--------------------------------------------------
+  GWAS using BOLT-LMM
+---------------------------------------------------*/
 
 if (params.bolt_lmm) {
   process run_bolt_lmm {

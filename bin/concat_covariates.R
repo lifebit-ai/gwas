@@ -14,16 +14,18 @@ if("--help" %in% args | "help" %in% args | (length(args) == 0) | (length(args) =
 
         --phenotype_file        - Path to file containing phenotype of interest and covariates. Supplied via --pheno_data to the pipeline.
 
+        --phenotype_colname     - Name of column containing phenotype.
+
         --output_file           - Path to resultant file with phenotype, covariates and PCs combined.
 
-         --help                    - helpful documentation.
+         --help                 - helpful documentation.
 
 
      Usage:
 
           The typical command for running the script is as follows:
 
-          ./concat_covariates.R --pcs_file='pca_results.eigenvec' --phenotype_file='pheno_and_covariates.tsv' --output_file='full_covariates_pheno_files.tsv'
+          ./concat_covariates.R --pcs_file='pca_results.eigenvec' --phenotype_file='pheno_and_covariates.tsv' --phenotype_colname='PHE' --output_file='full_covariates_pheno_files.tsv'
 
      Output:
 
@@ -64,6 +66,7 @@ suppressWarnings(suppressMessages(library(dplyr)))
 
 pcs_file <- as.character(args$pcs_file)
 phenotype_file <- as.character(args$phenotype_file)
+phenotype_colname <- as.character(args$phenotype_colname)
 output_file <- as.character(args$output_file)
 
 
@@ -72,6 +75,7 @@ cat("ARGUMENTS SUMMARY")
 cat("\n")
 cat("pcs_file         : ", pcs_file         ,"\n",sep="")
 cat("phenotype_file   : ", phenotype_file   ,"\n",sep="")
+cat("phenotype_colname   : ", phenotype_colname   ,"\n",sep="")
 cat("output_file  : ", output_file  ,"\n",sep="")
 
 
@@ -80,8 +84,9 @@ cat("output_file  : ", output_file  ,"\n",sep="")
 principal_components = fread(pcs_file)
 covariates_file = fread(phenotype_file)
 
-output_df <- dplyr::left_join(principal_components, covariates_file, by='IID') %>% mutate(across(where(is.numeric), coalesce, -9))
-output_df <- output_df[output_df$phenotype != -9]
+output_df <- dplyr::left_join(principal_components, covariates_file, by='IID') %>% mutate(across(where(is.numeric), coalesce, -9)) # change null values to -9 
+#output_df <- output_df[output_df$phenotype != -9] # remove rows with null phenotype values but preserve covariates with null values
+output_df <- output_df %>% filter(!!as.symbol(phenotype_colname) != -9)
 data.table::fwrite(output_df, "covariates_with_PCs.tsv", sep = "\t")
 
 
