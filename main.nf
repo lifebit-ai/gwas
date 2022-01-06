@@ -489,7 +489,7 @@ if (params.bolt_lmm || params.regenie) {
     set file(bed), file(bim), file(fam) from ch_plink_merged_bgen
 
     output:
-    set file('merged_bgen.bgen'), file('merged_bgen.sample') into ch_merged_bgen_bolt_lmm, ch_merged_bgen_regenie
+    set file('merged_bgen.bgen'), file('merged_bgen.sample') into ch_merged_bgen_bolt_lmm, ch_merged_bgen_regenie_step1, ch_merged_bgen_regenie_step2
 
     script: 
     """
@@ -510,18 +510,22 @@ if (params.regenie) {
     container 'regenie:test'
 
     input:
-    set file(bgen), file(sample_file) from ch_merged_bgen_regenie
+    set file(bgen), file(sample_file) from ch_merged_bgen_regenie_step1
     file(pheno_covariates) from ch_full_covariate_file_regenie
 
     output:
     file "*" into ch_regenie_step1_output
+    file "fit_bin_out_pred.list" into ch_regenie_step1_pred
+    file "covariates.txt" into ch_regenie_cov
+    file "pheno.txt" into ch_regenie_pheno
 
     script:
+    covariates = params.covariate_cols ? "--covarColList ${params.covariate_cols}" : ''
     """
     sed -e '1s/^.//' ${pheno_covariates}| sed 's/\t/ /g' > full_pheno_covariates.txt
     pheno_col=`awk -v RS=' ' '/${params.phenotype_colname}/{print NR; exit}' full_pheno_covariates.txt`
     cut -d' ' -f1,2,\$pheno_col full_pheno_covariates.txt > pheno.txt
-    cut -d' ' --complement -f\$pheno_col > covariates.txt
+    cut -d' ' --complement -f\$pheno_col full_pheno_covariates.txt > covariates.txt
 
 
 
@@ -529,45 +533,54 @@ if (params.regenie) {
      --step 1 \
       --bgen ${bgen} \
       --covarFile covariates.txt \
+      $covariates \
       --phenoFile pheno.txt \
       --bsize 100 \
       --threads ${task.cpus} \
-      --bt --lowmem \
+      ${params.trait_type == "binary" ? '--bt' : ''} \
+      --lowmem \
       --lowmem-prefix tmp_rg \
       --out fit_bin_out
     """
 
   }
 
+  process regenie_step2_association_testing {
+    label 'regenie_association_test_step2'
+    publishDir "${params.outdir}/regenie", mode: 'copy'
+    container 'regenie:test'
 
-/*--------------------------------------------------
-  GWAS using REGENIE
----------------------------------------------------*/
+    input:
+    file(pred) from ch_regenie_step1_pred
+    set file(bgen), file(sample_file) from ch_merged_bgen_regenie_step1
+    file(covariates_file) from ch_regenie_cov
+    file(pheno) from ch_regenie_pheno
 
-  // process regenie_step2_association_testing {
-  //   label 'regenie_association_test_step2'
-  //   publishDir "${params.outdir}/regenie", mode: 'copy'
-  //   container 'regenie:test'
+    output:
+    file "*" into ch_regenie_step2_assoc
 
-  //   input:
-  //   output:
+    script:
+    covariates = params.covariate_cols ? "--covarColList ${params.covariate_cols}" : ''
+    """
+    regenie \
+      --step 2 \
+      --bgen ${bgen} \
+      --covarFile ${covariates_file} \
+      --phenoFile ${pheno} \
+      --threads ${task.cpus} \
+      --bsize 200 \
+      ${params.trait_type == "binary" ? '--bt' : ''} \
+      --minMAC ${params.regenie_min_mac} \
+      --minINFO ${params.regenie_min_imputation_score} \
+      --firth --approx \
+      --pThresh 0.01 \
+      --gz \
+      --pred ${pred} \
+      --out test_bin_out_firth
 
-  //   script:
-  //   """
-  //   regenie \
-  //     --step 2 \
-  //     --bgen example/example.bgen \
-  //     --covarFile example/covariates.txt \
-  //     --phenoFile example/phenotype_bin.txt \
-  //     --bsize 200 \
-  //     --bt \
-  //     --firth --approx \
-  //     --pThresh 0.01 \
-  //     --pred fit_bin_out_pred.list \
-  //     --out test_bin_out_firth
-  //   """
+    """
 
-  // }
+  }
 
 
 }
