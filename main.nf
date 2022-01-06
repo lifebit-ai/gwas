@@ -91,6 +91,11 @@ Channel.fromPath("${params.input_folder_location}/**${params.file_pattern}*.{${p
        .set { inputVcfCh }
 }
 
+projectDir = workflow.projectDir
+
+Channel
+  .fromPath("${projectDir}/bin/concat_covariates.R",  type: 'file', followLinks: false)
+  .set { ch_concat_covariates_r }
 
 if (params.trait_type == 'binary') {
   inv_normalisation = 'FALSE'
@@ -344,7 +349,8 @@ process calculate_hwe {
   """
 }
 
-if (!params.grm_plink_input) {
+if (params.bolt_lmm || !params.grm_plink_input) {
+
   process merge_plink {
       tag "merge_plink"
 
@@ -354,8 +360,8 @@ if (!params.grm_plink_input) {
       file("*") from ch_filtered_plink.collect()
 
       output:
-      set file('merged.bed'), file('merged.bim'), file('merged.fam') into ch_plink_merged
-      set file('merged_bgen.bgen'), file('merged_bgen.sample') into ch_merged_bgen
+      set file('merged.bed'), file('merged.bim'), file('merged.fam') into ch_plink_merged, ch_plink_merged_bgen
+
 
 
       script:
@@ -376,11 +382,11 @@ if (!params.grm_plink_input) {
       --make-bed \
       --out merged
 
-      plink2 --bfile merged --export bgen-1.2 bits=8 --out merged_bgen
-
       """
   }
+}
 
+if (!params.grm_plink_input) {
 
   process ld_prune {
       tag "LD-prune plink set"
@@ -425,6 +431,7 @@ process run_pca {
     input:
     set val(plink_prefix), file(bed), file(bim), file(fam) from ch_plink_pruned_for_pca
     each file(phenotype_file) from ch_pheno_pca
+    file("concat_covariates.R") from ch_concat_covariates_r
 
     output:
     set file('pca_results.eigenvec'), file('pca_results.eigenval') into ch_pca_files
@@ -466,6 +473,70 @@ ch_plink_input_for_grm_bolt_lmm = params.grm_plink_input ? external_ch_plink_pru
 ch_covariate_file_for_saige = params.run_pca ? ch_full_covariate_file_saige : ch_pheno_for_saige
 ch_covariate_file_for_bolt_lmm = params.run_pca ? ch_full_covariate_file_bolt_lmm : ch_pheno_for_saige
 
+
+
+if (params.bolt_lmm) {
+
+  process convert2bgen   {
+    tag "convert2bgen"
+    label "convert2bgen"
+    publishDir "${params.outdir}/bgen", mode: 'copy'
+
+    input:
+    set file(bed), file(bim), file(fam) from ch_plink_merged_bgen
+
+    output:
+    set file('merged_bgen.bgen'), file('merged_bgen.sample') into ch_merged_bgen
+
+    script: 
+    """
+    plink2 --bfile ${bed.baseName} --export bgen-1.2 bits=8 --out merged_bgen
+    """
+  }
+
+  process run_bolt_lmm {
+  tag "$name"
+  label 'bolt_lmm'
+  container 'bolt_lmm:test'
+  publishDir "${params.outdir}/bolt_lmm", mode: 'copy'
+
+  input:
+  set val(plink_grm_prefix), file(pruned_bed), file(pruned_bim), file(pruned_fam) from ch_plink_input_for_grm_bolt_lmm
+  each file(full_covariate_file) from ch_covariate_file_for_bolt_lmm
+  set val(name), val(chr), file(vcf), file(index) from filteredVcfsCh_bolt_lmm
+  file(ld_scores) from ch_ld_scores
+  set file(bgen), file(sample_file) from ch_merged_bgen
+
+
+  output:
+  file "*" into ch_bolt_lmm_results
+
+  script:
+  """
+  sed -e '1s/^.//' ${full_covariate_file}| sed 's/\t/ /g' > pheno_covariates.txt
+
+
+  bolt --bfile=${plink_grm_prefix} \
+       --phenoFile=pheno_covariates.txt \
+       --phenoCol=${params.phenotype_colname} \
+       --LDscoresFile=${ld_scores} \
+       --qCovarCol=${params.bolt_lmm_quant_covariates} \
+       --verboseStats \
+       --lmm \
+       --bgenFile=${bgen} \
+       --sampleFile=${sample_file} \
+       --LDscoresMatchBp \
+       --covarFile=pheno_covariates.txt \
+      --covarCol=${params.bolt_lmm_categ_covariates} \
+      --statsFileBgenSnps=bgen_snps_stats.gz \
+      --statsFile=stats.tab 
+
+  """
+
+}
+}
+
+if (params.saige) {
 process gwas_1_fit_null_glmm_with_pcs {
   tag "$plink_grm_snps"
   label 'saige'
@@ -541,52 +612,13 @@ process gwas_2_spa_tests {
   """
 }
 
+
 /*--------------------------------------------------
   GWAS using BOLT-LMM
 ---------------------------------------------------*/
 
-if (params.bolt_lmm) {
-  process run_bolt_lmm {
-  tag "$name"
-  label 'bolt_lmm'
-  container 'bolt_lmm:test'
-  publishDir "${params.outdir}/bolt_lmm", mode: 'copy'
 
-  input:
-  set val(plink_grm_prefix), file(pruned_bed), file(pruned_bim), file(pruned_fam) from ch_plink_input_for_grm_bolt_lmm
-  each file(full_covariate_file) from ch_covariate_file_for_bolt_lmm
-  set val(name), val(chr), file(vcf), file(index) from filteredVcfsCh_bolt_lmm
-  file(ld_scores) from ch_ld_scores
-  set file(bgen), file(sample_file) from ch_merged_bgen
-
-
-  output:
-  file "*" into ch_bolt_lmm_results
-
-  script:
-  """
-  sed -e '1s/^.//' ${full_covariate_file} | cut -f 1-12,14- | sed 's/\t/ /g' | grep -vwE "56_56"> pheno_covariates.txt
-
-
-  bolt --bfile=${plink_grm_prefix} \
-       --phenoFile=pheno_covariates.txt \
-       --phenoCol=${params.phenotype_colname} \
-       --LDscoresFile=${ld_scores} \
-       --qCovarCol=${params.bolt_lmm_quant_covariates} \
-       --verboseStats \
-       --bgenFile=${bgen} \
-       --sampleFile=${sample_file} \
-       --covarFile=pheno_covariates.txt \
-      --covarCol=${params.bolt_lmm_categ_covariates} \
-      --statsFileBgenSnps=bgen_snps_stats.gz \
-      --statsFile=stats.tab 
-
-  """
-
-}
-}
   //      #--geneticMapFile \
-  //      #--LDscoresFile \
   //      #--numThreads \
   //      #--lmm \
   //    # --statsFileImpute2Snps ./stroke.all.consensus.AFR.EUR.QC2.chr$chr.imputed.boltlmm.afib.$pheno.nonGRM.$grm.results.pcs.txt \
@@ -670,5 +702,6 @@ mv gwas_report.html multiqc_report.html
 # Generates the ipynb
 jupytext --to ipynb gwas_report.Rmd
 """
+}
 }
 
