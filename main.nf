@@ -27,6 +27,10 @@ summary['Working dir']                    = workflow.workDir
 summary['Script dir']                     = workflow.projectDir
 summary['User']                           = workflow.userName
 
+summary['saige']                          = params.saige
+summary['bolt_lmm']                       = params.bolt_lmm
+summary['regenie']                        = params.regenie
+
 summary['genotype_files_list']            = params.genotype_files_list
 summary['genotype_format']                = params.genotype_format
 summary['grm_plink_input']                = params.grm_plink_input
@@ -110,7 +114,7 @@ params.output_tag ? Channel.value(params.output_tag).into {ch_output_tag_report;
 
 
 ch_pheno = params.pheno_data ? Channel.value(file(params.pheno_data)) : Channel.empty()
-(phenoCh_gwas_filtering, ch_pheno_pca, ch_pheno_for_saige, phenoCh, ch_pheno_vcf2plink, ch_pheno_bgen) = ch_pheno.into(6)
+(phenoCh_gwas_filtering, ch_pheno_pca, ch_pheno_for_saige, ch_pheno_for_regenie, ch_pheno_for_bolt_lmm, phenoCh, ch_pheno_vcf2plink, ch_pheno_bgen) = ch_pheno.into(8)
 ch_covariate_cols = params.covariate_cols ? Channel.value(params.covariate_cols) : "null"
 
 if (params.grm_plink_input) {
@@ -434,7 +438,7 @@ process run_pca {
 
     output:
     set file('pca_results.eigenvec'), file('pca_results.eigenval') into ch_pca_files
-    file('covariates_with_PCs.tsv') into (ch_full_covariate_file_saige, ch_full_covariate_file_bolt_lmm)
+    file('covariates_with_PCs.tsv') into (ch_full_covariate_file_saige, ch_full_covariate_file_bolt_lmm, ch_full_covariate_file_regenie)
 
     when: params.run_pca
 
@@ -470,11 +474,11 @@ process run_pca {
 ch_plink_input_for_grm_saige = params.grm_plink_input ? external_ch_plink_pruned_saige : ch_plink_pruned_saige
 ch_plink_input_for_grm_bolt_lmm = params.grm_plink_input ? external_ch_plink_pruned_bolt_lmm : ch_plink_pruned_bolt_lmm
 ch_covariate_file_for_saige = params.run_pca ? ch_full_covariate_file_saige : ch_pheno_for_saige
-ch_covariate_file_for_bolt_lmm = params.run_pca ? ch_full_covariate_file_bolt_lmm : ch_pheno_for_saige
+ch_covariate_file_for_bolt_lmm = params.run_pca ? ch_full_covariate_file_bolt_lmm : ch_pheno_for_bolt_lmm
+ch_covariate_file_for_regenie = params.run_pca ? ch_full_covariate_file_regenie : ch_pheno_for_regenie
 
 
-
-if (params.bolt_lmm) {
+if (params.bolt_lmm || params.regenie) {
 
   process convert2bgen   {
     tag "convert2bgen"
@@ -485,18 +489,93 @@ if (params.bolt_lmm) {
     set file(bed), file(bim), file(fam) from ch_plink_merged_bgen
 
     output:
-    set file('merged_bgen.bgen'), file('merged_bgen.sample') into ch_merged_bgen
+    set file('merged_bgen.bgen'), file('merged_bgen.sample') into ch_merged_bgen_bolt_lmm, ch_merged_bgen_regenie
 
     script: 
     """
     plink2 --bfile ${bed.baseName} --export bgen-1.2 bits=8 --out merged_bgen
     """
   }
+}
+
+if (params.regenie) {
+
+/*--------------------------------------------------
+  GWAS using REGENIE
+---------------------------------------------------*/
+
+  process regenie_step1_fit_model {
+    label 'regenie_fit_model_step1'
+    publishDir "${params.outdir}/regenie", mode: 'copy'
+    container 'regenie:test'
+
+    input:
+    set file(bgen), file(sample_file) from ch_merged_bgen_regenie
+    file(pheno_covariates) from ch_full_covariate_file_regenie
+
+    output:
+    file "*" into ch_regenie_step1_output
+
+    script:
+    """
+    sed -e '1s/^.//' ${pheno_covariates}| sed 's/\t/ /g' > full_pheno_covariates.txt
+    pheno_col=`awk -v RS=' ' '/${params.phenotype_colname}/{print NR; exit}' full_pheno_covariates.txt`
+    cut -d' ' -f1,2,\$pheno_col full_pheno_covariates.txt > pheno.txt
+    cut -d' ' --complement -f\$pheno_col > covariates.txt
+
+
+
+    regenie \
+     --step 1 \
+      --bgen ${bgen} \
+      --covarFile covariates.txt \
+      --phenoFile pheno.txt \
+      --bsize 100 \
+      --threads ${task.cpus} \
+      --bt --lowmem \
+      --lowmem-prefix tmp_rg \
+      --out fit_bin_out
+    """
+
+  }
+
+
+/*--------------------------------------------------
+  GWAS using REGENIE
+---------------------------------------------------*/
+
+  // process regenie_step2_association_testing {
+  //   label 'regenie_association_test_step2'
+  //   publishDir "${params.outdir}/regenie", mode: 'copy'
+  //   container 'regenie:test'
+
+  //   input:
+  //   output:
+
+  //   script:
+  //   """
+  //   regenie \
+  //     --step 2 \
+  //     --bgen example/example.bgen \
+  //     --covarFile example/covariates.txt \
+  //     --phenoFile example/phenotype_bin.txt \
+  //     --bsize 200 \
+  //     --bt \
+  //     --firth --approx \
+  //     --pThresh 0.01 \
+  //     --pred fit_bin_out_pred.list \
+  //     --out test_bin_out_firth
+  //   """
+
+  // }
+
+
+}
 
 /*--------------------------------------------------
   GWAS using BOLT-LMM
 ---------------------------------------------------*/
-
+if (params.bolt_lmm) {
   process run_bolt_lmm {
   tag "$name"
   label 'bolt_lmm'
@@ -507,7 +586,7 @@ if (params.bolt_lmm) {
   each file(full_covariate_file) from ch_covariate_file_for_bolt_lmm
   set val(name), val(chr), file(vcf), file(index) from filteredVcfsCh_bolt_lmm
   file(ld_scores) from ch_ld_scores
-  set file(bgen), file(sample_file) from ch_merged_bgen
+  set file(bgen), file(sample_file) from ch_merged_bgen_bolt_lmm
 
 
   output:
