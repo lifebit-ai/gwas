@@ -19,7 +19,7 @@ jobs:
         run: |
           nextflow run ${GITHUB_WORKSPACE} --config conf/test_binary.config
   test_qt:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     strategy:
       matrix:
         nxf_ver: ['20.01.0', '']
@@ -34,7 +34,7 @@ jobs:
         run: |
           nextflow run ${GITHUB_WORKSPACE} --config conf/test_qt.config
   test_binary_prune_pca:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     strategy:
       matrix:
         nxf_ver: ['20.01.0', '']
@@ -49,7 +49,7 @@ jobs:
         run: |
           nextflow run ${GITHUB_WORKSPACE} --config conf/test_binary_prune_pca.config
   test_binary_prune_no_pca:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     strategy:
       matrix:
         nxf_ver: ['20.01.0', '']
@@ -64,7 +64,7 @@ jobs:
         run: |
           nextflow run ${GITHUB_WORKSPACE} --config conf/test_binary_prune_no_pca.config
   test_binary_input_folder_location:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     strategy:
       matrix:
         nxf_ver: ['20.01.0', '']
@@ -79,7 +79,7 @@ jobs:
         run: |
           nextflow run ${GITHUB_WORKSPACE} --config conf/test_binary_with_input_folder.config
   test_binary_bgen:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     strategy:
       matrix:
         nxf_ver: ['20.01.0', '']
@@ -93,3 +93,18 @@ jobs:
       - name: Binary trait GWAS with retrieving bgen files and their indices
         run: |
           nextflow run ${GITHUB_WORKSPACE} --config conf/test_binary_bgen.config
+    test_binary_bolt_lmm:
+      runs-on: ubuntu-18.04
+      strategy:
+        matrix:
+          nxf_ver: ['20.01.0', '']
+      steps:
+        - uses: actions/checkout@v1
+        - name: Install Nextflow
+          run: |
+            export NXF_VER=${{ matrix.nxf_ver }}
+            wget -qO- get.nextflow.io | bash
+            sudo mv nextflow /usr/local/bin/
+        - name: Binary trait GWAS using BOLT-LMM
+          run: |
+            nextflow run ${GITHUB_WORKSPACE} --config conf/test_binary_bolt_lmm.config
