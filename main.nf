@@ -505,9 +505,9 @@ if (params.regenie) {
 ---------------------------------------------------*/
 
   process regenie_step1_fit_model {
-    label 'regenie_fit_model_step1'
+    tag "regenie_step1_fit_model"
+    label 'regenie'
     publishDir "${params.outdir}/regenie", mode: 'copy'
-    container 'regenie:test'
 
     input:
     set file(bgen), file(sample_file) from ch_merged_bgen_regenie_step1
@@ -546,9 +546,9 @@ if (params.regenie) {
   }
 
   process regenie_step2_association_testing {
-    label 'regenie_association_test_step2'
+    tag "regenie_step2_association_tests"
+    label 'regenie'
     publishDir "${params.outdir}/regenie", mode: 'copy'
-    container 'regenie:test'
 
     input:
     file(pred) from ch_regenie_step1_pred
