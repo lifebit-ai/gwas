@@ -426,7 +426,6 @@ ch_plink_pruned_for_pca = params.grm_plink_input ? external_ch_plink_pruned_pca:
 process run_pca {
     tag "Run PCA"
     publishDir "${params.outdir}", mode: 'copy'
-    container 'gwas:test'
 
     input:
     set val(plink_prefix), file(bed), file(bim), file(fam) from ch_plink_pruned_for_pca
