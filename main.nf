@@ -572,14 +572,14 @@ if (params.bolt_lmm) {
        --phenoFile=pheno_covariates.txt \
        --phenoCol=${params.phenotype_colname} \
        --LDscoresFile=${ld_scores} \
-       --qCovarCol=PC{1:10} \
+       --qCovarCol=${params.bolt_lmm_quant_covariates} \
        --verboseStats \
        --bgenFile=${bgen} \
        --sampleFile=${sample_file} \
        --covarFile=pheno_covariates.txt \
-      --covarCol=sex \
+      --covarCol=${params.bolt_lmm_categ_covariates} \
       --statsFileBgenSnps=bgen_snps_stats.gz \
-       --statsFile=stats.tab 
+      --statsFile=stats.tab 
 
   """
 
