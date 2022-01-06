@@ -1,8 +1,0 @@
-name: base
-channels:
-  - defaults
-  - bioconda
-dependencies:
-  - python=3.7
-  - bolt-lmm
-

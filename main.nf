@@ -497,7 +497,6 @@ if (params.bolt_lmm) {
   process run_bolt_lmm {
   tag "$name"
   label 'bolt_lmm'
-  container 'bolt_lmm:test'
   publishDir "${params.outdir}/bolt_lmm", mode: 'copy'
 
   input:
