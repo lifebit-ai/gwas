@@ -493,6 +493,10 @@ if (params.bolt_lmm) {
     """
   }
 
+/*--------------------------------------------------
+  GWAS using BOLT-LMM
+---------------------------------------------------*/
+
   process run_bolt_lmm {
   tag "$name"
   label 'bolt_lmm'
@@ -609,25 +613,6 @@ process gwas_2_spa_tests {
     --IsOutputHetHomCountsinCaseCtrl=TRUE
   """
 }
-
-
-/*--------------------------------------------------
-  GWAS using BOLT-LMM
----------------------------------------------------*/
-
-
-  //      #--geneticMapFile \
-  //      #--numThreads \
-  //      #--lmm \
-  //    # --statsFileImpute2Snps ./stroke.all.consensus.AFR.EUR.QC2.chr$chr.imputed.boltlmm.afib.$pheno.nonGRM.$grm.results.pcs.txt \
-  //  # --statsFile  ./stroke.all.consensus.AFR.EUR.QC2.chr$chr.imputed.boltlmm.afib.$pheno.GRM.$grm.results.pcs.txt\
-  //   #--impute2FileList /home/stroke/SiGNimpute2/dosage.lists/stroke.all.consensus.AFR.EUR.QC2.chr$chr.imputed.dosage.list \
-  //   #--impute2FidIidFile /home/stroke/SiGNimpute2/stroke.all.consensus.AFR.EUR.QC2.imputed.samples \
-  //   #--impute2MinMAF 0.01 \
-  //   #--maxMissingPerSnp 0.05 \
-  //   #--qCovarCol PC{1:10} \
-  //   #--covarFile /home/stroke/afib/stroke.all.consensus.AFR.EUR.QC2.covariates.txt \
-  //  # --covarCol SEX \
 
 /*--------------------------------------------------
   GWAS Analysis 2 with SAIGE - Combine SAIGE outputs
