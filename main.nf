@@ -514,7 +514,7 @@ if (params.regenie) {
     file(pheno_covariates) from ch_full_covariate_file_regenie
 
     output:
-    file "fit_bin_out_pred.list" into ch_regenie_step1_pred
+    file "regenie_fit_out_pred.list" into ch_regenie_step1_pred
     file "covariates.txt" into ch_regenie_cov
     file "pheno.txt" into ch_regenie_pheno
 
@@ -537,7 +537,7 @@ if (params.regenie) {
       ${params.trait_type == "binary" ? '--bt' : ''} \
       --lowmem \
       --lowmem-prefix tmp_rg \
-      --out fit_bin_out
+      --out regenie_fit_out
     """
 
   }
@@ -573,7 +573,7 @@ if (params.regenie) {
       --pThresh 0.01 \
       --gz \
       --pred ${pred} \
-      --out test_bin_out_firth
+      --out regenie_firth
 
     """
 
