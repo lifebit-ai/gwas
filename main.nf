@@ -514,7 +514,6 @@ if (params.regenie) {
     file(pheno_covariates) from ch_full_covariate_file_regenie
 
     output:
-    file "*" into ch_regenie_step1_output
     file "fit_bin_out_pred.list" into ch_regenie_step1_pred
     file "covariates.txt" into ch_regenie_cov
     file "pheno.txt" into ch_regenie_pheno
@@ -526,8 +525,6 @@ if (params.regenie) {
     pheno_col=`awk -v RS=' ' '/${params.phenotype_colname}/{print NR; exit}' full_pheno_covariates.txt`
     cut -d' ' -f1,2,\$pheno_col full_pheno_covariates.txt > pheno.txt
     cut -d' ' --complement -f\$pheno_col full_pheno_covariates.txt > covariates.txt
-
-
 
     regenie \
      --step 1 \
