@@ -430,7 +430,7 @@ process run_pca {
     input:
     set val(plink_prefix), file(bed), file(bim), file(fam) from ch_plink_pruned_for_pca
     each file(phenotype_file) from ch_pheno_pca
-    file("concat_covariates.R") from ch_concat_covariates_r
+    file(concat_covariates_script) from ch_concat_covariates_r
 
     output:
     set file('pca_results.eigenvec'), file('pca_results.eigenval') into ch_pca_files
