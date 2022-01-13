@@ -518,7 +518,7 @@ if (params.regenie) {
     file(pheno_covariates) from ch_full_covariate_file_regenie
 
     output:
-    file "regenie_fit_out_pred.list" into ch_regenie_step1_pred
+    set file("regenie_fit_out_1.loco"), file "regenie_fit_out_pred.list" into ch_regenie_step1_pred
     file "covariates.txt" into ch_regenie_cov
     file "pheno.txt" into ch_regenie_pheno
 
@@ -552,7 +552,7 @@ if (params.regenie) {
     publishDir "${params.outdir}/regenie", mode: 'copy'
 
     input:
-    file(pred) from ch_regenie_step1_pred
+    set file(loco), file(pred) from ch_regenie_step1_pred
     set file(bgen), file(sample_file) from ch_merged_bgen_regenie_step1
     file(covariates_file) from ch_regenie_cov
     file(pheno) from ch_regenie_pheno
