@@ -148,6 +148,10 @@ else if (params.genotype_format != 'vcf' && params.genotype_format != 'bgen') {
 
 }
 
+if (!params.phenotype_colname) {
+  exit 1, "Phenotype column name has to be specified."
+}
+
 Channel
   .fromPath(params.high_LD_long_range_regions)
   .ifEmpty { exit 1, "Cannot find file containing long-range LD regions for exclusion : ${params.high_LD_long_range_regions}" }
