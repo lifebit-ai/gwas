@@ -10,9 +10,9 @@ RUN apt-get update --allow-releaseinfo-change && \
     procps && \
     apt-get clean -y 
 
-RUN wget https://storage.googleapis.com/broad-alkesgroup-public/BOLT-LMM/downloads/BOLT-LMM_v2.3.6.tar.gz
-
-RUN tar -xvf BOLT-LMM_v2.3.6.tar.gz
+RUN wget https://storage.googleapis.com/broad-alkesgroup-public/BOLT-LMM/downloads/BOLT-LMM_v2.3.6.tar.gz \
+  && tar -xvf BOLT-LMM_v2.3.6.tar.gz \
+  && rm BOLT-LMM_v2.3.6.tar.gz
 
 ENV PATH="$PATH:/BOLT-LMM_v2.3.6/"
 
