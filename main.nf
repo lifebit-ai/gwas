@@ -518,7 +518,7 @@ if (params.regenie) {
     file(pheno_covariates) from ch_full_covariate_file_regenie
 
     output:
-    set file("regenie_fit_out_1.loco"), file "regenie_fit_out_pred.list" into ch_regenie_step1_pred
+    set file("regenie_fit_out_1.loco"), file("regenie_fit_out_pred.list") into ch_regenie_step1_pred
     file "covariates.txt" into ch_regenie_cov
     file "pheno.txt" into ch_regenie_pheno
 
