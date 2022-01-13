@@ -438,19 +438,11 @@ process run_pca {
     input:
     set val(plink_prefix), file(bed), file(bim), file(fam) from ch_plink_pruned_for_pca
     each file(phenotype_file) from ch_pheno_pca
-<<<<<<< HEAD
-    file("concat_covariates.R") from ch_concat_covariates_r
-
-    output:
-    set file('pca_results.eigenvec'), file('pca_results.eigenval') into ch_pca_files
-    file('covariates_with_PCs.tsv') into (ch_full_covariate_file_saige, ch_full_covariate_file_bolt_lmm, ch_full_covariate_file_regenie)
-=======
     file(concat_covariates_script) from ch_concat_covariates_r
 
     output:
     set file('pca_results.eigenvec'), file('pca_results.eigenval') into ch_pca_files
     file('covariates_with_PCs.tsv') into (ch_full_covariate_file_saige, ch_full_covariate_file_bolt_lmm)
->>>>>>> dev
 
     when: params.run_pca
 
@@ -486,19 +478,11 @@ process run_pca {
 ch_plink_input_for_grm_saige = params.grm_plink_input ? external_ch_plink_pruned_saige : ch_plink_pruned_saige
 ch_plink_input_for_grm_bolt_lmm = params.grm_plink_input ? external_ch_plink_pruned_bolt_lmm : ch_plink_pruned_bolt_lmm
 ch_covariate_file_for_saige = params.run_pca ? ch_full_covariate_file_saige : ch_pheno_for_saige
-<<<<<<< HEAD
 ch_covariate_file_for_bolt_lmm = params.run_pca ? ch_full_covariate_file_bolt_lmm : ch_pheno_for_bolt_lmm
 ch_covariate_file_for_regenie = params.run_pca ? ch_full_covariate_file_regenie : ch_pheno_for_regenie
 
 
 if (params.bolt_lmm || params.regenie) {
-=======
-ch_covariate_file_for_bolt_lmm = params.run_pca ? ch_full_covariate_file_bolt_lmm : ch_pheno_for_saige
-
-
-
-if (params.bolt_lmm) {
->>>>>>> dev
 
   process convert2bgen   {
     tag "convert2bgen"
@@ -509,18 +493,13 @@ if (params.bolt_lmm) {
     set file(bed), file(bim), file(fam) from ch_plink_merged_bgen
 
     output:
-<<<<<<< HEAD
     set file('merged_bgen.bgen'), file('merged_bgen.sample') into ch_merged_bgen_bolt_lmm, ch_merged_bgen_regenie_step1, ch_merged_bgen_regenie_step2
-=======
-    set file('merged_bgen.bgen'), file('merged_bgen.sample') into ch_merged_bgen
->>>>>>> dev
 
     script: 
     """
     plink2 --bfile ${bed.baseName} --export bgen-1.2 bits=8 --out merged_bgen
     """
   }
-<<<<<<< HEAD
 }
 
 if (params.regenie) {
@@ -606,17 +585,11 @@ if (params.regenie) {
 
 
 }
-=======
->>>>>>> dev
 
 /*--------------------------------------------------
   GWAS using BOLT-LMM
 ---------------------------------------------------*/
-<<<<<<< HEAD
 if (params.bolt_lmm) {
-=======
-
->>>>>>> dev
   process run_bolt_lmm {
   tag "$name"
   label 'bolt_lmm'
@@ -627,21 +600,12 @@ if (params.bolt_lmm) {
   each file(full_covariate_file) from ch_covariate_file_for_bolt_lmm
   set val(name), val(chr), file(vcf), file(index) from filteredVcfsCh_bolt_lmm
   file(ld_scores) from ch_ld_scores
-<<<<<<< HEAD
   set file(bgen), file(sample_file) from ch_merged_bgen_bolt_lmm
 
 
   output:
   file "*" into ch_bolt_lmm_results
 
-=======
-  set file(bgen), file(sample_file) from ch_merged_bgen
-
-
-  output:
-  file "*" into ch_bolt_lmm_results
-
->>>>>>> dev
   script:
   """
   sed -e '1s/^.//' ${full_covariate_file}| sed 's/\t/ /g' > pheno_covariates.txt
