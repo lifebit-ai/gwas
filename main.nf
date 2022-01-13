@@ -442,7 +442,7 @@ process run_pca {
 
     output:
     set file('pca_results.eigenvec'), file('pca_results.eigenval') into ch_pca_files
-    file('covariates_with_PCs.tsv') into (ch_full_covariate_file_saige, ch_full_covariate_file_bolt_lmm)
+    file('covariates_with_PCs.tsv') into (ch_full_covariate_file_saige, ch_full_covariate_file_bolt_lmm, ch_full_covariate_file_regenie)
 
     when: params.run_pca
 
