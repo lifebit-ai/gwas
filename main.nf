@@ -518,7 +518,7 @@ if (params.regenie) {
     file(pheno_covariates) from ch_full_covariate_file_regenie
 
     output:
-    set file("regenie_fit_out_1.loco"), file("regenie_fit_out_pred.list") into ch_regenie_step1_pred
+    set file("*.loco"), file("*_pred.list") into ch_regenie_step1_pred
     file "covariates.txt" into ch_regenie_cov
     file "pheno.txt" into ch_regenie_pheno
 
@@ -564,12 +564,13 @@ if (params.regenie) {
     script:
     covariates = params.covariate_cols ? "--covarColList ${params.covariate_cols}" : ''
     """
+    mv ${loco} tmp.txt
+    cp tmp.txt regenie_fit_out_1.loco
     regenie \
       --step 2 \
       --bgen ${bgen} \
       --covarFile ${covariates_file} \
       --phenoFile ${pheno} \
-      --threads ${task.cpus} \
       --bsize 200 \
       ${params.trait_type == "binary" ? '--bt' : ''} \
       --minMAC ${params.regenie_min_mac} \
