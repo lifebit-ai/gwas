@@ -566,6 +566,9 @@ if (params.regenie) {
     """
     mv ${loco} tmp.txt
     cp tmp.txt regenie_fit_out_1.loco
+    rm tmp.txt
+    mv ${pred} tmp.txt
+    cp tmp.txt regenie_fit_out_pred.list
     regenie \
       --step 2 \
       --bgen ${bgen} \
@@ -578,7 +581,7 @@ if (params.regenie) {
       --firth --approx \
       --pThresh 0.01 \
       --gz \
-      --pred ${pred} \
+      --ignore-pred \
       --out regenie_firth
 
     """
