@@ -45,6 +45,7 @@ summary['variant_missingness']            = params.variant_missingness
 summary['hwe_threshold']                  = params.hwe_threshold
 summary['trait_type']                     = params.trait_type
 summary['saige_step1_extra_flags']        = params.saige_step1_extra_flags
+summary['saige_analysis_type']            = params.saige_analysis_type
 summary['gwas_cat']                       = params.gwas_cat
 summary['output_tag']                     = params.output_tag
 summary['top_n_sites']                    = params.top_n_sites
