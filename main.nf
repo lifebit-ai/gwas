@@ -550,6 +550,7 @@ if (params.regenie) {
     tag "regenie_step2_association_tests"
     label 'regenie'
     publishDir "${params.outdir}/regenie", mode: 'copy'
+    beforeScript 'export NXF_TEMP=$TMPDIR'
 
     input:
     set file(loco), file(pred) from ch_regenie_step1_pred
