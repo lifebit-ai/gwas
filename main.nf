@@ -127,7 +127,7 @@ else exit 1, "Trait type is not recognised. Please check input for --trait_type 
 params.output_tag ? Channel.value(params.output_tag).into {ch_output_tag_report; ch_output_tag } : Channel.value(params.phenotype_colname).into {ch_output_tag_report; ch_output_tag }
 
 saige_analysis_list = defineSaigeAnalysisTypeList()
-saige_analysis = params.saige_analysis_list
+saige_analysis = params.saige_analysis_type
 if (saige_analysis.contains(',')) exit 1, 'You can choose only one analysis model, see --help for more information'
 if (!checkParameterExistence(saige_analysis, saige_analysis_list)) exit 1, "Unknown analysis mode: ${saige_analysis}, see --help for more information"
 
