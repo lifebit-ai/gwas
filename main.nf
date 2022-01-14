@@ -550,7 +550,6 @@ if (params.regenie) {
     tag "regenie_step2_association_tests"
     label 'regenie'
     publishDir "${params.outdir}/regenie", mode: 'copy'
-    beforeScript 'export NXF_TEMP=$TMPDIR'
 
     input:
     set file(loco), file(pred) from ch_regenie_step1_pred
@@ -564,6 +563,13 @@ if (params.regenie) {
     script:
     covariates = params.covariate_cols ? "--covarColList ${params.covariate_cols}" : ''
     """
+
+    mkdir new_folder
+    all_files=`ls -p | grep -v /`
+    cp \$all_files new_folder/
+    rm \$all_files
+    cp new_folder/* .
+    
     regenie \
       --step 2 \
       --bgen ${bgen} \
