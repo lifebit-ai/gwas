@@ -108,3 +108,18 @@ jobs:
       - name: Binary trait GWAS using BOLT-LMM
         run: |
           nextflow run ${GITHUB_WORKSPACE} --config conf/test_binary_bolt_lmm.config
+  test_binary_regenie:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        nxf_ver: ['20.01.0', '']
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install Nextflow
+        run: |
+          export NXF_VER=${{ matrix.nxf_ver }}
+          wget -qO- get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+      - name: Binary trait GWAS using REGENIR
+        run: |
+          nextflow run ${GITHUB_WORKSPACE} --config conf/test_binary_regenie.config
