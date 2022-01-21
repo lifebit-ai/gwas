@@ -49,6 +49,7 @@ summary['variant_missingness']            = params.variant_missingness
 summary['hwe_threshold']                  = params.hwe_threshold
 summary['trait_type']                     = params.trait_type
 summary['saige_step1_extra_flags']        = params.saige_step1_extra_flags
+summary['saige_analysis_type']            = params.saige_analysis_type
 summary['gwas_cat']                       = params.gwas_cat
 summary['output_tag']                     = params.output_tag
 summary['top_n_sites']                    = params.top_n_sites
@@ -72,8 +73,25 @@ def get_chromosome( file ) {
     
 }
 
+def checkParameterExistence(it, list) {
+    if (!list.contains(it)) {
+        log.warn "Unknown parameter: ${it}"
+        return false
+    }
+    return true
+}
+
 def checkParameterList(list, realList) {
     return list.every{ checkParameterExistence(it, realList) }
+}
+
+def defineSaigeAnalysisTypeList() {
+    return [
+        'additive',
+        'recessive',
+        'dominant'
+
+    ]
 }
 
 def defineFormatList() {
@@ -111,6 +129,11 @@ else exit 1, "Trait type is not recognised. Please check input for --trait_type 
 
 
 params.output_tag ? Channel.value(params.output_tag).into {ch_output_tag_report; ch_output_tag } : Channel.value(params.phenotype_colname).into {ch_output_tag_report; ch_output_tag }
+
+saige_analysis_list = defineSaigeAnalysisTypeList()
+saige_analysis = params.saige_analysis_type
+if (saige_analysis.contains(',')) exit 1, 'You can choose only one analysis model, see --help for more information'
+if (!checkParameterExistence(saige_analysis, saige_analysis_list)) exit 1, "Unknown analysis mode: ${saige_analysis}, see --help for more information"
 
 
 ch_pheno = params.pheno_data ? Channel.value(file(params.pheno_data)) : Channel.empty()
@@ -708,6 +731,7 @@ process gwas_2_spa_tests {
     --IsOutputAFinCaseCtrl=TRUE \
     --IsDropMissingDosages=FALSE \
     --IsOutputNinCaseCtrl=TRUE \
+    --analysisType=${params.saige_analysis_type} \
     --IsOutputHetHomCountsinCaseCtrl=TRUE
   """
 }

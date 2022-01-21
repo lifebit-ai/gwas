@@ -64,6 +64,7 @@ OR vcf files can be supplied using:
 - **--number_pcs** : Number of principal components generated ans used in GWAS. Default=`10`.
 
 - **--saige_step1_extra_flags** : Additional flags for SAIGE, they should be formatted as "--LOCO=FALSE".
+- **--saige_analysis_type** : Analysis mode for SAIGE GWAS. Options are `additive`, `dominant` and `recessive`. Default = `additive`.
 - **--outdir** : Output directory for results.
 - **--gwas_cat** : Path to GWAS catalog CSV file. Defaults to 's3://lifebit-featured-datasets/projects/gel/gel-gwas/gwascat.csv'.
 - **--output_tag** : Prefix to identify output files.
